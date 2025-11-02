@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Calendar, Search, Plus, AlertTriangle, Users, X } from "lucide-react";
 import GanttTimeline from "@/components/planification/gantt/GanttTimeline";
 import AffairesEnAttente from "@/components/planification/AffairesEnAttente";
+import AffairesPlanifiees from "@/components/planification/AffairesPlanifiees";
 import type { ActivitePlanification, AffectationPlanification } from "@/types/planification";
 
 interface PlanificationClientProps {
@@ -297,7 +298,32 @@ export default function PlanificationClient({
             </div>
             
             {/* Section Affaires en attente de planification - visible uniquement pour planificateurs */}
-            {isPlanificateur && <AffairesEnAttente userId={userId} />}
+            {isPlanificateur && (
+              <>
+                <AffairesEnAttente
+                  userId={userId}
+                  onCreateActivite={(affaireId) => {
+                    // Pré-remplir le modal avec l'affaire sélectionnée
+                    setEditingActivite({
+                      id: "",
+                      affaire_id: affaireId,
+                    } as any);
+                    setShowActiviteModal(true);
+                  }}
+                />
+                {/* Section Affaires planifiées sans activités */}
+                <AffairesPlanifiees
+                  onCreateActivite={(affaireId) => {
+                    // Pré-remplir le modal avec l'affaire sélectionnée
+                    setEditingActivite({
+                      id: "",
+                      affaire_id: affaireId,
+                    } as any);
+                    setShowActiviteModal(true);
+                  }}
+                />
+              </>
+            )}
 
             {filteredActivites.length > 0 ? (
               <GanttTimeline

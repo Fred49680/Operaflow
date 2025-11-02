@@ -7,9 +7,10 @@ import type { Affaire } from "@/types/affaires";
 
 interface AffairesEnAttenteProps {
   userId?: string;
+  onCreateActivite?: (affaireId: string) => void;
 }
 
-export default function AffairesEnAttente({ userId }: AffairesEnAttenteProps) {
+export default function AffairesEnAttente({ userId, onCreateActivite }: AffairesEnAttenteProps) {
   const router = useRouter();
   const [affaires, setAffaires] = useState<Affaire[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,11 +217,11 @@ export default function AffairesEnAttente({ userId }: AffairesEnAttenteProps) {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
+              <div className="flex items-center gap-2 pt-4 border-t border-gray-200 flex-wrap">
                 <button
                   onClick={() => handleAccept(affaire.id)}
                   disabled={processingId === affaire.id}
-                  className="flex-1 btn-primary bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 min-w-[120px] btn-primary bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <CheckCircle className="h-4 w-4" />
                   {processingId === affaire.id ? "Traitement..." : "Accepter"}
@@ -228,14 +229,14 @@ export default function AffairesEnAttente({ userId }: AffairesEnAttenteProps) {
                 <button
                   onClick={() => handleReject(affaire.id)}
                   disabled={processingId === affaire.id}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 min-w-[120px] bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <XCircle className="h-4 w-4" />
                   Refuser
                 </button>
                 <a
                   href={`/affaires/${affaire.id}`}
-                  className="btn-primary flex items-center justify-center gap-2 px-4 py-2"
+                  className="btn-primary flex items-center justify-center gap-2 px-4 py-2 min-w-[80px]"
                 >
                   <Eye className="h-4 w-4" />
                   Voir
