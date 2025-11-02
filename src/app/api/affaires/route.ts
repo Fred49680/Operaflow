@@ -41,7 +41,9 @@ export async function GET(request: Request) {
       .select(`
         *,
         charge_affaires:collaborateurs!tbl_affaires_charge_affaires_id_fkey(id, nom, prenom),
-        site:tbl_sites!tbl_affaires_site_id_fkey(site_id, site_code, site_label)
+        site:tbl_sites!tbl_affaires_site_id_fkey(site_id, site_code, site_label),
+        partenaire:tbl_partenaires!tbl_affaires_partenaire_id_fkey(id, raison_sociale, type_partenaire),
+        contact:tbl_partenaire_contacts!tbl_affaires_contact_id_fkey(id, nom, prenom, email)
       `);
 
     if (statut) query = query.eq("statut", statut);

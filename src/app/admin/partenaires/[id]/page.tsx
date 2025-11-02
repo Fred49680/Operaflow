@@ -90,10 +90,48 @@ export default async function PartenaireDetailPage({ params }: PageProps) {
     .eq("is_active", true)
     .order("site_code", { ascending: true });
 
+  // Récupérer les affaires liées à ce partenaire
+  const { data: affairesPartenaire } = await clientToUse
+    .from("tbl_affaires")
+    .select(`
+      id,
+      numero,
+      libelle,
+      statut,
+      date_debut,
+      date_fin,
+      montant_total,
+      site:tbl_sites!tbl_affaires_site_id_fkey(site_id, site_code, site_label)
+    `)
+    .eq("partenaire_id", id)
+    .order("created_at", { ascending: false });
+
+  // Récupérer les affaires liées aux contacts de ce partenaire
+  const contactIds = contacts?.map(c => c.id) || [];
+  const { data: affairesContacts } = contactIds.length > 0
+    ? await clientToUse
+        .from("tbl_affaires")
+        .select(`
+          id,
+          numero,
+          libelle,
+          statut,
+          date_debut,
+          date_fin,
+          montant_total,
+          contact_id,
+          site:tbl_sites!tbl_affaires_site_id_fkey(site_id, site_code, site_label)
+        `)
+        .in("contact_id", contactIds)
+        .order("created_at", { ascending: false })
+    : { data: null };
+
   return (
     <PartenaireDetailClient
       partenaire={partenaireWithRelations}
       sites={sites || []}
+      affairesPartenaire={affairesPartenaire || []}
+      affairesContacts={affairesContacts || []}
     />
   );
 }

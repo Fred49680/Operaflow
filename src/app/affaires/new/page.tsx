@@ -45,10 +45,41 @@ export default async function NewAffairePage() {
     .eq("statut", "actif")
     .order("nom", { ascending: true });
 
+  // Récupérer les partenaires (clients uniquement)
+  const { data: partenaires } = await clientToUse
+    .from("tbl_partenaires")
+    .select("id, raison_sociale, type_partenaire, code_interne")
+    .or("type_partenaire.eq.client,type_partenaire.eq.mixte")
+    .eq("statut", "actif")
+    .order("raison_sociale", { ascending: true });
+
+  // Récupérer tous les contacts actifs (seront filtrés côté client par site)
+  const { data: contacts } = await clientToUse
+    .from("tbl_partenaire_contacts")
+    .select(`
+      id,
+      partenaire_id,
+      nom,
+      prenom,
+      fonction,
+      email,
+      statut,
+      partenaire:tbl_partenaires!tbl_partenaire_contacts_partenaire_id_fkey(
+        id,
+        raison_sociale,
+        sites:tbl_partenaire_sites(
+          site_id
+        )
+      )
+    `)
+    .eq("statut", "actif");
+
   return (
     <CreateAffaireClient
       sites={sites || []}
       collaborateurs={collaborateurs || []}
+      partenaires={partenaires || []}
+      contacts={contacts || []}
     />
   );
 }

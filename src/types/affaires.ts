@@ -18,8 +18,9 @@ export interface Affaire {
   numero: string;
   libelle: string;
   description?: string | null;
-  client?: string | null;
-  client_code?: string | null;
+  client?: string | null; // Deprecated: conservé pour compatibilité
+  partenaire_id?: string | null;
+  contact_id?: string | null;
   charge_affaires_id?: string | null;
   site_id?: string | null;
   date_debut?: string | null;
@@ -39,6 +40,8 @@ export interface Affaire {
   // Relations
   charge_affaires?: { id: string; nom: string; prenom: string } | null;
   site?: { site_id: string; site_code: string; site_label: string } | null;
+  partenaire?: { id: string; raison_sociale: string; type_partenaire: string } | null;
+  contact?: { id: string; nom: string; prenom: string; email?: string | null } | null;
   bpu?: LigneBPU[];
   depenses?: Depense[];
   lots?: LotAffaire[];

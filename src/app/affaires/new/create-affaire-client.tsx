@@ -5,9 +5,33 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, Plus, X } from "lucide-react";
 
+interface Partenaire {
+  id: string;
+  raison_sociale: string;
+  type_partenaire: string;
+  code_interne?: string | null;
+}
+
+interface Contact {
+  id: string;
+  partenaire_id: string;
+  nom: string;
+  prenom: string;
+  fonction?: string | null;
+  email?: string | null;
+  statut: string;
+  partenaire?: {
+    id: string;
+    raison_sociale: string;
+    sites?: Array<{ site_id: string }>;
+  };
+}
+
 interface CreateAffaireClientProps {
   sites: Array<{ site_id: string; site_code: string; site_label: string }>;
   collaborateurs: Array<{ id: string; nom: string; prenom: string }>;
+  partenaires: Partenaire[];
+  contacts: Contact[];
 }
 
 interface LigneBPU {
@@ -48,6 +72,8 @@ interface Lot {
 export default function CreateAffaireClient({
   sites,
   collaborateurs,
+  partenaires,
+  contacts,
 }: CreateAffaireClientProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -58,8 +84,8 @@ export default function CreateAffaireClient({
     numero: "",
     libelle: "",
     description: "",
-    client: "",
-    client_code: "",
+    partenaire_id: "",
+    contact_id: "",
     charge_affaires_id: "",
     site_id: "",
     date_debut: "",
@@ -70,6 +96,20 @@ export default function CreateAffaireClient({
     priorite: "moyenne" as "basse" | "moyenne" | "haute" | "critique",
   });
 
+  // Filtrer les contacts selon le partenaire et le site sélectionnés
+  const availableContacts = formData.site_id && formData.partenaire_id
+    ? contacts.filter((contact) => {
+        // Le contact doit appartenir au partenaire sélectionné
+        if (contact.partenaire_id !== formData.partenaire_id) return false;
+        
+        // Vérifier si le partenaire a un site lié correspondant
+        const partenaireSites = contact.partenaire?.sites?.map(s => s.site_id) || [];
+        return partenaireSites.includes(formData.site_id) || partenaireSites.length === 0;
+      })
+    : formData.partenaire_id
+    ? contacts.filter((contact) => contact.partenaire_id === formData.partenaire_id)
+    : [];
+
   const [bpu, setBpu] = useState<LigneBPU[]>([]);
   const [depenses, setDepenses] = useState<Depense[]>([]);
   const [lots, setLots] = useState<Lot[]>([]);
@@ -79,7 +119,13 @@ export default function CreateAffaireClient({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Si on change le partenaire, réinitialiser le contact
+    if (name === "partenaire_id") {
+      setFormData((prev) => ({ ...prev, [name]: value, contact_id: "" }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   // Gérer les lignes BPU
@@ -171,7 +217,13 @@ export default function CreateAffaireClient({
       const payload: Record<string, unknown> = {
         ...formData,
         montant_total: formData.montant_total ? parseFloat(formData.montant_total) : null,
+        partenaire_id: formData.partenaire_id || null,
+        contact_id: formData.contact_id || null,
       };
+      
+      // Supprimer les champs obsolètes
+      delete payload.client;
+      delete payload.client_code;
 
       // Ajouter BPU si nécessaire
       if (formData.type_valorisation === "BPU" || formData.type_valorisation === "mixte") {
@@ -368,29 +420,70 @@ export default function CreateAffaireClient({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client
+                    Site
                   </label>
-                  <input
-                    type="text"
-                    name="client"
-                    value={formData.client}
+                  <select
+                    name="site_id"
+                    value={formData.site_id}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                  />
+                  >
+                    <option value="">Sélectionner...</option>
+                    {sites.map((site) => (
+                      <option key={site.site_id} value={site.site_id}>
+                        {site.site_code} - {site.site_label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Code client
+                    Client
                   </label>
-                  <input
-                    type="text"
-                    name="client_code"
-                    value={formData.client_code}
+                  <select
+                    name="partenaire_id"
+                    value={formData.partenaire_id}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                  />
+                  >
+                    <option value="">Sélectionner...</option>
+                    {partenaires.map((partenaire) => (
+                      <option key={partenaire.id} value={partenaire.id}>
+                        {partenaire.raison_sociale}
+                        {partenaire.code_interne && ` (${partenaire.code_interne})`}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
+                {formData.partenaire_id && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Contact (optionnel)
+                    </label>
+                    <select
+                      name="contact_id"
+                      value={formData.contact_id}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    >
+                      <option value="">Aucun contact spécifique</option>
+                      {availableContacts.map((contact) => (
+                        <option key={contact.id} value={contact.id}>
+                          {contact.prenom} {contact.nom}
+                          {contact.fonction && ` - ${contact.fonction}`}
+                          {contact.email && ` (${contact.email})`}
+                        </option>
+                      ))}
+                    </select>
+                    {formData.site_id && availableContacts.length === 0 && formData.partenaire_id && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Aucun contact disponible pour ce partenaire sur ce site
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -406,25 +499,6 @@ export default function CreateAffaireClient({
                     {collaborateurs.map((col) => (
                       <option key={col.id} value={col.id}>
                         {col.prenom} {col.nom}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Site
-                  </label>
-                  <select
-                    name="site_id"
-                    value={formData.site_id}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                  >
-                    <option value="">Sélectionner...</option>
-                    {sites.map((site) => (
-                      <option key={site.site_id} value={site.site_id}>
-                        {site.site_code} - {site.site_label}
                       </option>
                     ))}
                   </select>
