@@ -198,13 +198,23 @@ export default function PlanificationClient({
                 Gantt multi-affaires, suivi quotidien et valorisation horaire
               </p>
             </div>
-            <button
-              onClick={handleCreateActivite}
-              className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto"
-            >
-              <Plus className="h-5 w-5" />
-              Nouvelle activité
-            </button>
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => setShowGestionTemplatesModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                title="Gérer les templates"
+              >
+                <FileText className="h-5 w-5" />
+                Templates
+              </button>
+              <button
+                onClick={handleCreateActivite}
+                className="btn-primary flex items-center justify-center gap-2"
+              >
+                <Plus className="h-5 w-5" />
+                Nouvelle activité
+              </button>
+            </div>
           </div>
 
           {/* Onglets */}
