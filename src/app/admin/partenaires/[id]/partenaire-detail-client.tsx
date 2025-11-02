@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Edit, Save, Plus, X, User, FileText, MapPin, Building2, Phone, Mail, Globe, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, Edit, Save, Plus, X, FileText, CheckCircle } from "lucide-react";
 import type { Partenaire, ContactPartenaire, DocumentPartenaire } from "@/types/partenaires";
 
 interface PartenaireDetailClientProps {

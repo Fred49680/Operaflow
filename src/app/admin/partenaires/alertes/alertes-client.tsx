@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { AlertTriangle, Clock, XCircle, FileText, Building2, CheckCircle } from "lucide-react";
+import { AlertTriangle, Clock, XCircle, FileText, CheckCircle } from "lucide-react";
 import type { AlerteDocument } from "@/types/partenaires";
 
 interface AlertesClientProps {

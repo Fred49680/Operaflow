@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Edit, Save, Plus, X, FileText, TrendingUp, Calendar, MapPin, User } from "lucide-react";
-import type { Affaire, LigneBPU, Depense } from "@/types/affaires";
+import { ArrowLeft, Edit, Save, FileText } from "lucide-react";
+import type { Affaire } from "@/types/affaires";
 
 interface AffaireDetailClientProps {
   affaire: Affaire;
@@ -111,7 +111,6 @@ export default function AffaireDetailClient({
 
   // Calculer les totaux
   const totalBPU = affaire.bpu?.reduce((sum, l) => sum + (l.montant_total_ht || 0), 0) || 0;
-  const totalDepenses = affaire.depenses?.reduce((sum, d) => sum + (d.montant_ht || 0), 0) || 0;
   const totalDepensesTTC = affaire.depenses?.reduce((sum, d) => sum + (d.montant_ttc || 0), 0) || 0;
 
   return (

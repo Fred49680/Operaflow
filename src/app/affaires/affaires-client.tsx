@@ -3,13 +3,13 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Edit, Eye, Filter, Search, TrendingUp, AlertCircle } from "lucide-react";
+import { Plus, Edit, Eye, Search } from "lucide-react";
 import type { Affaire } from "@/types/affaires";
 
 interface AffairesClientProps {
   initialAffaires: Affaire[];
-  sites: Array<{ site_id: string; site_code: string; site_label: string }>;
-  collaborateurs: Array<{ id: string; nom: string; prenom: string }>;
+  sites?: Array<{ site_id: string; site_code: string; site_label: string }>;
+  collaborateurs?: Array<{ id: string; nom: string; prenom: string }>;
 }
 
 export default function AffairesClient({

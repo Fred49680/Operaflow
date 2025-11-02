@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Edit, Eye, Search, Filter, Building2, User, FileText, AlertCircle } from "lucide-react";
+import { Plus, Edit, Eye, Search } from "lucide-react";
 import type { Partenaire } from "@/types/partenaires";
 
 interface PartenairesClientProps {

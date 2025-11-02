@@ -146,13 +146,13 @@ export default function CreateAffaireClient({
     ]);
   };
 
-  const removeLot = (id: string) => {
-    setLots(lots.filter((l) => l.id !== id));
+  const removeLot = (lotId: string) => {
+    setLots(lots.filter((l) => l.id !== lotId));
   };
 
-  const updateLot = (id: string, field: keyof Lot, value: string | number | boolean) => {
+  const updateLot = (lotId: string, field: keyof Lot, value: string | number | boolean) => {
     setLots(
-      lots.map((l) => (l.id === id ? { ...l, [field]: value } : l))
+      lots.map((l) => (l.id === lotId ? { ...l, [field]: value } : l))
     );
   };
 
@@ -172,12 +172,18 @@ export default function CreateAffaireClient({
 
       // Ajouter BPU si nécessaire
       if (formData.type_valorisation === "BPU" || formData.type_valorisation === "mixte") {
-        payload.bpu = bpu.map(({ id, ...rest }) => rest);
+        payload.bpu = bpu.map((ligne) => {
+          const { id: _id, ...rest } = ligne;
+          return rest;
+        });
       }
 
       // Ajouter dépenses si nécessaire
       if (formData.type_valorisation === "dépense" || formData.type_valorisation === "mixte") {
-        payload.depenses = depenses.map(({ id, ...rest }) => rest);
+        payload.depenses = depenses.map((dep) => {
+          const { id: _id, ...rest } = dep;
+          return rest;
+        });
       }
 
       // Ajouter les lots
@@ -188,7 +194,10 @@ export default function CreateAffaireClient({
           setLoading(false);
           return;
         }
-        payload.lots = lots.map(({ id, ...rest }) => rest);
+        payload.lots = lots.map((lot) => {
+          const { id: _id, ...rest } = lot;
+          return rest;
+        });
       }
 
       const response = await fetch("/api/affaires", {

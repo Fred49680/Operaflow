@@ -131,7 +131,8 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { contacts, documents, sites, ...partenaireData } = body;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { contacts: _contacts, documents: _documents, sites: _sites, ...partenaireData } = body;
 
     const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY
       ? createClient<Database>(

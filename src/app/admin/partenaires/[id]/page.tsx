@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
+import type { Partenaire } from "@/types/partenaires";
 import PartenaireDetailClient from "./partenaire-detail-client";
 
 interface PageProps {
