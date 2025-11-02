@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Edit, Save, FileText, Upload, X, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Save, FileText, Upload, X, Plus, Trash2, FileSpreadsheet } from "lucide-react";
 import type { Affaire } from "@/types/affaires";
 
 interface AffaireDetailClientProps {
@@ -20,7 +20,7 @@ export default function AffaireDetailClient({
   partenaires = [],
 }: AffaireDetailClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"general" | "valorisation" | "lots" | "preplanif" | "documents">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "lots" | "preplanif" | "documents">("general");
   const [isEditing, setIsEditing] = useState(false);
   const [affaire, setAffaire] = useState(initialAffaire);
   const [loading, setLoading] = useState(false);
@@ -28,6 +28,8 @@ export default function AffaireDetailClient({
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showLotModal, setShowLotModal] = useState(false);
   const [editingLot, setEditingLot] = useState<any>(null);
+  const [showBpuImportModal, setShowBpuImportModal] = useState(false);
+  const [importingBpu, setImportingBpu] = useState(false);
 
   const getStatutBadge = (statut: string) => {
     const styles: Record<string, string> = {
@@ -453,119 +455,6 @@ export default function AffaireDetailClient({
           </div>
         )}
 
-        {/* Onglet Valorisation */}
-        {activeTab === "valorisation" && (
-          <div className="space-y-6">
-            <div className="card">
-              <h2 className="text-xl font-semibold text-secondary mb-4">Valorisation</h2>
-              <div className="mb-4">
-                <span className="text-sm text-gray-600">Type: </span>
-                <span className="font-semibold">{affaire.type_valorisation || "Non défini"}</span>
-              </div>
-
-              {affaire.type_valorisation === "BPU" || affaire.type_valorisation === "mixte" ? (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3">Bordereau de Prix Unitaires</h3>
-                  {affaire.bpu && affaire.bpu.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unité</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantité</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Prix unitaire</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total HT</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {affaire.bpu.map((ligne) => (
-                            <tr key={ligne.id}>
-                              <td className="px-4 py-3 text-sm">{ligne.code_bpu || "-"}</td>
-                              <td className="px-4 py-3 text-sm">{ligne.libelle_bpu}</td>
-                              <td className="px-4 py-3 text-sm">{ligne.unite || "-"}</td>
-                              <td className="px-4 py-3 text-sm text-right">{ligne.quantite_prevue}</td>
-                              <td className="px-4 py-3 text-sm text-right">{ligne.prix_unitaire_ht.toFixed(2)} €</td>
-                              <td className="px-4 py-3 text-sm font-semibold text-right">{ligne.montant_total_ht.toFixed(2)} €</td>
-                            </tr>
-                          ))}
-                          <tr className="bg-gray-50 font-semibold">
-                            <td colSpan={5} className="px-4 py-3 text-right">Total BPU HT</td>
-                            <td className="px-4 py-3 text-right">{totalBPU.toFixed(2)} €</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">Aucune ligne BPU</p>
-                  )}
-                </div>
-              ) : null}
-
-              {affaire.type_valorisation === "dépense" || affaire.type_valorisation === "mixte" ? (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-3">Dépenses</h3>
-                  {affaire.depenses && affaire.depenses.length > 0 ? (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Catégorie</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Montant HT</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">TVA</th>
-                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total TTC</th>
-                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {affaire.depenses.map((dep) => (
-                            <tr key={dep.id}>
-                              <td className="px-4 py-3 text-sm">{dep.categorie || "-"}</td>
-                              <td className="px-4 py-3 text-sm">{dep.libelle}</td>
-                              <td className="px-4 py-3 text-sm text-right">{dep.montant_ht.toFixed(2)} €</td>
-                              <td className="px-4 py-3 text-sm text-right">{dep.taux_tva}%</td>
-                              <td className="px-4 py-3 text-sm text-right">{dep.montant_ttc.toFixed(2)} €</td>
-                              <td className="px-4 py-3 text-sm">
-                                {new Date(dep.date_depense).toLocaleDateString("fr-FR")}
-                              </td>
-                            </tr>
-                          ))}
-                          <tr className="bg-gray-50 font-semibold">
-                            <td colSpan={4} className="px-4 py-3 text-right">Total Dépenses</td>
-                            <td className="px-4 py-3 text-right">{totalDepensesTTC.toFixed(2)} €</td>
-                            <td></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">Aucune dépense</p>
-                  )}
-                </div>
-              ) : null}
-
-              {affaire.type_valorisation === "forfait" ? (
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Montant forfaitaire</h3>
-                  <div className="text-2xl font-bold text-primary">
-                    {affaire.montant_total ? `${affaire.montant_total.toFixed(2)} €` : "-"}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="mt-6 p-4 bg-primary/10 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold">Montant total de l'affaire</span>
-                  <span className="text-2xl font-bold text-primary">
-                    {montantTotalCalcule > 0 ? `${montantTotalCalcule.toFixed(2)} €` : "-"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Onglet Lots */}
         {activeTab === "lots" && (
