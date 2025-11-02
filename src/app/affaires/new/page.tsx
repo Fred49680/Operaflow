@@ -54,7 +54,7 @@ export default async function NewAffairePage() {
     .order("raison_sociale", { ascending: true });
 
   // Récupérer tous les contacts actifs (seront filtrés côté client par site)
-  const { data: contacts } = await clientToUse
+  const { data: contactsRaw } = await clientToUse
     .from("tbl_partenaire_contacts")
     .select(`
       id,
@@ -74,12 +74,26 @@ export default async function NewAffairePage() {
     `)
     .eq("statut", "actif");
 
+  // Transformer les données pour correspondre au type Contact
+  const contacts = contactsRaw?.map((contact) => ({
+    id: contact.id,
+    partenaire_id: contact.partenaire_id,
+    nom: contact.nom,
+    prenom: contact.prenom,
+    fonction: contact.fonction,
+    email: contact.email,
+    statut: contact.statut,
+    partenaire: Array.isArray(contact.partenaire) && contact.partenaire.length > 0
+      ? contact.partenaire[0]
+      : (!Array.isArray(contact.partenaire) ? contact.partenaire : undefined),
+  })) || [];
+
   return (
     <CreateAffaireClient
       sites={sites || []}
       collaborateurs={collaborateurs || []}
       partenaires={partenaires || []}
-      contacts={contacts || []}
+      contacts={contacts}
     />
   );
 }
