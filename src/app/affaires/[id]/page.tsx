@@ -80,6 +80,23 @@ export default async function AffaireDetailPage({ params }: PageProps) {
     .eq("statut", "actif")
     .order("raison_sociale", { ascending: true });
 
+  // Vérifier les permissions pour la pré-planification
+  const { data: userRoles } = await clientToUse
+    .from("user_roles")
+    .select("roles(name)")
+    .eq("user_id", user.id);
+
+  const canEditPrePlanif = userRoles?.some((ur) => {
+    const role = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+    const roleName = role?.name?.toLowerCase() || "";
+    return (
+      roleName === "administrateur" ||
+      roleName.includes("planificateur") ||
+      roleName.includes("responsable d'activité") ||
+      roleName.includes("responsable")
+    );
+  }) || false;
+
   // Transformer les données pour correspondre aux types attendus
   const affaireWithRelations = affaire ? {
     ...affaire,
@@ -100,6 +117,7 @@ export default async function AffaireDetailPage({ params }: PageProps) {
       sites={sites || []}
       collaborateurs={collaborateurs || []}
       partenaires={partenaires || []}
+      canEditPrePlanif={canEditPrePlanif}
     />
   );
 }

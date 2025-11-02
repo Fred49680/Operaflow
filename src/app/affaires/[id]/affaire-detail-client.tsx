@@ -11,6 +11,7 @@ interface AffaireDetailClientProps {
   sites: Array<{ site_id: string; site_code: string; site_label: string }>;
   collaborateurs: Array<{ id: string; nom: string; prenom: string }>;
   partenaires?: Array<{ id: string; raison_sociale: string; type_partenaire: string }>;
+  canEditPrePlanif?: boolean; // Permissions pour éditer la pré-planification
 }
 
 export default function AffaireDetailClient({
@@ -18,6 +19,7 @@ export default function AffaireDetailClient({
   sites,
   collaborateurs,
   partenaires = [],
+  canEditPrePlanif = false,
 }: AffaireDetailClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"general" | "lots" | "preplanif" | "documents">("general");
@@ -30,6 +32,20 @@ export default function AffaireDetailClient({
   const [editingLot, setEditingLot] = useState<any>(null);
   const [showBpuImportModal, setShowBpuImportModal] = useState(false);
   const [importingBpu, setImportingBpu] = useState(false);
+  
+  // État pour la pré-planification
+  const [isEditingPrePlanif, setIsEditingPrePlanif] = useState(false);
+  const [prePlanifData, setPrePlanifData] = useState({
+    total_jours_homme: affaire.pre_planif?.total_jours_homme?.toString() || "",
+    total_heures: affaire.pre_planif?.total_heures?.toString() || "",
+    contraintes_calendrier: affaire.pre_planif?.contraintes_calendrier || "",
+    contraintes_techniques: affaire.pre_planif?.contraintes_techniques || "",
+    contraintes_rh: affaire.pre_planif?.contraintes_rh || "",
+    risques: affaire.pre_planif?.risques || "",
+    commentaire: affaire.pre_planif?.commentaire || "",
+  });
+  const [savingPrePlanif, setSavingPrePlanif] = useState(false);
+  const [validatingPrePlanif, setValidatingPrePlanif] = useState(false);
 
   const getStatutBadge = (statut: string) => {
     const styles: Record<string, string> = {
@@ -984,56 +1000,325 @@ export default function AffaireDetailClient({
         {/* Onglet Pré-planification */}
         {activeTab === "preplanif" && (
           <div className="card">
-            <h2 className="text-xl font-semibold text-secondary mb-4">Pré-planification</h2>
-            {affaire.pre_planif ? (
-              <div className="space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-secondary">Pré-planification</h2>
+              {canEditPrePlanif && !isEditingPrePlanif && (
+                <button
+                  onClick={() => setIsEditingPrePlanif(true)}
+                  className="btn-secondary flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Modifier
+                </button>
+              )}
+            </div>
+
+            {affaire.pre_planif?.valide_par && affaire.pre_planif?.date_validation && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">
+                  <span className="font-semibold">Pré-planification validée le</span>{" "}
+                  {new Date(affaire.pre_planif.date_validation).toLocaleDateString("fr-FR")}
+                </p>
+              </div>
+            )}
+
+            {isEditingPrePlanif ? (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setSavingPrePlanif(true);
+                  try {
+                    const response = await fetch(`/api/affaires/${affaire.id}/pre-planif`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(prePlanifData),
+                    });
+
+                    if (!response.ok) {
+                      const error = await response.json();
+                      throw new Error(error.error || "Erreur lors de la sauvegarde");
+                    }
+
+                    const updatedPrePlanif = await response.json();
+                    
+                    // Mettre à jour l'affaire avec la nouvelle pré-planification
+                    setAffaire({
+                      ...affaire,
+                      pre_planif: updatedPrePlanif,
+                    });
+
+                    setIsEditingPrePlanif(false);
+                    router.refresh();
+                  } catch (error) {
+                    console.error("Erreur sauvegarde pré-planif:", error);
+                    alert(error instanceof Error ? error.message : "Erreur lors de la sauvegarde");
+                  } finally {
+                    setSavingPrePlanif(false);
+                  }
+                }}
+                className="space-y-4"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Total jours-homme</label>
-                    <div className="px-3 py-2 bg-gray-50 rounded">
-                      {affaire.pre_planif.total_jours_homme || "-"}
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Total jours-homme
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={prePlanifData.total_jours_homme}
+                      onChange={(e) =>
+                        setPrePlanifData({ ...prePlanifData, total_jours_homme: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="0.00"
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Total heures</label>
-                    <div className="px-3 py-2 bg-gray-50 rounded">
-                      {affaire.pre_planif.total_heures || "-"}
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Total heures
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={prePlanifData.total_heures}
+                      onChange={(e) =>
+                        setPrePlanifData({ ...prePlanifData, total_heures: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="0.00"
+                    />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contraintes calendrier</label>
-                  <div className="px-3 py-2 bg-gray-50 rounded min-h-[60px]">
-                    {affaire.pre_planif.contraintes_calendrier || "Aucune"}
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contraintes calendrier
+                  </label>
+                  <textarea
+                    value={prePlanifData.contraintes_calendrier}
+                    onChange={(e) =>
+                      setPrePlanifData({ ...prePlanifData, contraintes_calendrier: e.target.value })
+                    }
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Dates bloquantes, disponibilités..."
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contraintes techniques</label>
-                  <div className="px-3 py-2 bg-gray-50 rounded min-h-[60px]">
-                    {affaire.pre_planif.contraintes_techniques || "Aucune"}
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contraintes techniques
+                  </label>
+                  <textarea
+                    value={prePlanifData.contraintes_techniques}
+                    onChange={(e) =>
+                      setPrePlanifData({ ...prePlanifData, contraintes_techniques: e.target.value })
+                    }
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Contraintes matérielles, environnementales..."
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contraintes RH</label>
-                  <div className="px-3 py-2 bg-gray-50 rounded min-h-[60px]">
-                    {affaire.pre_planif.contraintes_rh || "Aucune"}
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contraintes RH
+                  </label>
+                  <textarea
+                    value={prePlanifData.contraintes_rh}
+                    onChange={(e) =>
+                      setPrePlanifData({ ...prePlanifData, contraintes_rh: e.target.value })
+                    }
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Absences prévues, formations, habilitations..."
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Risques identifiés</label>
-                  <div className="px-3 py-2 bg-gray-50 rounded min-h-[60px]">
-                    {affaire.pre_planif.risques || "Aucun"}
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Risques identifiés
+                  </label>
+                  <textarea
+                    value={prePlanifData.risques}
+                    onChange={(e) =>
+                      setPrePlanifData({ ...prePlanifData, risques: e.target.value })
+                    }
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Risques potentiels..."
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Commentaire</label>
-                  <div className="px-3 py-2 bg-gray-50 rounded min-h-[60px]">
-                    {affaire.pre_planif.commentaire || "Aucun"}
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Commentaire
+                  </label>
+                  <textarea
+                    value={prePlanifData.commentaire}
+                    onChange={(e) =>
+                      setPrePlanifData({ ...prePlanifData, commentaire: e.target.value })
+                    }
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Commentaires généraux..."
+                  />
                 </div>
-              </div>
+                <div className="flex justify-end gap-4 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingPrePlanif(false);
+                      // Réinitialiser les données
+                      setPrePlanifData({
+                        total_jours_homme: affaire.pre_planif?.total_jours_homme?.toString() || "",
+                        total_heures: affaire.pre_planif?.total_heures?.toString() || "",
+                        contraintes_calendrier: affaire.pre_planif?.contraintes_calendrier || "",
+                        contraintes_techniques: affaire.pre_planif?.contraintes_techniques || "",
+                        contraintes_rh: affaire.pre_planif?.contraintes_rh || "",
+                        risques: affaire.pre_planif?.risques || "",
+                        commentaire: affaire.pre_planif?.commentaire || "",
+                      });
+                    }}
+                    className="btn-secondary"
+                    disabled={savingPrePlanif}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary flex items-center gap-2"
+                    disabled={savingPrePlanif}
+                  >
+                    <Save className="h-4 w-4" />
+                    {savingPrePlanif ? "Sauvegarde..." : "Enregistrer"}
+                  </button>
+                </div>
+              </form>
             ) : (
-              <p className="text-gray-500">Aucune pré-planification disponible</p>
+              <div className="space-y-4">
+                {affaire.pre_planif ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Total jours-homme
+                        </label>
+                        <div className="px-3 py-2 bg-gray-50 rounded">
+                          {affaire.pre_planif.total_jours_homme || "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Total heures
+                        </label>
+                        <div className="px-3 py-2 bg-gray-50 rounded">
+                          {affaire.pre_planif.total_heures || "-"}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contraintes calendrier
+                      </label>
+                      <div className="px-3 py-2 bg-gray-50 rounded min-h-[60px]">
+                        {affaire.pre_planif.contraintes_calendrier || "Aucune"}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contraintes techniques
+                      </label>
+                      <div className="px-3 py-2 bg-gray-50 rounded min-h-[60px]">
+                        {affaire.pre_planif.contraintes_techniques || "Aucune"}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contraintes RH
+                      </label>
+                      <div className="px-3 py-2 bg-gray-50 rounded min-h-[60px]">
+                        {affaire.pre_planif.contraintes_rh || "Aucune"}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Risques identifiés
+                      </label>
+                      <div className="px-3 py-2 bg-gray-50 rounded min-h-[60px]">
+                        {affaire.pre_planif.risques || "Aucun"}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Commentaire
+                      </label>
+                      <div className="px-3 py-2 bg-gray-50 rounded min-h-[60px]">
+                        {affaire.pre_planif.commentaire || "Aucun"}
+                      </div>
+                    </div>
+                    {canEditPrePlanif && !affaire.pre_planif.valide_par && (
+                      <div className="flex justify-end pt-4 border-t">
+                        <button
+                          onClick={async () => {
+                            if (!confirm("Confirmer la validation de la pré-planification ? Cette action changera le statut de l'affaire à 'Pré-planifiée'.")) {
+                              return;
+                            }
+                            setValidatingPrePlanif(true);
+                            try {
+                              const response = await fetch(
+                                `/api/affaires/${affaire.id}/pre-planif/validate`,
+                                {
+                                  method: "POST",
+                                }
+                              );
+
+                              if (!response.ok) {
+                                const error = await response.json();
+                                throw new Error(error.error || "Erreur lors de la validation");
+                              }
+
+                              alert("Pré-planification validée avec succès !");
+                              router.refresh();
+                              window.location.reload();
+                            } catch (error) {
+                              console.error("Erreur validation pré-planif:", error);
+                              alert(error instanceof Error ? error.message : "Erreur lors de la validation");
+                            } finally {
+                              setValidatingPrePlanif(false);
+                            }
+                          }}
+                          className="btn-primary flex items-center gap-2"
+                          disabled={validatingPrePlanif}
+                        >
+                          {validatingPrePlanif ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              Validation...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-4 w-4" />
+                              Valider la pré-planification
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">
+                      Aucune pré-planification disponible
+                    </p>
+                    {canEditPrePlanif && (
+                      <button
+                        onClick={() => setIsEditingPrePlanif(true)}
+                        className="btn-primary inline-flex items-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Créer une pré-planification
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
