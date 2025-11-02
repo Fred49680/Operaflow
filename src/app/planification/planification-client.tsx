@@ -47,7 +47,8 @@ export default function PlanificationClient({
   // Filtrage des activités
   const filteredActivites = useMemo(() => {
     return activites.filter((activite) => {
-      if (filters.site && activite.site_id !== filters.site) return false;
+      // Filtrer par site via l'affaire (le site est lié à l'affaire)
+      if (filters.site && activite.affaire?.site_id && activite.affaire.site_id !== filters.site) return false;
       if (filters.affaire && activite.affaire_id !== filters.affaire) return false;
       if (filters.responsable && activite.responsable_id !== filters.responsable) return false;
       if (filters.statut && activite.statut !== filters.statut) return false;
@@ -403,7 +404,6 @@ export default function PlanificationClient({
                   const payload = {
                     affaire_id: formData.get("affaire_id") as string,
                     lot_id: formData.get("lot_id") || null,
-                    site_id: formData.get("site_id") || null,
                     libelle: formData.get("libelle") as string,
                     description: formData.get("description") || null,
                     date_debut_prevue: formData.get("date_debut_prevue") as string,
@@ -473,22 +473,6 @@ export default function PlanificationClient({
                       defaultValue={editingActivite?.libelle || ""}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Site</label>
-                    <select
-                      name="site_id"
-                      defaultValue={editingActivite?.site_id || filters.site}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    >
-                      <option value="">Aucun</option>
-                      {sites.map((site) => (
-                        <option key={site.site_id} value={site.site_id}>
-                          {site.site_code} - {site.site_label}
-                        </option>
-                      ))}
-                    </select>
                   </div>
 
                   <div>
