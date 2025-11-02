@@ -963,6 +963,21 @@ export default function AffaireDetailClient({
                     setLotFormError("");
                   };
                   
+                  // Fonction pour calculer le pourcentage à partir du montant
+                  const handleMontantChange = (value: string) => {
+                    setLotFormMontant(value);
+                    const montant = parseFloat(value) || 0;
+                    
+                    if (montant > 0 && montantTotalCalcule > 0) {
+                      const pourcentageCalcule = (montant * 100) / montantTotalCalcule;
+                      setLotFormPourcentage(pourcentageCalcule.toFixed(2));
+                    } else {
+                      setLotFormPourcentage("");
+                    }
+                    
+                    setLotFormError("");
+                  };
+                  
                   return (
                     <>
                       {/* Affichage des totaux existants */}
@@ -1020,10 +1035,7 @@ export default function AffaireDetailClient({
                             min="0"
                             step="0.01"
                             value={currentMontant}
-                            onChange={(e) => {
-                              setLotFormMontant(e.target.value);
-                              setLotFormError("");
-                            }}
+                            onChange={(e) => handleMontantChange(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                           />
                           <p className="text-xs text-gray-500 mt-1">
