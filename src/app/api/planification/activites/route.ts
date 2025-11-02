@@ -104,6 +104,10 @@ export async function POST(request: NextRequest) {
       activite_precedente_id,
       type_dependance,
       commentaire,
+      // Nouveaux champs
+      parent_id,
+      duree_jours_ouvres,
+      calcul_auto_date_fin,
     } = body;
 
     // Validation des champs requis
@@ -141,6 +145,10 @@ export async function POST(request: NextRequest) {
         activite_precedente_id: activite_precedente_id || null,
         type_dependance: type_dependance || null,
         commentaire: commentaire || null,
+        // Nouveaux champs
+        parent_id: parent_id || null,
+        duree_jours_ouvres: duree_jours_ouvres || null,
+        calcul_auto_date_fin: calcul_auto_date_fin || false,
         created_by: user.id,
       })
       .select(`

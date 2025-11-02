@@ -22,16 +22,20 @@ export default async function PlanificationPage() {
     role === "Planificateur" || role === "Administrateur" || role === "Responsable d'Activité"
   );
 
-  // Charger les activités planifiées
+  // Charger les activités planifiées avec hiérarchie
   const { data: activites } = await supabase
     .from("tbl_planification_activites")
     .select(`
       *,
-      affaire:tbl_affaires!tbl_planification_activites_affaire_id_fkey(id, numero, libelle),
+      affaire:tbl_affaires!tbl_planification_activites_affaire_id_fkey(id, numero, libelle, site_id),
       lot:tbl_affaires_lots(id, numero_lot, libelle_lot),
       site:tbl_sites!tbl_planification_activites_site_id_fkey(site_id, site_code, site_label),
-      responsable:collaborateurs!tbl_planification_activites_responsable_id_fkey(id, nom, prenom)
+      responsable:collaborateurs!tbl_planification_activites_responsable_id_fkey(id, nom, prenom),
+      parent:tbl_planification_activites!tbl_planification_activites_parent_id_fkey(id, libelle, numero_hierarchique),
+      activite_precedente:tbl_planification_activites!tbl_planification_activites_activite_precedente_id_fkey(id, libelle, numero_hierarchique)
     `)
+    .order("numero_hierarchique", { ascending: true })
+    .order("ordre_affichage", { ascending: true })
     .order("date_debut_prevue", { ascending: true });
 
   // Charger les affectations

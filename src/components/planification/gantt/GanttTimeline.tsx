@@ -67,22 +67,35 @@ export default function GanttTimeline({
       <div className="overflow-x-auto">
         <div className="flex">
           {/* Colonne fixe avec libellés des activités */}
-          <div className="w-48 border-r border-gray-200 bg-gray-50 sticky left-0 z-10">
-            {activites.map((activite, index) => (
-              <div
-                key={activite.id}
-                className="h-12 p-3 border-b border-gray-100 flex items-center text-sm text-gray-700 font-medium"
-              >
-                <div className="truncate" title={activite.libelle}>
-                  {activite.libelle}
-                </div>
-                {activite.affaire && (
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {activite.affaire.numero}
+          <div className="w-64 border-r border-gray-200 bg-gray-50 sticky left-0 z-10">
+            {activites.map((activite, index) => {
+              const niveau = activite.niveau_hierarchie || 0;
+              const indent = niveau * 20; // 20px par niveau
+              return (
+                <div
+                  key={activite.id}
+                  className="h-12 p-3 border-b border-gray-100 flex items-center text-sm text-gray-700 font-medium"
+                >
+                  <div 
+                    className="flex items-center gap-2 truncate w-full" 
+                    title={activite.libelle}
+                    style={{ paddingLeft: `${indent}px` }}
+                  >
+                    {activite.numero_hierarchique && (
+                      <span className="text-xs font-bold text-primary flex-shrink-0">
+                        {activite.numero_hierarchique}
+                      </span>
+                    )}
+                    <span className="truncate flex-1">{activite.libelle}</span>
                   </div>
-                )}
-              </div>
-            ))}
+                  {activite.affaire && (
+                    <div className="text-xs text-gray-500 mt-0.5 ml-auto">
+                      {activite.affaire.numero}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Zone de timeline scrollable */}
