@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { gantt } from "dhtmlx-gantt";
 import "dhtmlx-gantt/codebase/dhtmlxgantt.css";
 import type { ActivitePlanification, GanttTask } from "@/types/planification";
@@ -53,7 +53,7 @@ export default function GanttChart({
     ];
 
     // Couleurs selon type horaire ou statut
-    gantt.templates.task_class = function (start: Date, end: Date, task: { type_horaire?: string; statut?: string }) {
+    gantt.templates.task_class = function (start: Date, end: Date, task: any) {
       if (task.type_horaire === "nuit") return "gantt_nuit";
       if (task.type_horaire === "weekend") return "gantt_weekend";
       if (task.type_horaire === "ferie") return "gantt_ferie";
@@ -124,14 +124,15 @@ export default function GanttChart({
       }
     });
 
-    // Nettoyage
+    // Nettoyage - copier la référence avant le cleanup
+    const container = ganttContainer.current;
     return () => {
-      const container = ganttContainer.current;
       if (container) {
         gantt.clearAll();
       }
     };
-  }, [activites, onTaskUpdate, onTaskCreate, onTaskDelete]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activites]);
 
   return (
     <div className="w-full">

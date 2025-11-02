@@ -21,6 +21,9 @@ export default function PlanificationClient({
   affaires = [],
   collaborateurs: _collaborateurs = [],
 }: PlanificationClientProps) {
+  // Suppression des avertissements pour variables préfixées avec _
+  void _affectations;
+  void _collaborateurs;
   const router = useRouter();
   const [activeView, setActiveView] = useState<"gantt" | "suivi" | "alertes">("gantt");
   const [filters, setFilters] = useState({
