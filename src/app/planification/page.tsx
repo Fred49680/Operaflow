@@ -68,6 +68,13 @@ export default async function PlanificationPage() {
     .eq("statut", "actif")
     .order("nom");
 
+  // Debug: Vérifier si les données sont récupérées
+  if (activites && activites.length > 0) {
+    console.log(`[Planification] ${activites.length} activité(s) récupérée(s) depuis Supabase`);
+  } else {
+    console.warn("[Planification] Aucune activité récupérée. Vérifier les RLS et les données.");
+  }
+
   // Transformation des données pour gérer les relations Supabase (arrays)
   const activitesTransformed: ActivitePlanification[] = (activites || []).map((act) => ({
     ...act,
@@ -75,6 +82,8 @@ export default async function PlanificationPage() {
     lot: Array.isArray(act.lot) ? act.lot[0] || null : act.lot || null,
     site: Array.isArray(act.site) ? act.site[0] || null : act.site || null,
     responsable: Array.isArray(act.responsable) ? act.responsable[0] || null : act.responsable || null,
+    parent: Array.isArray(act.parent) ? act.parent[0] || null : act.parent || null,
+    activite_precedente: Array.isArray(act.activite_precedente) ? act.activite_precedente[0] || null : act.activite_precedente || null,
   }));
 
   const affectationsTransformed: AffectationPlanification[] = (affectations || []).map((aff) => ({
