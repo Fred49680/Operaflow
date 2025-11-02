@@ -25,9 +25,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Appeler la fonction SQL pour calculer la date de fin
+    // Signature: calculer_date_fin_jours_ouvres(date_debut_activite, duree_jours_ouvres, site_id_activite)
     const { data, error } = await supabase.rpc("calculer_date_fin_jours_ouvres", {
-      p_date_debut: new Date(date_debut).toISOString(),
-      p_duree_jours: parseInt(duree_jours_ouvres.toString()),
+      date_debut_activite: new Date(date_debut).toISOString().split('T')[0], // Format DATE (YYYY-MM-DD)
+      duree_jours_ouvres: parseInt(duree_jours_ouvres.toString()),
+      site_id_activite: null, // Optionnel, peut être null
     });
 
     if (error) {
