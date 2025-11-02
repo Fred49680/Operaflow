@@ -761,7 +761,16 @@ export default function PartenaireDetailClient({
                       const isExpired = joursRestants !== null && joursRestants < 0;
 
                       return (
-                        <tr key={doc.id} className={isExpired ? "bg-red-50" : isExpiring ? "bg-orange-50" : ""}>
+                        <tr
+                          key={doc.id}
+                          onClick={() => {
+                            setEditingDocument(doc);
+                            setShowDocumentModal(true);
+                          }}
+                          className={`cursor-pointer hover:bg-gray-50 transition-colors ${
+                            isExpired ? "bg-red-50" : isExpiring ? "bg-orange-50" : ""
+                          }`}
+                        >
                           <td className="px-4 py-3 text-sm">{getDocumentTypeLabel(doc.type_document)}</td>
                           <td className="px-4 py-3 text-sm font-medium">{doc.titre}</td>
                           <td className="px-4 py-3 text-sm hidden lg:table-cell">
@@ -785,32 +794,17 @@ export default function PartenaireDetailClient({
                           </td>
                           <td className="px-4 py-3 text-center">{getStatutDocumentBadge(doc.statut)}</td>
                           <td className="px-4 py-3 text-sm hidden xl:table-cell">
-                            {doc.site ? `${doc.site.site_code} - ${doc.site.site_label}` : "-"}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              {doc.url_storage && (
-                                <a
-                                  href={doc.url_storage}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary hover:text-primary-dark"
-                                  title="Télécharger"
-                                >
-                                  <FileText className="h-4 w-4" />
-                                </a>
-                              )}
-                              <button
-                                onClick={() => {
-                                  setEditingDocument(doc);
-                                  setShowDocumentModal(true);
-                                }}
+                            {doc.site ? (
+                              <Link
+                                href={`/rh/sites#${doc.site.site_id}`}
                                 className="text-primary hover:text-primary-dark"
-                                title="Modifier"
+                                onClick={(e) => e.stopPropagation()}
                               >
-                                <Edit className="h-4 w-4" />
-                              </button>
-                            </div>
+                                {doc.site.site_code} - {doc.site.site_label}
+                              </Link>
+                            ) : (
+                              "-"
+                            )}
                           </td>
                         </tr>
                       );
