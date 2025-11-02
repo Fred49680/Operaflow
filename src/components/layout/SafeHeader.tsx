@@ -213,14 +213,18 @@ export default async function SafeHeader() {
                 label: "Fonctions Métier",
                 href: "/admin/fonctions-metier",
               },
-              {
-                label: "Catalogue Formations",
-                href: "/admin/formations/catalogue",
-              },
-            ],
-          },
-        ]
-      : [];
+            {
+              label: "Catalogue Formations",
+              href: "/admin/formations/catalogue",
+            },
+            {
+              label: "Partenaires",
+              href: "/admin/partenaires",
+            },
+          ],
+        },
+      ]
+    : [];
 
     return (
       <HeaderClient

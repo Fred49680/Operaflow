@@ -135,6 +135,10 @@ export default async function Header() {
               label: "Catalogue Formations",
               href: "/admin/formations/catalogue",
             },
+            {
+              label: "Partenaires",
+              href: "/admin/partenaires",
+            },
           ],
         },
       ]
