@@ -294,20 +294,6 @@ export default function AffaireDetailClient({
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Code client</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      name="client_code"
-                      value={affaire.client_code || ""}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
-                  ) : (
-                    <div className="px-3 py-2 bg-gray-50 rounded">{affaire.client_code || "-"}</div>
-                  )}
-                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Chargé d'affaires</label>
