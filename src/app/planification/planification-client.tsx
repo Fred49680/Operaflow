@@ -46,6 +46,15 @@ export default function PlanificationClient({
   const [selectedActiviteForAffectations, setSelectedActiviteForAffectations] = useState<ActivitePlanification | null>(null);
   const [editingActivite, setEditingActivite] = useState<ActivitePlanification | null>(null);
   const [saving, setSaving] = useState(false);
+  const [templates, setTemplates] = useState<Array<{ id: string; nom_template: string; description?: string }>>([]);
+  
+  // Charger les templates au montage
+  useEffect(() => {
+    fetch("/api/planification/templates")
+      .then((res) => res.json())
+      .then((data) => setTemplates(data.templates || []))
+      .catch((err) => console.error("Erreur chargement templates:", err));
+  }, []);
 
   // Filtrage des activités
   const filteredActivites = useMemo(() => {
@@ -399,10 +408,10 @@ export default function PlanificationClient({
         {/* Modal Création/Édition Activité */}
         {showActiviteModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between p-6 border-b">
                 <h2 className="text-xl font-bold text-primary">
-                  {editingActivite.id ? "Modifier l'activité" : "Nouvelle activité"}
+                  {editingActivite?.id ? "Modifier l'activité" : "Nouvelle activité"}
                 </h2>
                 <button
                   onClick={() => {
@@ -414,6 +423,66 @@ export default function PlanificationClient({
                   <X className="h-6 w-6" />
                 </button>
               </div>
+              
+              {/* Section Templates (uniquement en création) */}
+              {!editingActivite?.id && (
+                <div className="p-6 border-b bg-blue-50">
+                  <h3 className="text-sm font-semibold text-gray-800 mb-3">Template de tâches (optionnel)</h3>
+                  <div className="flex items-center gap-3">
+                    <select
+                      id="template-select"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      onChange={async (e) => {
+                        const templateId = e.target.value;
+                        if (!templateId) return;
+                        
+                        const affaireId = editingActivite?.affaire_id || filters.affaire;
+                        if (!affaireId) {
+                          alert("Veuillez d'abord sélectionner une affaire");
+                          return;
+                        }
+                        
+                        setSaving(true);
+                        try {
+                          const response = await fetch(`/api/planification/templates/apply`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              template_id: templateId,
+                              affaire_id: affaireId,
+                              date_debut_reference: new Date().toISOString(),
+                            }),
+                          });
+                          
+                          if (response.ok) {
+                            const data = await response.json();
+                            alert(`Template appliqué avec succès ! ${data.count} tâche(s) créée(s).`);
+                            setShowActiviteModal(false);
+                            setEditingActivite(null);
+                            router.refresh();
+                          } else {
+                            const error = await response.json();
+                            alert(`Erreur: ${error.error || "Erreur inconnue"}`);
+                          }
+                        } catch (error) {
+                          console.error("Erreur:", error);
+                          alert("Une erreur est survenue lors de l'application du template");
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                    >
+                      <option value="">Aucun template</option>
+                      {templates.map((template) => (
+                        <option key={template.id} value={template.id}>
+                          {template.nom_template}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-xs text-gray-500">Les tâches seront créées automatiquement</span>
+                  </div>
+                </div>
+              )}
 
               <form
                 className="p-6 space-y-4"
