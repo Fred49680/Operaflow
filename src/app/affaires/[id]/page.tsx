@@ -43,6 +43,8 @@ export default async function AffaireDetailPage({ params }: PageProps) {
       *,
       charge_affaires:collaborateurs!tbl_affaires_charge_affaires_id_fkey(id, nom, prenom),
       site:tbl_sites!tbl_affaires_site_id_fkey(site_id, site_code, site_label),
+      partenaire:tbl_partenaires!tbl_affaires_partenaire_id_fkey(id, raison_sociale, type_partenaire),
+      contact:tbl_partenaire_contacts!tbl_affaires_contact_id_fkey(id, nom, prenom, fonction, email),
       bpu:tbl_affaires_bpu(*),
       depenses:tbl_affaires_depenses(*),
       lots:tbl_affaires_lots(*),
@@ -70,11 +72,34 @@ export default async function AffaireDetailPage({ params }: PageProps) {
     .eq("statut", "actif")
     .order("nom", { ascending: true });
 
+  // Récupérer les partenaires pour la modification
+  const { data: partenaires } = await clientToUse
+    .from("tbl_partenaires")
+    .select("id, raison_sociale, type_partenaire, code_interne")
+    .or("type_partenaire.eq.client,type_partenaire.eq.mixte")
+    .eq("statut", "actif")
+    .order("raison_sociale", { ascending: true });
+
+  // Transformer les données pour correspondre aux types attendus
+  const affaireWithRelations = affaire ? {
+    ...affaire,
+    partenaire: Array.isArray(affaire.partenaire) && affaire.partenaire.length > 0
+      ? affaire.partenaire[0]
+      : (!Array.isArray(affaire.partenaire) ? affaire.partenaire : null),
+    contact: Array.isArray(affaire.contact) && affaire.contact.length > 0
+      ? affaire.contact[0]
+      : (!Array.isArray(affaire.contact) ? affaire.contact : null),
+    site: Array.isArray(affaire.site) && affaire.site.length > 0
+      ? affaire.site[0]
+      : (!Array.isArray(affaire.site) ? affaire.site : null),
+  } : null;
+
   return (
     <AffaireDetailClient
-      affaire={affaire}
+      affaire={affaireWithRelations}
       sites={sites || []}
       collaborateurs={collaborateurs || []}
+      partenaires={partenaires || []}
     />
   );
 }

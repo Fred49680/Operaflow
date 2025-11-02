@@ -214,16 +214,29 @@ export default function CreateAffaireClient({
     setLoading(true);
 
     try {
+      // Nettoyer les valeurs vides pour partenaire_id et contact_id
+      const cleanPartenaireId = formData.partenaire_id && formData.partenaire_id.trim() !== "" 
+        ? formData.partenaire_id 
+        : null;
+      const cleanContactId = formData.contact_id && formData.contact_id.trim() !== "" 
+        ? formData.contact_id 
+        : null;
+
       const payload: Record<string, unknown> = {
-        ...formData,
+        numero: formData.numero,
+        libelle: formData.libelle,
+        description: formData.description || null,
+        partenaire_id: cleanPartenaireId,
+        contact_id: cleanContactId,
+        charge_affaires_id: formData.charge_affaires_id || null,
+        site_id: formData.site_id || null,
+        date_debut: formData.date_debut || null,
+        date_fin: formData.date_fin || null,
         montant_total: formData.montant_total ? parseFloat(formData.montant_total) : null,
-        partenaire_id: formData.partenaire_id || null,
-        contact_id: formData.contact_id || null,
+        type_valorisation: formData.type_valorisation,
+        statut: formData.statut,
+        priorite: formData.priorite,
       };
-      
-      // Supprimer les champs obsolètes
-      delete payload.client;
-      delete payload.client_code;
 
       // Ajouter BPU si nécessaire
       if (formData.type_valorisation === "BPU" || formData.type_valorisation === "mixte") {

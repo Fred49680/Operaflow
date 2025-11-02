@@ -10,12 +10,14 @@ interface AffaireDetailClientProps {
   affaire: Affaire;
   sites: Array<{ site_id: string; site_code: string; site_label: string }>;
   collaborateurs: Array<{ id: string; nom: string; prenom: string }>;
+  partenaires?: Array<{ id: string; raison_sociale: string; type_partenaire: string }>;
 }
 
 export default function AffaireDetailClient({
   affaire: initialAffaire,
   sites,
   collaborateurs,
+  partenaires = [],
 }: AffaireDetailClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"general" | "valorisation" | "lots" | "preplanif" | "documents">("general");
@@ -282,15 +284,23 @@ export default function AffaireDetailClient({
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Client</label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      name="client"
-                      value={affaire.client || ""}
+                    <select
+                      name="partenaire_id"
+                      value={affaire.partenaire_id || ""}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
+                    >
+                      <option value="">Sélectionner...</option>
+                      {partenaires.map((partenaire) => (
+                        <option key={partenaire.id} value={partenaire.id}>
+                          {partenaire.raison_sociale}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
-                    <div className="px-3 py-2 bg-gray-50 rounded">{affaire.client || "-"}</div>
+                    <div className="px-3 py-2 bg-gray-50 rounded">
+                      {affaire.partenaire?.raison_sociale || affaire.client || "-"}
+                    </div>
                   )}
                 </div>
 
