@@ -191,8 +191,19 @@ export default function SuiviQuotidienClient({
         setShowActionModal(false);
         setActionType(null);
       } else {
-        const error = await response.json();
-        alert(`Erreur: ${error.error || "Erreur inconnue"}`);
+        let errorMessage = "Erreur inconnue";
+        try {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const error = await response.json();
+            errorMessage = error.error || error.message || errorMessage;
+          } else {
+            errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+          }
+        } catch (e) {
+          errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+        }
+        alert(`Erreur: ${errorMessage}`);
       }
     } catch (error) {
       console.error("Erreur:", error);
@@ -223,8 +234,19 @@ export default function SuiviQuotidienClient({
         router.refresh();
         setShowAvancementModal(false);
       } else {
-        const error = await response.json();
-        alert(`Erreur: ${error.error || "Erreur inconnue"}`);
+        let errorMessage = "Erreur inconnue";
+        try {
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const error = await response.json();
+            errorMessage = error.error || error.message || errorMessage;
+          } else {
+            errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+          }
+        } catch (e) {
+          errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+        }
+        alert(`Erreur: ${errorMessage}`);
       }
     } catch (error) {
       console.error("Erreur:", error);
