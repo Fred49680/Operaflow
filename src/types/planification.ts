@@ -148,29 +148,19 @@ export interface AlertePlanification {
   updated_at: string;
 }
 
-// Structure pour le Gantt (format dhtmlx-gantt)
-export interface GanttTask {
+// Structure pour le nouveau Gantt (simplifié, développé étape par étape)
+export interface GanttTimelineItem {
   id: string;
-  text: string;
-  start_date: string;
-  end_date?: string;
-  duration?: number;
-  progress?: number;
-  parent?: string | null;
-  type?: 'task' | 'project' | 'milestone';
-  color?: string;
-  open?: boolean;
-  readonly?: boolean;
-  
-  // Données métier
-  activite_id?: string;
+  activite_id: string;
+  libelle: string;
+  date_debut: Date;
+  date_fin: Date;
+  heures_prevues: number;
+  pourcentage_avancement: number;
+  statut: StatutActivite;
+  type_horaire: TypeHoraire;
   affaire_id?: string;
-  collaborateur_id?: string;
-  type_horaire?: TypeHoraire;
-  statut?: StatutActivite;
-  
-  // Propriétés pour les événements (conversion depuis dhtmlx-gantt)
-  date_debut_prevue?: string;
-  date_fin_prevue?: string;
+  site_id?: string;
+  color?: string; // Couleur calculée selon statut/type horaire
 }
 

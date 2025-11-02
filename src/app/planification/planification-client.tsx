@@ -3,8 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Search, Plus, AlertTriangle, Users, X } from "lucide-react";
-import GanttChart from "@/components/planification/GanttChart";
-import type { ActivitePlanification, AffectationPlanification, GanttTask } from "@/types/planification";
+import type { ActivitePlanification, AffectationPlanification } from "@/types/planification";
 
 interface PlanificationClientProps {
   activites: ActivitePlanification[];
@@ -64,23 +63,16 @@ export default function PlanificationClient({
     setShowActiviteModal(true);
   };
 
-  // Fonction pour mettre à jour une tâche depuis le Gantt
-  const handleTaskUpdate = async (task: Partial<GanttTask>) => {
-    if (!task.activite_id) return;
-
+  // Fonction pour mettre à jour une activité
+  const handleUpdateActivite = async (activiteId: string, updates: Partial<ActivitePlanification>) => {
     try {
-      const response = await fetch(`/api/planification/activites/${task.activite_id}`, {
+      const response = await fetch(`/api/planification/activites/${activiteId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date_debut_prevue: task.date_debut_prevue || task.start_date,
-          date_fin_prevue: task.date_fin_prevue || task.end_date,
-          pourcentage_avancement: task.progress,
-        }),
+        body: JSON.stringify(updates),
       });
 
       if (response.ok) {
-        // Rafraîchir la liste
         router.refresh();
       }
     } catch (error) {
@@ -88,25 +80,12 @@ export default function PlanificationClient({
     }
   };
 
-  // Fonction pour créer une activité depuis le Gantt
-  const handleTaskCreate = async (task: Partial<GanttTask>) => {
-    // Ouvrir le modal avec les données pré-remplies
-    setEditingActivite({
-      ...task,
-      affaire_id: filters.affaire || "",
-      libelle: task.text || "",
-      date_debut_prevue: task.date_debut_prevue || task.start_date || "",
-      date_fin_prevue: task.date_fin_prevue || task.end_date || "",
-    } as unknown as ActivitePlanification);
-    setShowActiviteModal(true);
-  };
-
   // Fonction pour supprimer une activité
-  const handleTaskDelete = async (taskId: string) => {
+  const handleDeleteActivite = async (activiteId: string) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette activité ?")) return;
 
     try {
-      const response = await fetch(`/api/planification/activites/${taskId}`, {
+      const response = await fetch(`/api/planification/activites/${activiteId}`, {
         method: "DELETE",
       });
 
