@@ -237,15 +237,15 @@ export default function FonctionsMetierClient({
       <div className="card">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                   Libellé
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                   Description
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                   Statut
                 </th>
               </tr>
@@ -262,7 +262,7 @@ export default function FonctionsMetierClient({
                   <tr 
                     key={fonction.id}
                     ref={editingId === fonction.id ? editRowRef : null}
-                    className={`hover:bg-gray-50 ${editingId === fonction.id ? 'bg-blue-50' : 'cursor-pointer'}`}
+                    className={`hover:bg-primary/5 transition-colors duration-150 ${editingId === fonction.id ? 'bg-blue-50' : 'cursor-pointer'}`}
                     onClick={(e) => {
                       // Ne pas déclencher si on clique sur le statut ou si on est déjà en édition
                       if (editingId === fonction.id) return;
@@ -319,10 +319,10 @@ export default function FonctionsMetierClient({
                             e.stopPropagation();
                             handleToggleActive(fonction.id, fonction.is_active);
                           }}
-                          className={`statut-badge inline-flex px-2 py-1 text-xs font-semibold rounded-full cursor-pointer transition-all hover:scale-105 ${
+                          className={`statut-badge inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border cursor-pointer transition-all hover:scale-105 ${
                             fonction.is_active
-                              ? "bg-green-100 text-green-800 hover:bg-green-200"
-                              : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                              ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+                              : "bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200"
                           }`}
                           title={`Cliquer pour ${fonction.is_active ? "désactiver" : "activer"}`}
                         >

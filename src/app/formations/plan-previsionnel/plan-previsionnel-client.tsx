@@ -286,24 +286,24 @@ export default function PlanPrevisionnelClient({
 
         {/* Statistiques */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <div className="card">
-            <div className="text-sm text-gray-600">Total</div>
+          <div className="card border-l-4 border-l-primary bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Total</div>
             <div className="text-2xl font-bold text-primary">{stats.total}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">En attente</div>
+          <div className="card border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">En attente</div>
             <div className="text-2xl font-bold text-orange-600">{stats.en_attente}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Validées</div>
+          <div className="card border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Validées</div>
             <div className="text-2xl font-bold text-green-600">{stats.valide}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Refusées</div>
+          <div className="card border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Refusées</div>
             <div className="text-2xl font-bold text-red-600">{stats.refuse}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Budget total</div>
+          <div className="card border-l-4 border-l-blue-600 bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Budget total</div>
             <div className="text-2xl font-bold text-blue-600">{stats.budget_total.toFixed(0)} €</div>
           </div>
         </div>
@@ -377,28 +377,28 @@ export default function PlanPrevisionnelClient({
         <div className="card overflow-hidden">
           <div className="overflow-x-auto -mx-6 sm:mx-0">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
                 <tr>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Collaborateur
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Formation
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden md:table-cell">
                     Période
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden lg:table-cell">
                     Priorité
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden xl:table-cell">
                     Budget
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Statut
                   </th>
                   {hasRHAccess && (
-                    <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-3 sm:px-6 py-3 text-right text-xs font-bold text-secondary uppercase tracking-wider">
                       Actions
                     </th>
                   )}
@@ -413,7 +413,7 @@ export default function PlanPrevisionnelClient({
                   </tr>
                 ) : (
                   filteredPlan.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
+                    <tr key={item.id} className="hover:bg-primary/5 transition-colors duration-150">
                       <td className="px-3 sm:px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">
                           {item.collaborateur?.prenom} {item.collaborateur?.nom}
@@ -440,10 +440,10 @@ export default function PlanPrevisionnelClient({
                         )}
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          item.priorite === 'haute' ? 'bg-red-100 text-red-800' :
-                          item.priorite === 'moyenne' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
+                        <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${
+                          item.priorite === 'haute' ? 'bg-red-100 text-red-800 border-red-300' :
+                          item.priorite === 'moyenne' ? 'bg-yellow-100 text-yellow-800 border-yellow-300' :
+                          'bg-gray-100 text-gray-800 border-gray-300'
                         }`}>
                           {item.priorite || 'moyenne'}
                         </span>
@@ -452,10 +452,10 @@ export default function PlanPrevisionnelClient({
                         {item.budget_estime ? `${item.budget_estime.toFixed(0)} €` : "-"}
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          item.statut_validation === 'valide' ? 'bg-green-100 text-green-800' :
-                          item.statut_validation === 'refusé' ? 'bg-red-100 text-red-800' :
-                          'bg-orange-100 text-orange-800'
+                        <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border ${
+                          item.statut_validation === 'valide' ? 'bg-green-100 text-green-800 border-green-300' :
+                          item.statut_validation === 'refusé' ? 'bg-red-100 text-red-800 border-red-300' :
+                          'bg-orange-100 text-orange-800 border-orange-300'
                         }`}>
                           {item.statut_validation}
                         </span>

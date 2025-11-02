@@ -224,24 +224,24 @@ export default function PlanFormationClient({
 
         {/* Statistiques */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <div className="card">
-            <div className="text-sm text-gray-600">Total</div>
+          <div className="card border-l-4 border-l-primary bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Total</div>
             <div className="text-2xl font-bold text-primary">{stats.total}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Planifiées</div>
+          <div className="card border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Planifiées</div>
             <div className="text-2xl font-bold text-blue-600">{stats.planifiee}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">En cours</div>
+          <div className="card border-l-4 border-l-yellow-500 bg-gradient-to-r from-yellow-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">En cours</div>
             <div className="text-2xl font-bold text-yellow-600">{stats.en_cours}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Terminées</div>
+          <div className="card border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Terminées</div>
             <div className="text-2xl font-bold text-green-600">{stats.terminee}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Budget consommé</div>
+          <div className="card border-l-4 border-l-purple-500 bg-gradient-to-r from-purple-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Budget consommé</div>
             <div className="text-2xl font-bold text-purple-600">{stats.budget_consomme.toFixed(0)} €</div>
           </div>
         </div>
@@ -302,27 +302,27 @@ export default function PlanFormationClient({
         <div className="card overflow-hidden">
           <div className="overflow-x-auto -mx-6 sm:mx-0">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
                 <tr>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Collaborateur
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Formation
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden md:table-cell">
                     Dates
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden lg:table-cell">
                     Organisme
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Statut
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden xl:table-cell">
                     Coût
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-right text-xs font-bold text-secondary uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -336,7 +336,7 @@ export default function PlanFormationClient({
                   </tr>
                 ) : (
                   filteredFormations.map((formation) => (
-                    <tr key={formation.id} className="hover:bg-gray-50">
+                    <tr key={formation.id} className="hover:bg-primary/5 transition-colors duration-150">
                       <td className="px-3 sm:px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">
                           {formation.collaborateur?.prenom} {formation.collaborateur?.nom}

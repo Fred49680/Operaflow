@@ -364,18 +364,18 @@ export default function RolesManagementClient({ roles, permissions }: Props) {
           </h2>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Nom
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Modules autorisés
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-6 py-3 text-right text-xs font-bold text-secondary uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -384,7 +384,7 @@ export default function RolesManagementClient({ roles, permissions }: Props) {
                 {roles.map((role) => {
 
                   return (
-                    <tr key={role.id} className="hover:bg-gray-50">
+                    <tr key={role.id} className="hover:bg-primary/5 transition-colors duration-150">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{role.name}</div>
                       </td>

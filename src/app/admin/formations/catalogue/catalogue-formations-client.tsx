@@ -201,30 +201,30 @@ export default function CatalogueFormationsClient({
         <div className="card overflow-hidden">
           <div className="overflow-x-auto -mx-6 sm:mx-0">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
                 <tr>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Nom
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden md:table-cell">
                     Code
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden lg:table-cell">
                     Catégorie
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden lg:table-cell">
                     Type
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden xl:table-cell">
                     Durée
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden xl:table-cell">
                     Validité
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Statut
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-right text-xs font-bold text-secondary uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -238,7 +238,7 @@ export default function CatalogueFormationsClient({
                   </tr>
                 ) : (
                   catalogue.map((formation) => (
-                    <tr key={formation.id} className="hover:bg-gray-50">
+                    <tr key={formation.id} className="hover:bg-primary/5 cursor-pointer transition-colors duration-150">
                       <td className="px-3 sm:px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">{formation.nom}</div>
                         <div className="text-xs text-gray-500 md:hidden mt-1">
@@ -264,10 +264,10 @@ export default function CatalogueFormationsClient({
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <button
                           onClick={() => handleToggleActive(formation.id, formation.is_active)}
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full cursor-pointer transition-all hover:scale-105 ${
+                          className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border cursor-pointer transition-all hover:scale-105 ${
                             formation.is_active
-                              ? "bg-green-100 text-green-800 hover:bg-green-200"
-                              : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+                              ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+                              : "bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200"
                           }`}
                         >
                           {formation.is_active ? "Actif" : "Inactif"}

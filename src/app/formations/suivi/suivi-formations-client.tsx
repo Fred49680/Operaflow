@@ -112,25 +112,25 @@ export default function SuiviFormationsClient({
           <>
             {/* Indicateurs principaux */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div className="card">
+              <div className="card border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-green-100 rounded-lg">
                     <CheckCircle className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Taux de conformité</p>
+                    <p className="text-sm text-gray-600 mb-1">Taux de conformité</p>
                     <p className="text-2xl font-bold text-green-600">{stats.taux_conformite}%</p>
                   </div>
                 </div>
               </div>
 
-              <div className="card">
+              <div className="card border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-blue-100 rounded-lg">
                     <DollarSign className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Budget consommé</p>
+                    <p className="text-sm text-gray-600 mb-1">Budget consommé</p>
                     <p className="text-2xl font-bold text-blue-600">{stats.budget_consomme.toFixed(0)} €</p>
                     {stats.budget_previsionnel > 0 && (
                       <p className="text-xs text-gray-500">
@@ -141,13 +141,13 @@ export default function SuiviFormationsClient({
                 </div>
               </div>
 
-              <div className="card">
+              <div className="card border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-white hover:shadow-lg transition-shadow">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-orange-100 rounded-lg">
                     <AlertTriangle className="h-6 w-6 text-orange-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Échéances proches</p>
+                    <p className="text-sm text-gray-600 mb-1">Échéances proches</p>
                     <p className="text-2xl font-bold text-orange-600">
                       {stats.alertes_proches + stats.alertes_imminentes}
                     </p>
@@ -155,13 +155,13 @@ export default function SuiviFormationsClient({
                 </div>
               </div>
 
-              <div className="card">
+              <div className="card border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-white hover:shadow-lg transition-shadow">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-red-100 rounded-lg">
                     <AlertTriangle className="h-6 w-6 text-red-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Formations expirées</p>
+                    <p className="text-sm text-gray-600 mb-1">Formations expirées</p>
                     <p className="text-2xl font-bold text-red-600">{stats.alertes_expirees}</p>
                   </div>
                 </div>
@@ -179,25 +179,25 @@ export default function SuiviFormationsClient({
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
                       <tr>
-                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                           Collaborateur
                         </th>
-                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                           Formation
                         </th>
-                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden md:table-cell">
                           Échéance
                         </th>
-                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                           Statut
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredAlertes.map((alerte) => (
-                        <tr key={alerte.id} className="hover:bg-gray-50">
+                        <tr key={alerte.id} className="hover:bg-primary/5 transition-colors duration-150">
                           <td className="px-3 sm:px-6 py-4">
                             <Link
                               href={`/rh/${alerte.collaborateur_id}`}

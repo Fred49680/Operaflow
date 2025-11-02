@@ -251,21 +251,21 @@ export default function UsersManagementClient({
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                         Nom / Prénom
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                         Email
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                         Date demande
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                         Statut
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                      <th className="px-6 py-3 text-right text-xs font-bold text-secondary uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -273,7 +273,7 @@ export default function UsersManagementClient({
                   <tbody className="bg-white divide-y divide-gray-200">
                     {pendingRequests && pendingRequests.length > 0 ? (
                       pendingRequests.map((request) => (
-                        <tr key={request.id} className="hover:bg-gray-50">
+                        <tr key={request.id} className="hover:bg-primary/5 transition-colors duration-150">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {request.nom} {request.prenom}
                           </td>
@@ -287,11 +287,11 @@ export default function UsersManagementClient({
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             {request.statut === "en_attente_validation_mail" ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-blue-300 bg-blue-100 text-blue-800">
                                 ⏳ Attente validation email
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border border-yellow-300 bg-yellow-100 text-yellow-800">
                                 📝 En attente
                               </span>
                             )}
@@ -344,21 +344,21 @@ export default function UsersManagementClient({
             </h2>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                       Email
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                       Rôle
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                       Statut
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                       Dernière connexion
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-6 py-3 text-right text-xs font-bold text-secondary uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -366,7 +366,7 @@ export default function UsersManagementClient({
                 <tbody className="bg-white divide-y divide-gray-200">
                   {users && users.length > 0 ? (
                     users.map((user) => (
-                      <tr key={user.id}>
+                      <tr key={user.id} className="hover:bg-primary/5 transition-colors duration-150">
                         <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {(() => {

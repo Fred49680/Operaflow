@@ -135,7 +135,7 @@ export default function SuiviAbsencesClient({
       {/* Statistiques */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 shadow-sm border border-blue-200">
+          <div className="card border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-blue-700">Total absences</h3>
               <Calendar className="h-5 w-5 text-blue-600" />
@@ -143,7 +143,7 @@ export default function SuiviAbsencesClient({
             <p className="text-3xl font-bold text-blue-900">{stats.total_absences}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-6 shadow-sm border border-amber-200">
+          <div className="card border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50 to-white hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-amber-700">En attente N+1</h3>
               <Clock className="h-5 w-5 text-amber-600" />
@@ -151,7 +151,7 @@ export default function SuiviAbsencesClient({
             <p className="text-3xl font-bold text-amber-900">{stats.en_attente_n1}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-6 shadow-sm border border-yellow-200">
+          <div className="card border-l-4 border-l-yellow-500 bg-gradient-to-r from-yellow-50 to-white hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-yellow-700">En attente RH</h3>
               <Clock className="h-5 w-5 text-yellow-600" />
@@ -159,7 +159,7 @@ export default function SuiviAbsencesClient({
             <p className="text-3xl font-bold text-yellow-900">{stats.en_attente_rh}</p>
           </div>
 
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 shadow-sm border border-green-200">
+          <div className="card border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-green-700">Jours validés</h3>
               <TrendingUp className="h-5 w-5 text-green-600" />
@@ -182,21 +182,21 @@ export default function SuiviAbsencesClient({
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                   Collaborateur
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                   Période
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                   Durée
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                <th className="px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                   Statut
                 </th>
               </tr>
@@ -210,7 +210,7 @@ export default function SuiviAbsencesClient({
                 .map((abs) => {
                   const badge = statutLabels[abs.statut] || abs.statut;
                   return (
-                    <tr key={abs.id} className="hover:bg-gray-50">
+                    <tr key={abs.id} className="hover:bg-primary/5 transition-colors duration-150">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
                           {abs.collaborateur?.prenom} {abs.collaborateur?.nom}
