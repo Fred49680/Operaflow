@@ -60,18 +60,20 @@ export default function AffairesClient({
 
   const getStatutBadge = (statut: string) => {
     const styles: Record<string, string> = {
-      cree: "bg-gray-100 text-gray-800",
-      pre_planifie: "bg-blue-100 text-blue-800",
-      planifie: "bg-yellow-100 text-yellow-800",
-      en_cours: "bg-green-100 text-green-800",
-      suspendu: "bg-orange-100 text-orange-800",
-      en_cloture: "bg-purple-100 text-purple-800",
-      termine: "bg-emerald-100 text-emerald-800",
-      archive: "bg-gray-200 text-gray-600",
+      cree: "bg-gray-100 text-gray-800 border border-gray-300",
+      en_attente_planification: "bg-amber-100 text-amber-800 border border-amber-300",
+      pre_planifie: "bg-blue-100 text-blue-800 border border-blue-300",
+      planifie: "bg-yellow-100 text-yellow-800 border border-yellow-300",
+      en_cours: "bg-green-100 text-green-800 border border-green-300",
+      suspendu: "bg-orange-100 text-orange-800 border border-orange-300",
+      en_cloture: "bg-purple-100 text-purple-800 border border-purple-300",
+      termine: "bg-emerald-100 text-emerald-800 border border-emerald-300",
+      archive: "bg-gray-200 text-gray-600 border border-gray-400",
     };
 
     const labels: Record<string, string> = {
       cree: "Créée",
+      en_attente_planification: "En attente de planification",
       pre_planifie: "Pré-planifiée",
       planifie: "Planifiée",
       en_cours: "En cours",
@@ -82,7 +84,7 @@ export default function AffairesClient({
     };
 
     return (
-      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${styles[statut] || styles.cree}`}>
+      <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${styles[statut] || styles.cree}`}>
         {labels[statut] || statut}
       </span>
     );
@@ -111,24 +113,24 @@ export default function AffairesClient({
 
         {/* Statistiques */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-          <div className="card">
-            <div className="text-sm text-gray-600">Total</div>
+          <div className="card border-l-4 border-l-primary bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Total</div>
             <div className="text-2xl font-bold text-primary">{stats.total}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">En cours</div>
+          <div className="card border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">En cours</div>
             <div className="text-2xl font-bold text-green-600">{stats.en_cours}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Planifiées</div>
+          <div className="card border-l-4 border-l-yellow-500 bg-gradient-to-r from-yellow-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Planifiées</div>
             <div className="text-2xl font-bold text-yellow-600">{stats.planifie}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Terminées</div>
+          <div className="card border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Terminées</div>
             <div className="text-2xl font-bold text-emerald-600">{stats.termine}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Montant total</div>
+          <div className="card border-l-4 border-l-blue-600 bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Montant total</div>
             <div className="text-2xl font-bold text-blue-600">{stats.montant_total.toFixed(0)} €</div>
           </div>
         </div>
@@ -158,6 +160,7 @@ export default function AffairesClient({
               >
                 <option value="">Tous</option>
                 <option value="cree">Créée</option>
+                <option value="en_attente_planification">En attente de planification</option>
                 <option value="pre_planifie">Pré-planifiée</option>
                 <option value="planifie">Planifiée</option>
                 <option value="en_cours">En cours</option>
@@ -187,24 +190,24 @@ export default function AffairesClient({
         <div className="card overflow-hidden">
           <div className="overflow-x-auto -mx-6 sm:mx-0">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
                 <tr>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Numéro
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Libellé
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden md:table-cell">
                     Client
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden lg:table-cell">
                     Site
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden xl:table-cell">
                     Montant
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Statut
                   </th>
                 </tr>
@@ -220,7 +223,7 @@ export default function AffairesClient({
                   filteredAffaires.map((affaire) => (
                     <tr
                       key={affaire.id}
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="hover:bg-primary/5 cursor-pointer transition-colors duration-150"
                       onClick={() => router.push(`/affaires/${affaire.id}`)}
                     >
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
