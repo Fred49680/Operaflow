@@ -193,8 +193,8 @@ $$ LANGUAGE plpgsql;
 -- 6️⃣ FONCTION: Générer numéro hiérarchique automatique
 -- ============================================================================
 CREATE OR REPLACE FUNCTION generer_numero_hierarchique(
-    activite_parent_id UUID DEFAULT NULL,
-    affaire_id_param UUID
+    affaire_id_param UUID,
+    activite_parent_id UUID DEFAULT NULL
 )
 RETURNS VARCHAR(50) AS $$
 DECLARE
@@ -264,7 +264,7 @@ RETURNS TRIGGER AS $$
 BEGIN
     -- Si numéro hiérarchique n'est pas fourni, le générer
     IF NEW.numero_hierarchique IS NULL OR NEW.numero_hierarchique = '' THEN
-        NEW.numero_hierarchique := generer_numero_hierarchique(NEW.parent_id, NEW.affaire_id);
+        NEW.numero_hierarchique := generer_numero_hierarchique(NEW.affaire_id, NEW.parent_id);
     END IF;
     
     -- Mettre à jour le niveau si parent_id est renseigné
