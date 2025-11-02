@@ -89,7 +89,6 @@ export default async function Header() {
       href: "/planification",
       icon: Calendar,
       visible: true,
-      comingSoon: true,
     },
     {
       label: "KPI & Alertes",

@@ -124,7 +124,6 @@ export default async function SafeHeader() {
         href: "/planification",
         iconName: "Calendar",
         visible: true,
-        comingSoon: true,
       },
       {
         label: "KPI & Alertes",
