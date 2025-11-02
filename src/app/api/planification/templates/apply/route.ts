@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       // Si la tâche a une dépendance, calculer la date de début
       if (tache.tache_precedente_id && tache.type_dependance) {
         // Trouver la tâche précédente dans le template
-        const tachePrecedente = taches.find((t) => t.id === tache.tache_precedente_id);
+        const tachePrecedente = taches.find((t: { id: string }) => t.id === tache.tache_precedente_id);
         if (tachePrecedente) {
           // Calcul basique selon le type de dépendance
           // Note: pour un calcul précis, on devrait recalculer après insertion
