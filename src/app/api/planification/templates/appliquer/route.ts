@@ -49,12 +49,12 @@ export async function POST(request: NextRequest) {
     
     // Fonction récursive pour créer les activités avec leur hiérarchie
     const creerActivite = async (
-      tacheTemplate: any,
+      tacheTemplate: { id: string; libelle: string; description?: string; duree_jours_ouvres?: number; heures_prevues?: number; type_horaire?: string; parent_template_tache_id?: string },
       parentActiviteId: string | null = null,
       dateDebutActuelle: Date = dateDebutBase
     ): Promise<string | null> => {
-      let dateDebut = new Date(dateDebutActuelle);
-      let dateFin = new Date(dateDebut);
+      const dateDebut = new Date(dateDebutActuelle);
+      const dateFin = new Date(dateDebut);
 
       // Calculer la date de fin si durée en jours ouvrés
       if (tacheTemplate.duree_jours_ouvres) {
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
       // Créer les sous-tâches récursivement
       const sousTaches = taches.filter(
-        (t: any) => t.parent_template_tache_id === tacheTemplate.id
+        (t: { parent_template_tache_id?: string }) => t.parent_template_tache_id === tacheTemplate.id
       );
       
       for (const sousTache of sousTaches) {
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Créer les tâches de niveau racine (sans parent)
-    const tachesRacine = taches.filter((t: any) => !t.parent_template_tache_id);
+    const tachesRacine = taches.filter((t: { parent_template_tache_id?: string }) => !t.parent_template_tache_id);
     for (const tacheRacine of tachesRacine) {
       await creerActivite(tacheRacine, null, dateDebutBase);
     }
