@@ -258,7 +258,7 @@ export default function AffairesClient({
                             <Eye className="h-4 w-4" />
                           </Link>
                           <Link
-                            href={`/affaires/${affaire.id}/edit`}
+                            href={`/affaires/${affaire.id}`}
                             className="text-primary hover:text-primary-dark"
                             title="Modifier"
                           >
