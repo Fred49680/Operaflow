@@ -4,26 +4,33 @@
 -- Date : 2025-01-11
 
 -- ============================================================================
--- 1️⃣ Fonction helper SECURITY DEFINER pour obtenir collaborateur_id sans déclencher RLS
+-- 1️⃣ Vue matérialisée simple pour mapping user_id -> collaborateur_id (sans RLS)
+-- ============================================================================
+-- Créer une vue simple qui ne déclenche pas de récursion
+CREATE OR REPLACE VIEW public.v_user_collaborateur_mapping AS
+SELECT 
+    user_id,
+    id as collaborateur_id
+FROM public.collaborateurs;
+
+-- RLS désactivé sur cette vue (les vues héritent des politiques de la table source)
+-- Mais on peut créer une fonction qui utilise cette vue
+
+-- ============================================================================
+-- 2️⃣ Fonction helper SECURITY DEFINER utilisant la vue
 -- ============================================================================
 CREATE OR REPLACE FUNCTION public.get_collaborateur_id_for_user(p_user_id UUID)
 RETURNS UUID
-LANGUAGE plpgsql
+LANGUAGE sql
 SECURITY DEFINER
-SET search_path = public, pg_temp
 STABLE
+PARALLEL SAFE
 AS $$
-DECLARE
-    v_collaborateur_id UUID;
-BEGIN
-    -- Cette fonction bypass RLS grâce à SECURITY DEFINER
-    SELECT id INTO v_collaborateur_id
-    FROM public.collaborateurs
+    -- Utiliser directement la vue, SECURITY DEFINER bypass RLS
+    SELECT collaborateur_id 
+    FROM public.v_user_collaborateur_mapping
     WHERE user_id = p_user_id
     LIMIT 1;
-    
-    RETURN v_collaborateur_id;
-END;
 $$;
 
 -- ============================================================================
