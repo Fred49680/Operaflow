@@ -221,6 +221,10 @@ export default async function SafeHeader() {
               label: "Partenaires",
               href: "/admin/partenaires",
             },
+            {
+              label: "Alertes Documents",
+              href: "/admin/partenaires/alertes",
+            },
           ],
         },
       ]
