@@ -401,7 +401,7 @@ export default function PlanificationClient({
                   setSaving(true);
 
                   const formData = new FormData(e.currentTarget);
-                  const payload = {
+                  const payload: any = {
                     affaire_id: formData.get("affaire_id") as string,
                     lot_id: formData.get("lot_id") || null,
                     libelle: formData.get("libelle") as string,
@@ -413,6 +413,22 @@ export default function PlanificationClient({
                     type_horaire: formData.get("type_horaire") as string || "jour",
                     coefficient: parseFloat(formData.get("coefficient") as string) || 1.0,
                   };
+                  
+                  // Nouveaux champs hiérarchie
+                  const parentId = formData.get("parent_id") as string;
+                  if (parentId) payload.parent_id = parentId;
+                  
+                  // Nouveaux champs dépendances
+                  const activitePrecedenteId = formData.get("activite_precedente_id") as string;
+                  const typeDependance = formData.get("type_dependance") as string;
+                  if (activitePrecedenteId) payload.activite_precedente_id = activitePrecedenteId;
+                  if (typeDependance) payload.type_dependance = typeDependance;
+                  
+                  // Nouveaux champs jours ouvrés
+                  const dureeJoursOuvres = formData.get("duree_jours_ouvres") as string;
+                  const calculAutoDateFin = formData.get("calcul_auto_date_fin") === "true";
+                  if (dureeJoursOuvres) payload.duree_jours_ouvres = parseInt(dureeJoursOuvres);
+                  payload.calcul_auto_date_fin = calculAutoDateFin;
 
                   try {
                     const url = editingActivite
@@ -535,6 +551,114 @@ export default function PlanificationClient({
                       defaultValue={editingActivite?.description || ""}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                     />
+                  </div>
+
+                  {/* Section Hiérarchie */}
+                  <div className="md:col-span-2 border-t pt-4">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Hiérarchie</h3>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tâche parente (pour créer une sous-tâche)
+                      </label>
+                      <select
+                        name="parent_id"
+                        defaultValue={editingActivite?.parent_id || ""}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      >
+                        <option value="">Aucune (tâche principale)</option>
+                        {activites
+                          .filter((a) => a.affaire_id === (editingActivite?.affaire_id || filters.affaire))
+                          .filter((a) => !editingActivite || a.id !== editingActivite.id)
+                          .map((activite) => (
+                            <option key={activite.id} value={activite.id}>
+                              {activite.numero_hierarchique || "•"} {activite.libelle}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Section Dépendances */}
+                  <div className="md:col-span-2 border-t pt-4">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Dépendances</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Tâche précédente
+                        </label>
+                        <select
+                          name="activite_precedente_id"
+                          defaultValue={editingActivite?.activite_precedente_id || ""}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        >
+                          <option value="">Aucune dépendance</option>
+                          {activites
+                            .filter((a) => a.affaire_id === (editingActivite?.affaire_id || filters.affaire))
+                            .filter((a) => !editingActivite || a.id !== editingActivite.id)
+                            .map((activite) => (
+                              <option key={activite.id} value={activite.id}>
+                                {activite.numero_hierarchique || "•"} {activite.libelle}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Type de dépendance
+                        </label>
+                        <select
+                          name="type_dependance"
+                          defaultValue={editingActivite?.type_dependance || ""}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        >
+                          <option value="">Sélectionner...</option>
+                          <option value="FS">Fin → Début (FS)</option>
+                          <option value="SS">Début → Début (SS)</option>
+                          <option value="FF">Fin → Fin (FF)</option>
+                          <option value="SF">Début → Fin (SF)</option>
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Les dates seront calculées automatiquement
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section Jours ouvrés */}
+                  <div className="md:col-span-2 border-t pt-4">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Durée en jours ouvrés</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Durée (jours ouvrés)
+                        </label>
+                        <input
+                          type="number"
+                          name="duree_jours_ouvres"
+                          min="1"
+                          defaultValue={editingActivite?.duree_jours_ouvres || ""}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                          placeholder="Ex: 5"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Exclut weekends et jours fériés
+                        </p>
+                      </div>
+                      <div className="flex items-end">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            name="calcul_auto_date_fin"
+                            value="true"
+                            defaultChecked={editingActivite?.calcul_auto_date_fin || false}
+                            className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                          />
+                          <span className="text-sm text-gray-700">
+                            Calculer automatiquement la date de fin
+                          </span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

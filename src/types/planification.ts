@@ -31,6 +31,17 @@ export interface ActivitePlanification {
   activite_precedente_id?: string | null;
   type_dependance?: TypeDependance | null;
   commentaire?: string | null;
+  
+  // Nouveaux champs hiérarchie
+  parent_id?: string | null;
+  numero_hierarchique?: string | null;
+  niveau_hierarchie?: number;
+  ordre_affichage?: number;
+  
+  // Nouveaux champs jours ouvrés
+  duree_jours_ouvres?: number | null;
+  calcul_auto_date_fin?: boolean;
+  
   created_at: string;
   updated_at: string;
   created_by?: string | null;
@@ -41,6 +52,7 @@ export interface ActivitePlanification {
     id: string;
     numero: string;
     libelle: string;
+    site_id?: string | null;
   } | null;
   lot?: {
     id: string;
@@ -57,6 +69,9 @@ export interface ActivitePlanification {
     nom: string;
     prenom: string;
   } | null;
+  parent?: ActivitePlanification | null;
+  activite_precedente?: ActivitePlanification | null;
+  enfants?: ActivitePlanification[]; // Sous-tâches
 }
 
 export interface AffectationPlanification {
