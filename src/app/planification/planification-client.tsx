@@ -170,6 +170,34 @@ export default function PlanificationClient({
     }
   };
 
+  // Fonction pour calculer la date de fin en jours ouvrés
+  const calculerDateFin = async (dateDebutStr: string, joursOuvres: number) => {
+    try {
+      const response = await fetch("/api/planification/calculer-date-fin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date_debut: dateDebutStr,
+          duree_jours_ouvres: joursOuvres,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.date_fin) {
+          // Convertir en format datetime-local (YYYY-MM-DDTHH:mm)
+          const dateFin = new Date(data.date_fin);
+          const formattedDate = new Date(dateFin.getTime() - dateFin.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16);
+          setDateFinCalculee(formattedDate);
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors du calcul de la date de fin:", error);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
@@ -509,8 +537,10 @@ export default function PlanificationClient({
                     lot_id: formData.get("lot_id") || null,
                     libelle: formData.get("libelle") as string,
                     description: formData.get("description") || null,
-                    date_debut_prevue: formData.get("date_debut_prevue") as string,
-                    date_fin_prevue: formData.get("date_fin_prevue") as string,
+                    date_debut_prevue: dateDebut || (formData.get("date_debut_prevue") as string),
+                    date_fin_prevue: (calculAutoDateFin && dateFinCalculee) 
+                      ? new Date(dateFinCalculee).toISOString()
+                      : (formData.get("date_fin_prevue") as string),
                     responsable_id: formData.get("responsable_id") || null,
                     heures_prevues: parseFloat(formData.get("heures_prevues") as string) || 0,
                     type_horaire: formData.get("type_horaire") as string || "jour",
@@ -528,10 +558,17 @@ export default function PlanificationClient({
                   if (typeDependance) payload.type_dependance = typeDependance;
                   
                   // Nouveaux champs jours ouvrés
-                  const dureeJoursOuvres = formData.get("duree_jours_ouvres") as string;
-                  const calculAutoDateFin = formData.get("calcul_auto_date_fin") === "true";
-                  if (dureeJoursOuvres) payload.duree_jours_ouvres = parseInt(dureeJoursOuvres);
-                  payload.calcul_auto_date_fin = calculAutoDateFin;
+                  const dureeJoursOuvresForm = formData.get("duree_jours_ouvres") as string;
+                  const calculAutoDateFinForm = calculAutoDateFin || (formData.get("calcul_auto_date_fin") === "true");
+                  if (dureeJoursOuvresForm) payload.duree_jours_ouvres = parseInt(dureeJoursOuvresForm);
+                  payload.calcul_auto_date_fin = calculAutoDateFinForm;
+                  
+                  // Si calcul auto, utiliser la date calculée
+                  if (calculAutoDateFinForm && dateFinCalculee) {
+                    payload.date_fin_prevue = new Date(dateFinCalculee).toISOString();
+                  } else {
+                    payload.date_fin_prevue = formData.get("date_fin_prevue") as string;
+                  }
 
                   try {
                     const url = editingActivite
@@ -602,7 +639,13 @@ export default function PlanificationClient({
                       type="datetime-local"
                       name="date_debut_prevue"
                       required
-                      defaultValue={editingActivite?.date_debut_prevue ? new Date(editingActivite.date_debut_prevue).toISOString().slice(0, 16) : ""}
+                      value={dateDebut || (editingActivite?.date_debut_prevue ? new Date(editingActivite.date_debut_prevue).toISOString().slice(0, 16) : "")}
+                      onChange={(e) => {
+                        setDateDebut(e.target.value);
+                        if (calculAutoDateFin && dureeJoursOuvres && e.target.value) {
+                          calculerDateFin(e.target.value, parseInt(dureeJoursOuvres));
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                     />
                   </div>
@@ -614,9 +657,17 @@ export default function PlanificationClient({
                     <input
                       type="datetime-local"
                       name="date_fin_prevue"
-                      required
-                      defaultValue={editingActivite?.date_fin_prevue ? new Date(editingActivite.date_fin_prevue).toISOString().slice(0, 16) : ""}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      required={!calculAutoDateFin}
+                      disabled={calculAutoDateFin}
+                      value={calculAutoDateFin ? dateFinCalculee : (editingActivite?.date_fin_prevue ? new Date(editingActivite.date_fin_prevue).toISOString().slice(0, 16) : "")}
+                      onChange={(e) => {
+                        if (!calculAutoDateFin) {
+                          setDateFinCalculee(e.target.value);
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${
+                        calculAutoDateFin ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+                      }`}
                     />
                   </div>
 
@@ -761,7 +812,15 @@ export default function PlanificationClient({
                             type="checkbox"
                             name="calcul_auto_date_fin"
                             value="true"
-                            defaultChecked={editingActivite?.calcul_auto_date_fin || false}
+                            checked={calculAutoDateFin || (editingActivite?.calcul_auto_date_fin || false)}
+                            onChange={(e) => {
+                              setCalculAutoDateFin(e.target.checked);
+                              if (e.target.checked && dateDebut && dureeJoursOuvres) {
+                                calculerDateFin(dateDebut, parseInt(dureeJoursOuvres));
+                              } else {
+                                setDateFinCalculee("");
+                              }
+                            }}
                             className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
                           />
                           <span className="text-sm text-gray-700">
