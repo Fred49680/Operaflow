@@ -16,16 +16,17 @@ export default function PartenaireDetailClient({
   sites,
 }: PartenaireDetailClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"general" | "contacts" | "documents" | "sites">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "contacts" | "sites">("general");
   const [isEditing, setIsEditing] = useState(false);
   const [partenaire, setPartenaire] = useState(initialPartenaire);
   const [loading, setLoading] = useState(false);
   const [contacts, setContacts] = useState<ContactPartenaire[]>(initialPartenaire.contacts || []);
-  const [documents, setDocuments] = useState<DocumentPartenaire[]>(initialPartenaire.documents || []);
+  const [linkedSites, setLinkedSites] = useState<Array<{ site_id: string; site_code: string; site_label: string }>>(
+    initialPartenaire.sites || []
+  );
   const [showContactModal, setShowContactModal] = useState(false);
-  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showSiteModal, setShowSiteModal] = useState(false);
   const [editingContact, setEditingContact] = useState<ContactPartenaire | null>(null);
-  const [editingDocument, setEditingDocument] = useState<DocumentPartenaire | null>(null);
 
   const getTypeBadge = (type: string) => {
     const styles: Record<string, string> = {
@@ -205,35 +206,52 @@ export default function PartenaireDetailClient({
     }
   };
 
-  // Gestion des documents
-  const handleSaveDocument = async (documentData: Partial<DocumentPartenaire>) => {
+  // Gestion des sites liés
+  const handleAddSite = async (siteId: string) => {
     setLoading(true);
     try {
-      const url = editingDocument
-        ? `/api/partenaires/${partenaire.id}/documents/${editingDocument.id}`
-        : `/api/partenaires/${partenaire.id}/documents`;
-      const method = editingDocument ? "PATCH" : "POST";
-
-      const response = await fetch(url, {
-        method,
+      const response = await fetch(`/api/partenaires/${partenaire.id}/sites`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(documentData),
+        body: JSON.stringify({ site_id: siteId }),
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la sauvegarde");
+        throw new Error("Erreur lors de l'ajout du site");
       }
 
-      // Rafraîchir la liste
-      const documentsResponse = await fetch(`/api/partenaires/${partenaire.id}/documents`);
-      const updatedDocuments = await documentsResponse.json();
-      setDocuments(updatedDocuments);
-      setShowDocumentModal(false);
-      setEditingDocument(null);
+      const newSite = sites.find((s) => s.site_id === siteId);
+      if (newSite) {
+        setLinkedSites([...linkedSites, newSite]);
+      }
+      setShowSiteModal(false);
       router.refresh();
     } catch (error) {
-      console.error("Erreur sauvegarde document:", error);
-      alert("Erreur lors de la sauvegarde");
+      console.error("Erreur ajout site:", error);
+      alert("Erreur lors de l'ajout du site");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveSite = async (siteId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir retirer ce site ?")) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/partenaires/${partenaire.id}/sites/${siteId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la suppression");
+      }
+
+      setLinkedSites(linkedSites.filter((s) => s.site_id !== siteId));
+      router.refresh();
+    } catch (error) {
+      console.error("Erreur suppression site:", error);
+      alert("Erreur lors de la suppression");
     } finally {
       setLoading(false);
     }
@@ -299,16 +317,6 @@ export default function PartenaireDetailClient({
               Contacts ({contacts.filter((c) => c.statut === "actif").length})
             </button>
             <button
-              onClick={() => setActiveTab("documents")}
-              className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
-                activeTab === "documents"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Documents ({documents.length})
-            </button>
-            <button
               onClick={() => setActiveTab("sites")}
               className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
                 activeTab === "sites"
@@ -316,7 +324,7 @@ export default function PartenaireDetailClient({
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              Sites liés ({partenaire.sites?.length || 0})
+              Sites liés ({linkedSites.length})
             </button>
           </nav>
         </div>
@@ -719,170 +727,117 @@ export default function PartenaireDetailClient({
           </div>
         )}
 
-        {/* Onglet Documents */}
-        {activeTab === "documents" && (
-          <div className="card">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-secondary">Documents</h2>
-              <button
-                onClick={() => {
-                  setEditingDocument(null);
-                  setShowDocumentModal(true);
-                }}
-                className="btn-primary flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Ajouter un document
-              </button>
-            </div>
-
-            {documents.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Aucun document enregistré</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Titre</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Émis le</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expire le</th>
-                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">Site</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {documents.map((doc) => {
-                      const joursRestants = doc.date_expiration
-                        ? Math.ceil((new Date(doc.date_expiration).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-                        : null;
-                      const isExpiring = joursRestants !== null && joursRestants <= 30 && joursRestants > 0;
-                      const isExpired = joursRestants !== null && joursRestants < 0;
-
-                      return (
-                        <tr
-                          key={doc.id}
-                          onClick={() => {
-                            setEditingDocument(doc);
-                            setShowDocumentModal(true);
-                          }}
-                          className={`cursor-pointer hover:bg-gray-50 transition-colors ${
-                            isExpired ? "bg-red-50" : isExpiring ? "bg-orange-50" : ""
-                          }`}
-                        >
-                          <td className="px-4 py-3 text-sm">{getDocumentTypeLabel(doc.type_document)}</td>
-                          <td className="px-4 py-3 text-sm font-medium">{doc.titre}</td>
-                          <td className="px-4 py-3 text-sm hidden lg:table-cell">
-                            {doc.date_emission ? new Date(doc.date_emission).toLocaleDateString("fr-FR") : "-"}
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            {doc.date_expiration ? (
-                              <div>
-                                {new Date(doc.date_expiration).toLocaleDateString("fr-FR")}
-                                {joursRestants !== null && (
-                                  <div className={`text-xs mt-1 ${
-                                    isExpired ? "text-red-600 font-semibold" : isExpiring ? "text-orange-600" : "text-gray-500"
-                                  }`}>
-                                    {isExpired ? `Expiré depuis ${Math.abs(joursRestants)} jours` : `J-${joursRestants}`}
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-center">{getStatutDocumentBadge(doc.statut)}</td>
-                          <td className="px-4 py-3 text-sm hidden xl:table-cell">
-                            {doc.site ? (
-                              <Link
-                                href={`/rh/sites#${doc.site.site_id}`}
-                                className="text-primary hover:text-primary-dark"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {doc.site.site_code} - {doc.site.site_label}
-                              </Link>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Modal Document */}
-            {showDocumentModal && (
-              <DocumentModal
-                document={editingDocument}
-                sites={sites}
-                onSave={handleSaveDocument}
-                onClose={() => {
-                  setShowDocumentModal(false);
-                  setEditingDocument(null);
-                }}
-              />
-            )}
-          </div>
-        )}
-
         {/* Onglet Sites */}
         {activeTab === "sites" && (
           <div className="card">
-            <h2 className="text-xl font-semibold text-secondary mb-4">Sites liés</h2>
-            {partenaire.sites && partenaire.sites.length > 0 ? (
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-secondary">Sites liés</h2>
+              <button
+                onClick={() => setShowSiteModal(true)}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Lier un site
+              </button>
+            </div>
+
+            {linkedSites.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Aucun site lié à ce partenaire</p>
+            ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {partenaire.sites.map((site) => (
-                      <tr
-                        key={site.site_id}
-                        onClick={() => {
-                          window.location.href = `/rh/sites#${site.site_id}`;
-                        }}
-                        className="cursor-pointer hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-4 py-3 text-sm font-medium">{site.site_code}</td>
+                    {linkedSites.map((site) => (
+                      <tr key={site.site_id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm font-medium">
+                          <Link
+                            href={`/rh/sites#${site.site_id}`}
+                            className="text-primary hover:text-primary-dark"
+                          >
+                            {site.site_code}
+                          </Link>
+                        </td>
                         <td className="px-4 py-3 text-sm">{site.site_label}</td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => handleRemoveSite(site.site_id)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Retirer le site"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            ) : (
-              <p className="text-gray-500 text-center py-8">Aucun site lié à ce partenaire</p>
+            )}
+
+            {/* Modal pour lier un site */}
+            {showSiteModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg max-w-md w-full">
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold mb-4">Lier un site</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Site à lier <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          id="site-select"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                          defaultValue=""
+                        >
+                          <option value="">Sélectionner un site</option>
+                          {sites
+                            .filter((s) => !linkedSites.some((ls) => ls.site_id === s.site_id))
+                            .map((site) => (
+                              <option key={site.site_id} value={site.site_id}>
+                                {site.site_code} - {site.site_label}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                      <div className="flex justify-end gap-4 pt-4">
+                        <button
+                          onClick={() => setShowSiteModal(false)}
+                          className="btn-secondary"
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          onClick={() => {
+                            const select = document.getElementById("site-select") as HTMLSelectElement;
+                            const siteId = select.value;
+                            if (siteId) {
+                              handleAddSite(siteId);
+                            }
+                          }}
+                          className="btn-primary"
+                          disabled={loading}
+                        >
+                          {loading ? "Ajout..." : "Ajouter"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
       </div>
     </div>
   );
-}
-
-function getDocumentTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    contrat_cadre: "Contrat cadre",
-    devis: "Devis",
-    bon_commande: "Bon de commande",
-    attestation_urssaf: "Attestation URSSAF",
-    attestation_assurance: "Attestation assurance",
-    attestation_decennale: "Attestation décennale",
-    certificat_qualite: "Certificat qualité",
-    certificat_iso: "Certificat ISO",
-    fiche_securite: "Fiche sécurité",
-    plan_prevention: "Plan de prévention",
-    correspondance: "Correspondance",
-    autre: "Autre",
-  };
-  return labels[type] || type;
 }
 
 // Modal pour créer/modifier un contact

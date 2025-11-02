@@ -139,10 +139,6 @@ export default async function Header() {
               label: "Partenaires",
               href: "/admin/partenaires",
             },
-            {
-              label: "Alertes Documents",
-              href: "/admin/partenaires/alertes",
-            },
           ],
         },
       ]
