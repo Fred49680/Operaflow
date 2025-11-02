@@ -85,6 +85,39 @@ export default function PlanificationClient({
     setShowTemplateModal(true);
   };
 
+  // Fonction pour appliquer un template
+  const handleApplyTemplate = async (templateId: string, affaireId: string, dateDebut: string) => {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/planification/templates/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          template_id: templateId,
+          affaire_id: affaireId,
+          date_debut_reference: dateDebut,
+        }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        alert(`Template appliqué avec succès ! ${data.count} tâche(s) créée(s).`);
+        setShowTemplateModal(false);
+        setShowActiviteModal(false);
+        setEditingActivite(null);
+        router.refresh();
+      } else {
+        const error = await response.json();
+        alert(`Erreur: ${error.error || "Erreur inconnue"}`);
+      }
+    } catch (error) {
+      console.error("Erreur:", error);
+      alert("Une erreur est survenue lors de l'application du template");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Fonction pour mettre à jour une activité
   const handleUpdateActivite = async (activiteId: string, updates: Partial<ActivitePlanification>) => {
     try {
