@@ -14,8 +14,8 @@ interface AffairesClientProps {
 
 export default function AffairesClient({
   initialAffaires,
-  sites,
-  collaborateurs,
+  sites: _sites,
+  collaborateurs: _collaborateurs,
 }: AffairesClientProps) {
   const router = useRouter();
   const [affaires] = useState(initialAffaires);

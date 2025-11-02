@@ -38,19 +38,50 @@ export default async function PartenaireDetailPage({ params }: PageProps) {
   const clientToUse = supabaseAdmin || supabase;
 
   // Récupérer le partenaire avec toutes ses données
-  const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/partenaires/${id}`, {
-    headers: {
-      Cookie: (await supabase.auth.getSession()).data.session
-        ? `sb-access-token=${(await supabase.auth.getSession()).data.session?.access_token}`
-        : "",
-    },
-  });
+  const { data: partenaire, error: partenaireError } = await clientToUse
+    .from("tbl_partenaires")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
 
-  if (!response.ok) {
+  if (partenaireError || !partenaire) {
+    console.error("Erreur récupération partenaire:", partenaireError);
     notFound();
   }
 
-  const partenaire = await response.json();
+  // Récupérer les contacts
+  const { data: contacts } = await clientToUse
+    .from("tbl_partenaire_contacts")
+    .select("*")
+    .eq("partenaire_id", id)
+    .order("est_contact_principal", { ascending: false })
+    .order("nom", { ascending: true });
+
+  // Récupérer les documents
+  const { data: documents } = await clientToUse
+    .from("tbl_partenaire_documents")
+    .select(`
+      *,
+      site:tbl_sites!tbl_partenaire_documents_site_id_fkey(site_id, site_code, site_label)
+    `)
+    .eq("partenaire_id", id)
+    .order("date_expiration", { ascending: true, nullsFirst: false });
+
+  // Récupérer les sites liés
+  const { data: sitesLinks } = await clientToUse
+    .from("tbl_partenaire_sites")
+    .select(`
+      site_id,
+      site:tbl_sites!tbl_partenaire_sites_site_id_fkey(site_id, site_code, site_label)
+    `)
+    .eq("partenaire_id", id);
+
+  const partenaireWithRelations: Partenaire = {
+    ...partenaire,
+    contacts: contacts || [],
+    documents: documents || [],
+    sites: sitesLinks?.map((sl) => sl.site).filter(Boolean) || [],
+  };
 
   // Récupérer les sites pour le formulaire
   const { data: sites } = await clientToUse

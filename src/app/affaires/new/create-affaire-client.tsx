@@ -133,6 +133,7 @@ export default function CreateAffaireClient({
   };
 
   // Gérer les lots
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addLot = () => {
     setLots([
       ...lots,
@@ -146,10 +147,12 @@ export default function CreateAffaireClient({
     ]);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const removeLot = (lotId: string) => {
     setLots(lots.filter((l) => l.id !== lotId));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const updateLot = (lotId: string, field: keyof Lot, value: string | number | boolean) => {
     setLots(
       lots.map((l) => (l.id === lotId ? { ...l, [field]: value } : l))
@@ -173,6 +176,7 @@ export default function CreateAffaireClient({
       // Ajouter BPU si nécessaire
       if (formData.type_valorisation === "BPU" || formData.type_valorisation === "mixte") {
         payload.bpu = bpu.map((ligne) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { id: _id, ...rest } = ligne;
           return rest;
         });
@@ -181,6 +185,7 @@ export default function CreateAffaireClient({
       // Ajouter dépenses si nécessaire
       if (formData.type_valorisation === "dépense" || formData.type_valorisation === "mixte") {
         payload.depenses = depenses.map((dep) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { id: _id, ...rest } = dep;
           return rest;
         });
@@ -195,6 +200,7 @@ export default function CreateAffaireClient({
           return;
         }
         payload.lots = lots.map((lot) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { id: _id, ...rest } = lot;
           return rest;
         });
