@@ -473,7 +473,6 @@ export default function CreateAffaireClient({
                         <option key={contact.id} value={contact.id}>
                           {contact.prenom} {contact.nom}
                           {contact.fonction && ` - ${contact.fonction}`}
-                          {contact.email && ` (${contact.email})`}
                         </option>
                       ))}
                     </select>
