@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Edit, Eye, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import type { Affaire } from "@/types/affaires";
 
 interface AffairesClientProps {
@@ -34,7 +34,7 @@ export default function AffairesClient({
         if (
           !affaire.numero.toLowerCase().includes(searchLower) &&
           !affaire.libelle.toLowerCase().includes(searchLower) &&
-          !affaire.client?.toLowerCase().includes(searchLower)
+          !affaire.partenaire?.raison_sociale?.toLowerCase().includes(searchLower)
         ) {
           return false;
         }
@@ -207,15 +207,12 @@ export default function AffairesClient({
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Statut
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredAffaires.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                       Aucune affaire trouvée
                     </td>
                   </tr>
@@ -232,12 +229,12 @@ export default function AffairesClient({
                       <td className="px-3 sm:px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">{affaire.libelle}</div>
                         <div className="text-xs text-gray-500 sm:hidden mt-1">
-                          {affaire.client && `${affaire.client} • `}
+                          {affaire.partenaire?.raison_sociale && `${affaire.partenaire.raison_sociale} • `}
                           {affaire.montant_total ? `${affaire.montant_total.toFixed(0)} €` : ""}
                         </div>
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden md:table-cell">
-                        {affaire.client || "-"}
+                        {affaire.partenaire?.raison_sociale || "-"}
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell">
                         {affaire.site?.site_code || "-"}
@@ -247,24 +244,6 @@ export default function AffairesClient({
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         {getStatutBadge(affaire.statut)}
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Link
-                            href={`/affaires/${affaire.id}`}
-                            className="text-primary hover:text-primary-dark"
-                            title="Voir le détail"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                          <Link
-                            href={`/affaires/${affaire.id}`}
-                            className="text-primary hover:text-primary-dark"
-                            title="Modifier"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Link>
-                        </div>
                       </td>
                     </tr>
                   ))

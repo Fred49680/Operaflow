@@ -37,9 +37,21 @@ export default async function AffairesPage() {
     .select(`
       *,
       charge_affaires:collaborateurs!tbl_affaires_charge_affaires_id_fkey(id, nom, prenom),
-      site:tbl_sites!tbl_affaires_site_id_fkey(site_id, site_code, site_label)
+      site:tbl_sites!tbl_affaires_site_id_fkey(site_id, site_code, site_label),
+      partenaire:tbl_partenaires!tbl_affaires_partenaire_id_fkey(id, raison_sociale, type_partenaire)
     `)
     .order("created_at", { ascending: false });
+
+  // Transformer les données pour correspondre aux types attendus
+  const affairesWithRelations = affaires?.map((affaire) => ({
+    ...affaire,
+    partenaire: Array.isArray(affaire.partenaire) && affaire.partenaire.length > 0
+      ? affaire.partenaire[0]
+      : (!Array.isArray(affaire.partenaire) ? affaire.partenaire : null),
+    site: Array.isArray(affaire.site) && affaire.site.length > 0
+      ? affaire.site[0]
+      : (!Array.isArray(affaire.site) ? affaire.site : null),
+  })) || [];
 
   if (error) {
     console.error("Erreur récupération affaires:", error);
@@ -61,7 +73,7 @@ export default async function AffairesPage() {
 
   return (
     <AffairesClient
-      initialAffaires={affaires || []}
+      initialAffaires={affairesWithRelations}
       sites={sites || []}
       collaborateurs={collaborateurs || []}
     />
