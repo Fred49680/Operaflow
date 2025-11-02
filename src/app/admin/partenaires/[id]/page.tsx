@@ -91,7 +91,7 @@ export default async function PartenaireDetailPage({ params }: PageProps) {
     .order("site_code", { ascending: true });
 
   // Récupérer les affaires liées à ce partenaire
-  const { data: affairesPartenaire } = await clientToUse
+  const { data: affairesPartenaireRaw } = await clientToUse
     .from("tbl_affaires")
     .select(`
       id,
@@ -106,9 +106,23 @@ export default async function PartenaireDetailPage({ params }: PageProps) {
     .eq("partenaire_id", id)
     .order("created_at", { ascending: false });
 
+  // Transformer les données pour correspondre au type AffaireLinked
+  const affairesPartenaire = affairesPartenaireRaw?.map((affaire) => ({
+    id: affaire.id,
+    numero: affaire.numero,
+    libelle: affaire.libelle,
+    statut: affaire.statut,
+    date_debut: affaire.date_debut,
+    date_fin: affaire.date_fin,
+    montant_total: affaire.montant_total,
+    site: Array.isArray(affaire.site) && affaire.site.length > 0 
+      ? affaire.site[0] 
+      : (!Array.isArray(affaire.site) ? affaire.site : null),
+  })) || [];
+
   // Récupérer les affaires liées aux contacts de ce partenaire
   const contactIds = contacts?.map(c => c.id) || [];
-  const { data: affairesContacts } = contactIds.length > 0
+  const { data: affairesContactsRaw } = contactIds.length > 0
     ? await clientToUse
         .from("tbl_affaires")
         .select(`
@@ -125,6 +139,21 @@ export default async function PartenaireDetailPage({ params }: PageProps) {
         .in("contact_id", contactIds)
         .order("created_at", { ascending: false })
     : { data: null };
+
+  // Transformer les données pour correspondre au type AffaireLinked
+  const affairesContacts = affairesContactsRaw?.map((affaire) => ({
+    id: affaire.id,
+    numero: affaire.numero,
+    libelle: affaire.libelle,
+    statut: affaire.statut,
+    date_debut: affaire.date_debut,
+    date_fin: affaire.date_fin,
+    montant_total: affaire.montant_total,
+    contact_id: affaire.contact_id,
+    site: Array.isArray(affaire.site) && affaire.site.length > 0 
+      ? affaire.site[0] 
+      : (!Array.isArray(affaire.site) ? affaire.site : null),
+  })) || [];
 
   return (
     <PartenaireDetailClient
