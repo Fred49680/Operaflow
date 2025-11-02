@@ -657,9 +657,22 @@ export default function PartenaireDetailClient({
                     {contacts.map((contact) => (
                       <tr
                         key={contact.id}
-                        onClick={() => {
-                          setEditingContact(contact);
-                          setShowContactModal(true);
+                        onClick={(e) => {
+                          // Si on clique sur le statut, on toggle le statut, sinon on ouvre le modal ou les affaires
+                          const target = e.target as HTMLElement;
+                          const isStatutClick = target.closest('[data-contact-statut]');
+                          
+                          if (!isStatutClick) {
+                            const affairesDuContact = affairesContacts.filter(a => a.contact_id === contact.id);
+                            if (affairesDuContact.length > 0) {
+                              // Si le contact a des affaires, on affiche ses affaires
+                              setSelectedContactId(contact.id);
+                            } else {
+                              // Sinon on ouvre le modal d'édition
+                              setEditingContact(contact);
+                              setShowContactModal(true);
+                            }
+                          }
                         }}
                         className="cursor-pointer hover:bg-gray-50 transition-colors"
                       >
@@ -697,6 +710,7 @@ export default function PartenaireDetailClient({
                         </td>
                         <td
                           className="px-4 py-3 text-center"
+                          data-contact-statut
                           onClick={(e) => {
                             e.stopPropagation();
                             handleToggleContactStatut(contact.id, contact.statut);
@@ -719,117 +733,92 @@ export default function PartenaireDetailClient({
               </div>
             )}
 
-            {/* Section Affaires liées au partenaire */}
-            {affairesPartenaire.length > 0 && (
-              <div className="mt-8 pt-8 border-t border-gray-200">
-                <h3 className="text-lg font-semibold text-secondary mb-4">Affaires liées au partenaire</h3>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Numéro</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Site</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Montant</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {affairesPartenaire.map((affaire) => (
-                        <tr
-                          key={affaire.id}
-                          onClick={() => router.push(`/affaires/${affaire.id}`)}
-                          className="cursor-pointer hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-4 py-3 text-sm font-medium text-primary">
-                            {affaire.numero}
-                          </td>
-                          <td className="px-4 py-3 text-sm">{affaire.libelle}</td>
-                          <td className="px-4 py-3 text-sm hidden md:table-cell">
-                            {affaire.site ? `${affaire.site.site_code} - ${affaire.site.site_label}` : "-"}
-                          </td>
-                          <td className="px-4 py-3 text-sm hidden lg:table-cell">
-                            {affaire.montant_total ? `${affaire.montant_total.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : "-"}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              affaire.statut === "termine" ? "bg-green-100 text-green-800" :
-                              affaire.statut === "en_cours" ? "bg-blue-100 text-blue-800" :
-                              affaire.statut === "suspendu" ? "bg-orange-100 text-orange-800" :
-                              "bg-gray-100 text-gray-600"
-                            }`}>
-                              {affaire.statut}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {/* Section Affaires par contact */}
-            {contacts.length > 0 && affairesContacts.length > 0 && (
-              <div className="mt-8 pt-8 border-t border-gray-200">
-                <h3 className="text-lg font-semibold text-secondary mb-4">Affaires par contact</h3>
-                {contacts.map((contact) => {
-                  const affairesDuContact = affairesContacts.filter(a => a.contact_id === contact.id);
-                  if (affairesDuContact.length === 0) return null;
-                  
+            {/* Section Affaires par contact (affichée uniquement pour le contact sélectionné) */}
+            {selectedContactId && (
+              (() => {
+                const affairesDuContact = affairesContacts.filter(a => a.contact_id === selectedContactId);
+                const contact = contacts.find(c => c.id === selectedContactId);
+                
+                if (affairesDuContact.length === 0) {
                   return (
-                    <div key={contact.id} className="mb-6">
-                      <h4 className="text-md font-medium text-gray-700 mb-2">
-                        {contact.prenom} {contact.nom}
-                        {contact.fonction && <span className="text-sm text-gray-500 ml-2">({contact.fonction})</span>}
-                      </h4>
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Numéro</th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Site</th>
-                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Montant</th>
-                              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {affairesDuContact.map((affaire) => (
-                              <tr
-                                key={affaire.id}
-                                onClick={() => router.push(`/affaires/${affaire.id}`)}
-                                className="cursor-pointer hover:bg-gray-50 transition-colors"
-                              >
-                                <td className="px-4 py-2 text-sm font-medium text-primary">
-                                  {affaire.numero}
-                                </td>
-                                <td className="px-4 py-2 text-sm">{affaire.libelle}</td>
-                                <td className="px-4 py-2 text-sm hidden md:table-cell">
-                                  {affaire.site ? `${affaire.site.site_code} - ${affaire.site.site_label}` : "-"}
-                                </td>
-                                <td className="px-4 py-2 text-sm hidden lg:table-cell">
-                                  {affaire.montant_total ? `${affaire.montant_total.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : "-"}
-                                </td>
-                                <td className="px-4 py-2 text-center">
-                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                    affaire.statut === "termine" ? "bg-green-100 text-green-800" :
-                                    affaire.statut === "en_cours" ? "bg-blue-100 text-blue-800" :
-                                    affaire.statut === "suspendu" ? "bg-orange-100 text-orange-800" :
-                                    "bg-gray-100 text-gray-600"
-                                  }`}>
-                                    {affaire.statut}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                    <div className="mt-8 pt-8 border-t border-gray-200">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-secondary">
+                          Affaires de {contact?.prenom} {contact?.nom}
+                          {contact?.fonction && <span className="text-sm text-gray-500 ml-2">({contact.fonction})</span>}
+                        </h3>
+                        <button
+                          onClick={() => setSelectedContactId(null)}
+                          className="text-sm text-gray-500 hover:text-gray-700"
+                        >
+                          Fermer
+                        </button>
                       </div>
+                      <p className="text-gray-500 text-center py-4">Aucune affaire liée à ce contact</p>
                     </div>
                   );
-                })}
-              </div>
+                }
+                
+                return (
+                  <div className="mt-8 pt-8 border-t border-gray-200">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-secondary">
+                        Affaires de {contact?.prenom} {contact?.nom}
+                        {contact?.fonction && <span className="text-sm text-gray-500 ml-2">({contact.fonction})</span>}
+                      </h3>
+                      <button
+                        onClick={() => setSelectedContactId(null)}
+                        className="text-sm text-gray-500 hover:text-gray-700"
+                      >
+                        Fermer
+                      </button>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Numéro</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">Site</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Montant</th>
+                            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {affairesDuContact.map((affaire) => (
+                            <tr
+                              key={affaire.id}
+                              onClick={() => router.push(`/affaires/${affaire.id}`)}
+                              className="cursor-pointer hover:bg-gray-50 transition-colors"
+                            >
+                              <td className="px-4 py-2 text-sm font-medium text-primary">
+                                {affaire.numero}
+                              </td>
+                              <td className="px-4 py-2 text-sm">{affaire.libelle}</td>
+                              <td className="px-4 py-2 text-sm hidden md:table-cell">
+                                {affaire.site ? `${affaire.site.site_code} - ${affaire.site.site_label}` : "-"}
+                              </td>
+                              <td className="px-4 py-2 text-sm hidden lg:table-cell">
+                                {affaire.montant_total ? `${affaire.montant_total.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : "-"}
+                              </td>
+                              <td className="px-4 py-2 text-center">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  affaire.statut === "termine" ? "bg-green-100 text-green-800" :
+                                  affaire.statut === "en_cours" ? "bg-blue-100 text-blue-800" :
+                                  affaire.statut === "suspendu" ? "bg-orange-100 text-orange-800" :
+                                  "bg-gray-100 text-gray-600"
+                                }`}>
+                                  {affaire.statut}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()
             )}
 
             {/* Modal Contact */}
