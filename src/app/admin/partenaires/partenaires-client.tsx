@@ -2,8 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Plus, Edit, Eye, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import type { Partenaire } from "@/types/partenaires";
 
 interface PartenairesClientProps {
@@ -14,7 +13,8 @@ export default function PartenairesClient({
   initialPartenaires,
 }: PartenairesClientProps) {
   const router = useRouter();
-  const [partenaires] = useState(initialPartenaires);
+  const [partenaires, setPartenaires] = useState(initialPartenaires);
+  const [loading, setLoading] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     type: "",
@@ -71,12 +71,40 @@ export default function PartenairesClient({
     );
   };
 
-  const getStatutBadge = (statut: string) => {
+  const handleToggleStatut = async (e: React.MouseEvent, partenaireId: string, currentStatut: string) => {
+    e.stopPropagation(); // Empêcher le clic sur la ligne
+    setLoading(partenaireId);
+
+    try {
+      const newStatut = currentStatut === "actif" ? "inactif" : "actif";
+      const response = await fetch(`/api/partenaires/${partenaireId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statut: newStatut }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la mise à jour");
+      }
+
+      // Mettre à jour l'état local
+      setPartenaires((prev) =>
+        prev.map((p) => (p.id === partenaireId ? { ...p, statut: newStatut } : p))
+      );
+    } catch (error) {
+      console.error("Erreur changement statut:", error);
+      alert("Erreur lors de la modification du statut");
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const getStatutBadge = (statut: string, partenaireId: string) => {
     const styles: Record<string, string> = {
-      actif: "bg-green-100 text-green-800",
-      inactif: "bg-gray-100 text-gray-800",
-      suspendu: "bg-orange-100 text-orange-800",
-      archive: "bg-gray-200 text-gray-600",
+      actif: "bg-green-100 text-green-800 hover:bg-green-200",
+      inactif: "bg-gray-100 text-gray-800 hover:bg-gray-200",
+      suspendu: "bg-orange-100 text-orange-800 hover:bg-orange-200",
+      archive: "bg-gray-200 text-gray-600 hover:bg-gray-300",
     };
 
     const labels: Record<string, string> = {
@@ -87,8 +115,12 @@ export default function PartenairesClient({
     };
 
     return (
-      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${styles[statut] || styles.actif}`}>
-        {labels[statut] || statut}
+      <span
+        onClick={(e) => handleToggleStatut(e, partenaireId, statut)}
+        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full cursor-pointer transition-colors ${styles[statut] || styles.actif}`}
+        title={statut === "actif" || statut === "inactif" ? "Cliquer pour changer le statut" : ""}
+      >
+        {loading === partenaireId ? "..." : labels[statut] || statut}
       </span>
     );
   };
@@ -201,15 +233,12 @@ export default function PartenairesClient({
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Statut
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredPartenaires.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                       Aucun partenaire trouvé
                     </td>
                   </tr>
@@ -237,25 +266,7 @@ export default function PartenairesClient({
                         {partenaire.email_principal || partenaire.telephone_principal || "-"}
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                        {getStatutBadge(partenaire.statut)}
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Link
-                            href={`/admin/partenaires/${partenaire.id}`}
-                            className="text-primary hover:text-primary-dark"
-                            title="Voir le détail"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                          <Link
-                            href={`/admin/partenaires/${partenaire.id}/edit`}
-                            className="text-primary hover:text-primary-dark"
-                            title="Modifier"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Link>
-                        </div>
+                        {getStatutBadge(partenaire.statut, partenaire.id)}
                       </td>
                     </tr>
                   ))
