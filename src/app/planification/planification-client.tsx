@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Search, Plus, AlertTriangle, Users, X } from "lucide-react";
+import GanttTimeline from "@/components/planification/gantt/GanttTimeline";
 import type { ActivitePlanification, AffectationPlanification } from "@/types/planification";
 
 interface PlanificationClientProps {
@@ -225,34 +226,41 @@ export default function PlanificationClient({
 
         {/* Contenu selon vue active */}
         {activeView === "gantt" && (
-          <div className="card">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-secondary">
                 Planning Gantt ({filteredActivites.length} activité{filteredActivites.length > 1 ? "s" : ""})
               </h3>
-              <p className="text-sm text-gray-500">
-                Module en cours de développement - Nouvelle version en construction
-              </p>
-            </div>
-            <div className="text-center py-12">
-              <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h4 className="text-xl font-semibold text-secondary mb-2">
-                Nouveau Gantt en développement
-              </h4>
-              <p className="text-gray-600 mb-4">
-                Une nouvelle version simplifiée et maintenable est en cours de création étape par étape.
-              </p>
-              <div className="mt-8 text-left max-w-2xl mx-auto">
-                <h5 className="font-semibold text-secondary mb-2">Étapes prévues :</h5>
-                <ul className="list-disc list-inside space-y-1 text-gray-600 text-sm">
-                  <li>Étape 1: Affichage basique des activités en timeline</li>
-                  <li>Étape 2: Drag & drop des activités</li>
-                  <li>Étape 3: Redimensionnement des activités</li>
-                  <li>Étape 4: Filtres et vues (jour/semaine/mois)</li>
-                  <li>Étape 5: Affectation ressources aux activités</li>
-                </ul>
+              <div className="flex items-center gap-2">
+                <select
+                  value={filters.statut || ""}
+                  onChange={(e) => setFilters({ ...filters, statut: e.target.value })}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                >
+                  <option value="">Tous les statuts</option>
+                  <option value="planifiee">Planifiée</option>
+                  <option value="lancee">Lancée</option>
+                  <option value="terminee">Terminée</option>
+                </select>
               </div>
             </div>
+
+            {filteredActivites.length > 0 ? (
+              <GanttTimeline
+                activites={filteredActivites}
+                vue="semaine"
+                onActiviteClick={(activite) => {
+                  // Ouvrir modal de détails ou édition
+                  setEditingActivite(activite);
+                  setShowActiviteModal(true);
+                }}
+              />
+            ) : (
+              <div className="card text-center py-12">
+                <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Aucune activité trouvée avec les filtres sélectionnés</p>
+              </div>
+            )}
           </div>
         )}
 
