@@ -4,14 +4,18 @@
 -- Date : 2025-01-11
 
 -- ============================================================================
--- 1️⃣ SUPPRESSION de la fonction helper qui cause la récursion
--- ============================================================================
-DROP FUNCTION IF EXISTS public.can_read_activite(UUID, UUID, UUID, UUID);
-
--- ============================================================================
--- 2️⃣ NOUVELLE politique RLS simplifiée SANS fonction helper
+-- 1️⃣ SUPPRESSION de la politique RLS qui dépend de la fonction
 -- ============================================================================
 DROP POLICY IF EXISTS "Users can read activities based on role" ON public.tbl_planification_activites;
+
+-- ============================================================================
+-- 2️⃣ SUPPRESSION de la fonction helper qui cause la récursion
+-- ============================================================================
+DROP FUNCTION IF EXISTS public.can_read_activite(UUID, UUID, UUID, UUID) CASCADE;
+
+-- ============================================================================
+-- 3️⃣ NOUVELLE politique RLS simplifiée SANS fonction helper
+-- ============================================================================
 
 -- Politique simplifiée sans sous-requêtes complexes sur collaborateurs
 CREATE POLICY "Users can read activities based on role"
