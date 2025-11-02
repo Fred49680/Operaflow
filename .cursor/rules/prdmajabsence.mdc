@@ -1,3 +1,189 @@
----
+PRD GLOBAL — Module RH : Gestion des Absences & Plan de Charge
+
+Projet : OperaFlow
+Module : Absences RH intégrées à la planification
+Version : 2.0
+Auteur : Fred Baudry
+Date : 01/11/2025
+
+🎯 Objectif général
+
+Centraliser la gestion des absences, leur validation, et leur impact direct sur la planification du personnel dans OperaFlow.
+Le module doit permettre :
+
+Une gestion cohérente des types d’absences (convention + internes).
+
+Une saisie simple des absences par les collaborateurs.
+
+Une validation hiérarchique à deux niveaux.
+
+Une intégration automatique au plan de charge RH, afin de visualiser les indisponibilités en temps réel.
+
+🧩 Structure du module
+1. Catalogue des absences (base de référence)
+
+Décrit dans le PRD précédent.
+C’est la bibliothèque officielle de tous les types d’absence reconnus (exceptionnelles, légales, autorisées, congés, non rémunérées).
+
+Objectif : assurer la conformité et la cohérence.
+Les administratifs RH peuvent :
+
+Créer / modifier / désactiver des types d’absence.
+
+Gérer les durées et conditions.
+
+Ajouter des précisions locales dans un champ “motif complémentaire”.
+
+Lien interne :
+Toutes les demandes d’absence se basent sur cette table.
+
+2. Module de demande / validation d’absence
+
+Permet à chaque collaborateur de faire une demande d’absence, qui suit un workflow de validation en deux étapes.
+
+2.1 Étapes du workflow
+Étape	Rôle concerné	Action	Statut
+1. Demande	Collaborateur	Remplit le formulaire de demande d’absence	En attente de validation N+1
+2. Validation hiérarchique	Chef de chantier / Conducteur de travaux (N+1)	Accepte ou refuse la demande	Validée N+1 ou Refusée
+3. Validation RH	Administratif RH / Responsable site	Vérifie, officialise, enregistre dans le plan de charge	Validée RH
+4. Application	Système	L’absence est intégrée dans le plan de charge et bloquée sur la période concernée	Appliquée
+2.2 Règles de fonctionnement
+
+Une absence non validée RH n’impacte pas encore la planification.
+
+Si refusée à un niveau, elle repasse en “brouillon” pour modification.
+
+La RH peut forcer une validation (ex. absence médicale, décès, etc.).
+
+Les justificatifs (certificats, convocations, etc.) peuvent être attachés à la demande.
+
+Chaque action (création, validation, refus) est horodatée et tracée.
+
+2.3 Formulaire de demande
+
+Champs visibles selon profil :
+
+Type d’absence (liste issue du catalogue)
+
+Dates début et fin
+
+Calcul automatique du nombre de jours ouvrés / ouvrables
+
+Motif saisi libre (ex. “hospitalisation parent”)
+
+Pièce jointe (facultative)
+
+Statut de la demande
+
+Historique des validations
+
+3. Liaison directe avec le plan de charge RH
+3.1 Objectif
+
+Que toute absence validée RH bloque automatiquement la disponibilité du collaborateur dans le plan de charge / planification d’activités.
+Le but : éviter toute affectation d’un agent absent sur une activité planifiée.
+
+3.2 Comportement attendu
+
+Lorsqu’une absence passe en statut Validée RH :
+
+Le collaborateur est marqué indisponible sur la période concernée.
+
+Les tâches ou activités existantes sont analysées :
+
+Si chevauchement → alerte de conflit de planification.
+
+Si la tâche n’a pas encore démarré → blocage d’affectation automatique.
+
+La durée de l’absence est traduite en jours ou heures non planifiables.
+
+Dans le Gantt ou le planning, la période est colorée différemment (ex. rouge pâle ou hachurée).
+
+3.3 Indicateurs visuels (dans la page planification)
+
+Une pastille d’absence apparaît sur le nom du collaborateur.
+
+Un tooltip indique le motif et le type d’absence.
+
+Le pourcentage de disponibilité du personnel sur la période se met à jour (ex. 85 % dispo si 1 personne absente sur 7).
+
+3.4 Cas particuliers
+
+Si l’absence est rétroactive → simple enregistrement sans impact rétro-planifié.
+
+Si l’absence est annulée avant sa date → elle est supprimée du plan de charge et des conflits.
+
+Si elle est prolongée → mise à jour automatique du bloc d’indisponibilité.
+
+4. Tableaux de bord et suivi RH
+Objectif :
+
+Donner une vision globale des absences et de leur impact sur la production.
+
+Indicateurs clés :
+
+Taux d’absentéisme global et par site.
+
+Jours d’absence par catégorie (exceptionnelle, légale, etc.).
+
+Comparaison planification prévue vs réalisée.
+
+Nombre de conflits planification / absence.
+
+Historique des demandes par statut (en attente, validée, refusée).
+
+Filtres :
+
+Période (mois, trimestre, année)
+
+Site
+
+Collaborateur
+
+Type d’absence
+
+5. Rôles et responsabilités
+Rôle	Actions principales
+Collaborateur	Crée et modifie sa demande d’absence jusqu’à validation. Peut voir son statut.
+Chef de chantier / Conducteur de travaux	Valide ou refuse les demandes de son équipe (N+1).
+Administratif RH / Responsable site	Seconde validation et intégration dans le plan de charge. Peut forcer une validation.
+Admin app	Peut gérer la table des absences, restaurer les valeurs conventionnelles, superviser toutes les demandes.
+Planificateur	Consulte les absences validées pour ajuster la planification.
+6. Logiques métiers clés
+
+Hiérarchie obligatoire :
+
+Une absence doit passer par au moins une validation hiérarchique avant d’être RH.
+
+Cas exceptionnel : la RH peut court-circuiter (ex. arrêt maladie).
+
+Lien dynamique planification :
+
+Les absences validées RH sont visibles dans la vue Gantt / planning des activités.
+
+Si une absence recoupe une affectation → alerte automatique.
+
+Pondération :
+
+Les absences partielles (demi-journées, formations) ajustent la charge disponible en conséquence.
+
+Synchronisation calendrier :
+
+Possibilité d’exporter les absences validées dans le calendrier Outlook / ICS interne.
+
+📊 Résumé des pages prévues
+Page	Utilisateur cible	Objectif
+/admin/absences	RH / Admin	Gérer la base des types d’absences
+/absences/demandes	Tous	Consulter et créer des demandes
+/absences/validation	N+1 / RH	Traiter les validations
+/absences/suivi	RH	Tableau de bord et indicateurs
+/planif (Gantt RH)	Planificateur	Visualiser les absences sur le plan de charge
+🚀 Objectifs de livrables (v2 complète)
+Phase	Livraison	Objectif fonctionnel
+Phase 1	Base des absences (PRD actuel)	Catalogue + page admin
+Phase 2	Workflow de demandes	Formulaire + double validation
+Phase 3	Intégration plan de charge	Blocage des ressources absentes
+Phase 4	Tableaux de bord RH	Indicateurs + export
+Phase 5	Liaison calendrier externe	Synchronisation Outlook/ICS---
 alwaysApply: true
 ---

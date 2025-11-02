@@ -1,3 +1,277 @@
 ---
 alwaysApply: true
 ---
+
+PRD — Module RH : Gestion des Formations
+
+Projet : OperaFlow
+Module : Suivi et planification des formations du personnel
+Version : 2.0
+Auteur : Fred Baudry
+Date : 01/11/2025
+
+🎯 Objectif général
+
+Mettre à disposition un système complet de gestion, planification et suivi des formations, permettant de :
+
+centraliser toutes les actions de formation (obligatoires, souhaitées, internes, externes),
+
+suivre la validité des habilitations et certifications (avec alertes d’échéance),
+
+établir un plan prévisionnel annuel (par site, catégorie, ou compétence),
+
+suivre l’exécution réelle (plan de formation validé),
+
+lier les compétences et disponibilités du personnel à la planification globale (plan de charge RH).
+
+🧱 Structure fonctionnelle du module
+1. Page “Catalogue des formations”
+
+Base de données principale recensant toutes les formations reconnues par l’entreprise.
+
+Contenu :
+
+Nom de la formation
+
+Code interne / organisme
+
+Catégorie (Sécurité, Technique, Qualité, Managériale, etc.)
+
+Type (obligatoire / facultative / réglementaire)
+
+Durée (en heures ou jours)
+
+Périodicité (valable X mois / années)
+
+Compétences associées
+
+Coût unitaire ou forfaitaire
+
+Organisme formateur / prestataire
+
+Support de preuve (attestation, certificat)
+
+Statut actif / inactif
+
+Objectif :
+
+Constituer le catalogue référentiel des formations pour alimenter :
+
+le plan prévisionnel,
+
+le suivi collaborateur,
+
+les alertes d’échéance.
+
+Actions possibles :
+
+Ajouter / modifier / désactiver une formation
+
+Associer des compétences cibles
+
+Définir la périodicité de validité
+
+Spécifier si la formation est obligatoire (ex. habilitation électrique)
+
+Affecter un coût prévisionnel
+
+2. Page “Plan Prévisionnel”
+
+Outil de préparation annuelle du plan de formation (souhaits et besoins anticipés).
+
+Objectif :
+
+Lister toutes les formations prévues ou souhaitées pour l’année N+1, classées :
+
+par site,
+
+par collaborateur,
+
+par type de formation.
+
+Contenu :
+
+Collaborateur concerné
+
+Formation souhaitée / planifiée
+
+Période cible (mois, trimestre)
+
+Statut de validation (en attente / validé / refusé)
+
+Budget estimé
+
+Priorité (haute / moyenne / basse)
+
+Commentaire RH
+
+Règles :
+
+Les formations du plan prévisionnel ne sont pas encore réalisées.
+
+Une fois “validées RH”, elles passent automatiquement dans le Plan de Formation (réel).
+
+Le bouton “Valider le plan prévisionnel” gèle les prévisions pour l’année et déclenche la génération du plan réel.
+
+3. Page “Plan de Formation” (réel)
+
+Représente les formations effectivement validées, réalisées ou programmées.
+
+Objectif :
+
+Suivre l’exécution du plan et la conformité réglementaire.
+
+Contenu :
+
+Collaborateur
+
+Formation suivie
+
+Dates de réalisation
+
+Statut : Planifiée / Réalisée / Annulée / Reportée
+
+Organisme formateur
+
+Coût réel
+
+Résultat / Attestation / Document joint
+
+Date d’échéance de validité (si applicable)
+
+Règles :
+
+Le passage d’une formation du plan prévisionnel à “plan validé” la rend active dans le suivi.
+
+Une formation réalisée met à jour automatiquement la compétence correspondante du collaborateur.
+
+Le module vérifie automatiquement les prochaines échéances (validités arrivant à terme).
+
+4. Suivi des collaborateurs (page RH intégrée)
+
+Sur chaque fiche collaborateur :
+
+Onglet “Formations suivies” : liste des formations déjà effectuées avec dates et validités.
+
+Onglet “Formations à renouveler” : détecte les habilitations à échéance (ex. 3 mois avant).
+
+Onglet “Formations prévues” : liste des formations issues du plan prévisionnel.
+
+Objectif :
+
+Donner une vue complète de la situation formation par personne, sans passer par le tableau global.
+
+Alerte automatique :
+
+Couleur orange : formation bientôt à échéance.
+
+Couleur rouge : formation expirée.
+
+Couleur verte : à jour.
+
+5. Tableau de bord “Pilotage des formations”
+
+Vue synthétique RH et direction.
+
+Indicateurs :
+
+Taux de conformité des habilitations (% de collaborateurs à jour)
+
+Budget consommé vs budget prévu
+
+Répartition des formations par catégorie
+
+Nombre total de jours de formation par site
+
+Statistiques “Formations par compétence”
+
+Liste des formations expirées ou à venir (alertes automatiques)
+
+Filtres :
+
+Année
+
+Site
+
+Catégorie
+
+Statut (planifié / réalisé / expiré)
+
+Collaborateur
+
+👥 Rôles et responsabilités
+Rôle	Accès	Description
+Collaborateur	Consultation	Peut voir ses formations passées et prévues.
+Chef de chantier / Conducteur	Lecture + suggestion	Peut proposer des besoins de formation dans le plan prévisionnel.
+Administratif RH / Responsable formation	Édition complète	Gère le catalogue, valide le plan prévisionnel, met à jour le plan réel.
+Responsable site / Direction	Supervision	Valide le plan final et suit les indicateurs financiers et réglementaires.
+Admin app	Maintenance	Peut restaurer le catalogue standard et gérer les règles automatiques.
+🔄 Flux fonctionnel global
+
+Catalogue = Répertoire des formations disponibles.
+
+Plan prévisionnel = Besoins exprimés et planifiés pour l’année suivante.
+
+Validation RH = Passage au plan réel.
+
+Plan de formation = Exécution effective des actions.
+
+Suivi individuel = Actualisation des compétences et alertes échéance.
+
+Reporting = Analyse budgétaire et conformité.
+
+📅 Cycle annuel de gestion
+Étape	Période	Acteur	Objectif
+Collecte besoins	Octobre – Décembre	Conducteurs / RH	Identifier les besoins N+1
+Validation prévisionnelle	Janvier	RH / Direction	Valider le plan prévisionnel
+Exécution du plan	Février – Décembre	RH / Formateurs	Suivre la réalisation
+Évaluation et mise à jour	Fin d’année	RH	Analyser les écarts et préparer N+1
+⚙️ Règles de gestion clés
+
+Formation obligatoire
+
+Toute formation marquée “obligatoire” génère une alerte d’échéance automatique selon sa périodicité.
+
+Compétences associées
+
+Lorsqu’une formation est validée, les compétences liées sont automatiquement mises à jour dans la fiche collaborateur.
+
+Alertes
+
+Notification automatique aux RH et au collaborateur 90 / 30 / 0 jours avant expiration.
+
+Budget
+
+Les formations validées consomment le budget formation prévisionnel.
+
+Les écarts sont affichés dans le tableau de bord RH.
+
+Annulation / Report
+
+Si une formation planifiée est annulée ou reportée, le statut et les coûts sont mis à jour (avec motif).
+
+Synchronisation plan de charge
+
+Une formation planifiée bloque automatiquement la disponibilité du collaborateur sur la période concernée (comme une absence).
+
+📊 Synthèse des pages
+Page	Public cible	Objectif
+/formations/catalogue	RH / Admin	Gérer la base des formations
+/formations/plan-previsionnel	RH / Conducteurs	Préparer le plan N+1
+/formations/plan-formation	RH	Suivre la réalisation
+/formations/suivi	RH / Direction	Tableaux de bord et alertes
+/rh/collaborateur/[id]	RH / Managers	Suivi individuel par personne
+🚀 Objectifs de livrables (v2 complète)
+Phase	Livraison	Objectif fonctionnel
+Phase 1	Catalogue des formations	Structure + référentiel initial
+Phase 2	Plan prévisionnel	Collecte + validation N+1
+Phase 3	Plan réel (formation)	Suivi, statuts, coûts, alertes
+Phase 4	Intégration RH / Plan de charge	Blocage automatique des périodes
+Phase 5	Reporting & conformité	Indicateurs + export
+🧩 Intégrations internes OperaFlow
+Intégration	Description
+RH Collaborateurs	Synchronisation des compétences et statuts de validité.
+Plan de charge RH	Blocage des périodes de formation validées.
+Absences RH	Cohabitation des indisponibilités (absence vs formation).
+Notifications système	Alertes automatiques échéances / validations.
+

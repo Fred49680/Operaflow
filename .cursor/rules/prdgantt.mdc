@@ -1,3 +1,212 @@
 ---
 alwaysApply: true
 ---
+
+🧩 MODULE 4 — PLANIFICATION & SUIVI
+v1.6 — Gantt multi-affaires, suivi quotidien, coefficients paramétrables, synchronisation RH & Affaires
+🎯 Objectif général
+
+Le module Planification & Suivi est le cœur opérationnel de l’application :
+il orchestre les activités planifiées, leur exécution réelle et leur valorisation.
+
+Il garantit la cohérence entre les affaires, les ressources RH et les règles contractuelles, tout en offrant une vision temps réel de la charge, de l’avancement et de la disponibilité.
+
+👥 Utilisateurs concernés
+Rôle	Accès / Actions principales	Objectif
+Administrateur	Paramétrage calendriers, jours fériés, règles planif	Cohérence globale
+Planificateur	Planification, répartition, validation des tâches	Équilibrage des ressources
+Responsable d’Activité	Validation sur son périmètre, ajustement coefficients	Supervision locale
+Chargé d’Affaires	Création des activités liées à l’affaire	Lancer / suivre l’exécution
+Chef de Chantier	Mise à jour terrain (heures, anomalies)	Suivi réel
+Technicien	Lecture planning personnel	Exécution quotidienne
+Consultation / Direction	Lecture synthétique consolidée	Vision globale de charge
+⚙️ 1️⃣ Architecture fonctionnelle
+
+Planification Gantt → vision macro multi-affaires et multi-sites.
+
+Suivi quotidien → remontée terrain temps réel.
+
+Valorisation automatique → application coefficients horaires.
+
+Alertes intelligentes → dérives, absences, retards, non-conformités.
+
+Synchronisations externes → RH, SIRH, Outlook, Signature.
+
+🗓️ 2️⃣ Planification Gantt interactive
+🧱 Fonctionnalités principales
+
+Vue Gantt multi-niveaux : Site > Affaire > Activité > Ressource.
+
+Glisser-déposer, redimensionnement, dépendances (FS/SS/FF).
+
+Zoom jour / semaine / mois.
+
+Colorisation dynamique par statut, type horaire, ou responsable.
+
+Alerte sur sur-affectation ou absence planifiée (info RH).
+
+Filtrage multi-critères : site, responsable, type d’activité, statut.
+
+Vue cumulée des charges et taux d’utilisation.
+
+Lien direct vers fiche Affaire, Claim, ou Ressource RH.
+
+📋 Données gérées
+Champ	Description
+ActivitéID	Identifiant unique
+AffaireID	Lien vers l’affaire mère
+RessourceID(s)	Collaborateurs affectés
+Dates début / fin	Période planifiée
+Type horaire	Normal / Nuit / Week-end / Férié
+Coefficient	Valeur issue de l’affaire
+Heures prévues	Nombre total
+Statut	Planifiée / Lancée / Suspendue / Terminée
+% Avancement	Automatique (réel vs prévu)
+Commentaire	Note interne
+⏱️ 3️⃣ Suivi quotidien (Cards A → D)
+🎯 Objectif
+
+Permettre la saisie terrain simple et rapide, sans ressaisie ni perte d’information.
+
+⚙️ Fonctionnalités
+
+Déclaration d’heures : début, fin, pause, type horaire.
+
+Calcul automatique durée + majoration.
+
+Ajout commentaires, photos, anomalies.
+
+Statuts : Lancée / Suspendue / Reportée / Terminée.
+
+Création directe de Claim depuis une anomalie.
+
+Validation multi-niveau (Chef → Responsable).
+
+Synchronisation automatique avec le Gantt et les Affaires.
+
+💰 4️⃣ Valorisation horaire & coefficients paramétrables
+🎯 Objectif
+
+Valoriser automatiquement les heures planifiées et réelles selon le type horaire défini dans l’affaire.
+
+Type horaire	Coefficient par défaut	Paramétrable par	Exemple
+Jour	1.00	—	Heures normales
+Nuit	1.25	Responsable / Chargé d’Affaires	Ex : 1.40
+Week-end	1.50	Responsable / Chargé d’Affaires	Ex : 1.75
+Férié	2.00	Responsable / Chargé d’Affaires	Ex : 2.50
+Calcul
+Valorisation = Σ (HeuresRéelles × TauxHoraire × Coefficient)
+
+
+Appliqué automatiquement à :
+
+BPU (poste par poste),
+
+Dépenses contrôlées (temps réel),
+
+Forfait (analyse interne de productivité).
+
+Visualisation
+
+Barre colorée dans le Gantt selon type horaire :
+
+Gris : Jour / Bleu : Nuit / Orange : Week-end / Rouge : Férié.
+Tooltip : “8h Nuit @ 1.40 – Valorisé 560 €”.
+
+📅 5️⃣ Prise en compte des absences (intégration RH)
+
+Lecture en temps réel des absences validées depuis le module RH.
+
+Blocage automatique des ressources absentes (bande grisée).
+
+Alerte immédiate “Ressource indisponible”.
+
+Proposition automatique de remplacement (filtre compétences + site).
+
+Si absence prolongée > 7 jours → recalcul automatique du plan hebdo.
+
+🔄 6️⃣ Synchronisations externes
+🔗 SIRH corporate
+
+Import quotidien des nouveaux collaborateurs / contrats / absences.
+
+Export hebdomadaire des activités planifiées (heures par ressource).
+
+Logs de synchronisation stockés dans Supabase.
+
+Erreurs visibles dans un tableau “Sync SIRH”.
+
+📅 Outlook / Microsoft 365
+
+Export automatique des affectations validées → calendrier Outlook.
+
+Catégorisation automatique (Projet / Chantier / Formation).
+
+Synchronisation bidirectionnelle (modif Outlook → update planif).
+
+Notifications Teams en cas de déplacement d’activité.
+
+✍️ Module Signature
+
+Signature numérique hebdomadaire ou mensuelle des plannings validés.
+
+Archivage automatique du document signé (plan validé, relevé d’heures).
+
+Liaison avec module Visa global pour historique et conformité.
+
+⚙️ 7️⃣ Automatisations
+Déclencheur	Action
+Création activité	Vérifie dispo / absence RH / charge ressource
+Déplacement tâche	Recalcul charge + mise à jour Outlook
+Changement statut → Lancée	Active suivi quotidien
+Maj heures réelles	Met à jour avancement Affaire
+Activité terminée	Verrouille Gantt + génère visa planification
+Absence validée (RH)	Bloc ressource + alerte planificateur
+Claim créé	Bloque activité + notif Responsable
+📊 8️⃣ Indicateurs & alertes intégrés
+🧮 Indicateurs
+
+Taux d’avancement global (physique / financier)
+
+Heures planifiées vs réalisées
+
+Heures par type horaire
+
+Charge par ressource / par site
+
+Taux d’utilisation moyen
+
+Productivité (h / % avancement)
+
+⚠️ Alertes automatiques
+Type	Déclencheur	Action
+Surcharge	Charge > 100 %	Badge rouge + notif
+Retard	Fin > prévu	Alerte Responsable
+Absence	Affectation pendant absence	Alerte instantanée
+Non-conformité	Habilitation expirée	Blocage planification
+Claim	Activité bloquée	Notif + statut “à résoudre”
+🪶 9️⃣ Interfaces principales
+📍 Page : Gantt
+
+Vue interactive (React + Tailwind).
+
+Filtres dynamiques.
+
+Infobulle détaillée (dates, heures, coefficients).
+
+Vue cumulée charges / taux utilisation.
+
+📍 Page : Suivi quotidien
+
+Tableau ou cartes (Cards B / D).
+
+Saisie simple : activité, ressource, type horaire, avancement, commentaire.
+
+Boutons : Reporter / Bloquer / Claim.
+
+📍 Page : Alertes
+
+Liste centralisée des anomalies planif (retards, absences, dérives).
+
+Filtrage multi-critères et tri par gravité.
+

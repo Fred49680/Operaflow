@@ -1,3 +1,217 @@
+🧩 Extension PRD — Gestion Multi-Contacts & Documents Liés
+
+Projet : OperaFlow
+Module rattaché : Catalogue Clients & Fournisseurs
+Version : 1.1
+Auteur : Fred Baudry
+Date : 01/11/2025
+
+🎯 Objectif de l’extension
+
+Étendre le module Catalogue Clients & Fournisseurs pour permettre :
+
+La gestion de plusieurs contacts par partenaire (client ou fournisseur).
+
+Le stockage et le suivi de documents associés (contrats, devis, attestations, fiches sécurité, etc.).
+
+La centralisation de ces données dans une fiche partenaire enrichie utilisable par tous les rôles internes.
+
+Ce sous-module transforme le catalogue en véritable répertoire de relations professionnelles — à mi-chemin entre CRM et base fournisseurs.
+
+🧱 1. Gestion multi-contacts
+Objectif
+
+Permettre à chaque client ou fournisseur d’avoir un nombre illimité de contacts référencés, avec rôle, coordonnées et suivi d’activité.
+
+Structure fonctionnelle
+
+Chaque partenaire (client/fournisseur) peut être associé à plusieurs personnes de contact, chacune ayant :
+
+Nom & prénom
+
+Fonction (ex. acheteur, chef de projet, responsable HSE, etc.)
+
+Téléphone professionnel
+
+Email professionnel
+
+Téléphone mobile (facultatif)
+
+Disponibilité / horaires (facultatif)
+
+Observations internes (ex. “souvent sur site”, “contact privilégié pour devis”, etc.)
+
+Statut (actif / inactif)
+
+Comportement attendu
+
+Depuis la fiche du partenaire, une section “Contacts” affiche la liste complète.
+
+Bouton “+ Ajouter un contact” permet d’en créer un nouveau.
+
+Un contact peut être désactivé sans être supprimé (historisation).
+
+Un indicateur permet d’identifier le contact principal (1 seul par partenaire).
+
+Les contacts peuvent être filtrés par fonction ou recherchés globalement dans le module.
+
+Exemple d’affichage (dans fiche partenaire)
+Nom	Fonction	Téléphone	Email	Principal	Actif
+Martin, Julie	Acheteuse	06 45 22 18 09	julie.martin@edf.fr
+	✅	✅
+Dupont, Alain	Responsable chantier	06 12 33 98 42	alain.dupont@edf.fr
+		✅
+Leroy, Isabelle	Facturation	04 72 88 10 50	compta@edf.fr
+		❌
+🗂️ 2. Gestion des documents liés
+Objectif
+
+Permettre le stockage, le classement et la consultation rapide de documents administratifs ou contractuels rattachés à chaque partenaire.
+
+Type de documents gérés
+
+Contrats cadres / sous-traitance
+
+Devis / bons de commande
+
+Attestations URSSAF / assurance décennale
+
+Certificats qualité (ISO, sécurité, etc.)
+
+Fiches de sécurité / plan de prévention
+
+Correspondances (PDF, lettres, etc.)
+
+Champs associés
+
+Chaque document est enregistré avec :
+
+Type de document (menu déroulant)
+
+Titre / Description
+
+Date d’émission
+
+Date d’expiration (pour suivi des validités)
+
+Statut (valide / expiré / en attente)
+
+Lien de stockage (document hébergé dans OperaFlow ou lien externe SharePoint / Drive)
+
+Observations internes
+
+Fonctions disponibles
+
+Ajouter un document depuis la fiche du partenaire
+
+Télécharger / visualiser un document existant
+
+Recevoir une alerte automatique avant expiration (30 jours avant)
+
+Filtrer les documents par type ou statut
+
+Marquer un document comme “contrat principal” ou “document de référence”
+
+Exemple d’affichage
+Type	Titre	Émis le	Expire le	Statut	Lié au site
+Attestation URSSAF	URSSAF 2025	01/01/2025	31/12/2025	✅ Valide	Belleville
+Contrat cadre	Marché 2024-2026	15/03/2024	15/03/2026	✅ Valide	Dampierre
+Attestation décennale	Assurance AXA	01/02/2025	31/01/2026	⚠️ À renouveler	—
+🔄 3. Flux fonctionnel global (vue simplifiée)
+
+Création du partenaire
+→ l’utilisateur crée un client ou fournisseur.
+
+Ajout des contacts
+→ plusieurs personnes peuvent être associées, dont une principale.
+
+Ajout de documents
+→ les fichiers sont enregistrés avec suivi de validité.
+
+Liaison aux sites et affaires
+→ les contacts et documents apparaissent automatiquement dans les pages associées.
+
+Suivi
+→ alertes expirations + historique conservé même en cas de désactivation du partenaire.
+
+👥 4. Rôles et responsabilités
+Rôle	Accès	Description
+Administratif RH / Responsable site	Lecture + édition complète	Peut gérer les contacts et documents des partenaires rattachés à ses sites.
+Chargé d’affaires / Conducteur de travaux	Lecture + ajout restreint	Peut ajouter un contact ou un document opérationnel (devis, contrat site).
+Admin app	Accès global	Supervise tout le catalogue, gère les alertes et validations.
+Utilisateur standard	Lecture seule	Peut consulter les coordonnées et documents des partenaires liés à son périmètre.
+⚙️ 5. Règles de gestion principales
+
+Contacts multiples
+
+Un partenaire peut avoir plusieurs contacts.
+
+Un seul contact principal par partenaire.
+
+Les contacts inactifs restent visibles à titre d’archive.
+
+Documents
+
+Les documents peuvent être rattachés soit au partenaire, soit à un site spécifique.
+
+Les documents arrivant à expiration génèrent une alerte automatique visible dans la page d’accueil admin.
+
+L’historique complet des documents reste consultable même après renouvellement.
+
+Liens dynamiques
+
+Si un document est rattaché à un site, il est visible à la fois depuis la fiche du site et depuis celle du partenaire.
+
+Les contacts peuvent être référencés dans d’autres modules (ex. validation d’affaire, envoi de contrat).
+
+Confidentialité
+
+Certains documents peuvent être marqués “interne RH” (ex. attestations, certifications non publiques).
+
+Ces documents sont invisibles pour les profils non autorisés.
+
+📊 6. Tableaux et vues prévues
+Page	Objectif	Contenu principal
+/partenaire/[id]	Vue détaillée du partenaire	Coordonnées + contacts + documents + liens sites/affaires
+/partenaire/[id]/contacts	Vue liste dédiée	Contacts multiples avec tri et recherche
+/partenaire/[id]/documents	Vue documentaire	Liste des documents avec dates de validité
+/catalogue-partenaires	Vue globale	Recherche partenaires, filtres et statut global
+/alertes-documents	Tableau RH	Liste des documents arrivant à expiration
+🔔 7. Système d’alertes & notifications
+Types d’alertes :
+
+Document arrivant à échéance (J-30 / J-7)
+
+Contact principal inactif sans remplaçant
+
+Fournisseur inactif rattaché à un chantier actif
+
+Destinataires :
+
+Administratifs RH concernés par le site
+
+Conducteurs de travaux liés
+
+Admin global pour les documents critiques (ex. URSSAF expirée)
+
+🚀 8. Objectifs de livrables (version enrichie)
+Phase	Livraison	Objectif fonctionnel
+Phase 1	Multi-contacts	Fiche partenaire enrichie avec contacts multiples
+Phase 2	Documents liés	Gestion documentaire avec suivi de validité
+Phase 3	Alerte & notifications	Automatisation des rappels de documents expirants
+Phase 4	Intégration multi-modules	Liens contacts/documents vers affaires, sites, planif
+Phase 5	Reporting partenaire	Indicateurs activité / conformité documentaire
+🧭 9. Bénéfices opérationnels
+
+Centralisation complète de la relation client/fournisseur.
+
+Historisation claire des personnes de contact (utile en cas de rotation).
+
+Suivi automatique des documents de conformité (fin URSSAF, assurances, contrats).
+
+Réduction du risque de non-conformité administrative sur site.
+
+Meilleure réactivité des conducteurs et administratifs (infos à jour, accessibles).
 ---
 alwaysApply: true
 ---

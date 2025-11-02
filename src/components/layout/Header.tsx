@@ -91,6 +91,12 @@ export default async function Header() {
       visible: true,
     },
     {
+      label: "Suivi Terrain",
+      href: "/suivi",
+      icon: TrendingUp,
+      visible: true,
+    },
+    {
       label: "KPI & Alertes",
       href: "/kpi",
       icon: BarChart3,

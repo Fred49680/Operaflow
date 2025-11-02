@@ -1,7 +1,7 @@
 // Types pour le Module 4 : Planification & Suivi
 
 export type TypeHoraire = 'jour' | 'nuit' | 'weekend' | 'ferie' | '3x8' | 'accelerer';
-export type StatutActivite = 'planifiee' | 'lancee' | 'suspendue' | 'reportee' | 'terminee' | 'annulee';
+export type StatutActivite = 'planifiee' | 'lancee' | 'suspendue' | 'reportee' | 'terminee' | 'annulee' | 'prolongee' | 'archivee';
 export type StatutAffectation = 'planifiee' | 'en_cours' | 'suspendue' | 'terminee' | 'annulee';
 export type StatutSuivi = 'en_cours' | 'terminee' | 'suspendue' | 'reportee';
 export type TypeDependance = 'FS' | 'SS' | 'FF' | 'SF'; // Finish-to-Start, Start-to-Start, etc.

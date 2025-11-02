@@ -126,6 +126,12 @@ export default async function SafeHeader() {
         visible: true,
       },
       {
+        label: "Suivi Terrain",
+        href: "/suivi",
+        iconName: "TrendingUp",
+        visible: true,
+      },
+      {
         label: "KPI & Alertes",
         href: "/kpi",
         iconName: "BarChart3",

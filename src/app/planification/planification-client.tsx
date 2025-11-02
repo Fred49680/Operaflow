@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Search, Plus, AlertTriangle, Users, X, FileText } from "lucide-react";
+import { Calendar, Search, Plus, AlertTriangle, X, FileText } from "lucide-react";
 import GanttTimeline from "@/components/planification/gantt/GanttTimeline";
 import AffairesEnAttente from "@/components/planification/AffairesEnAttente";
 import AffairesPlanifiees from "@/components/planification/AffairesPlanifiees";
@@ -32,7 +32,7 @@ export default function PlanificationClient({
   // Suppression des avertissements pour variables préfixées avec _
   void _collaborateurs;
   const router = useRouter();
-  const [activeView, setActiveView] = useState<"gantt" | "suivi" | "alertes">("gantt");
+  const [activeView, setActiveView] = useState<"gantt" | "alertes">("gantt");
   const [vueGantt, setVueGantt] = useState<"jour" | "semaine" | "mois">("semaine");
   const [filters, setFilters] = useState({
     site: "",
@@ -232,17 +232,6 @@ export default function PlanificationClient({
                 Gantt
               </button>
               <button
-                onClick={() => setActiveView("suivi")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap flex items-center gap-2 ${
-                  activeView === "suivi"
-                    ? "border-primary text-primary"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                <Users className="h-4 w-4" />
-                Suivi quotidien
-              </button>
-              <button
                 onClick={() => setActiveView("alertes")}
                 className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap flex items-center gap-2 ${
                   activeView === "alertes"
@@ -402,20 +391,6 @@ export default function PlanificationClient({
                 <p className="text-gray-600">Aucune activité trouvée avec les filtres sélectionnés</p>
               </div>
             )}
-          </div>
-        )}
-
-        {activeView === "suivi" && (
-          <div className="card">
-            <div className="text-center py-12">
-              <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-2xl font-semibold text-secondary mb-2">
-                Suivi quotidien
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Interface de saisie terrain à implémenter
-              </p>
-            </div>
           </div>
         )}
 
