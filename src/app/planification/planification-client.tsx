@@ -2,11 +2,12 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Search, Plus, AlertTriangle, Users, X } from "lucide-react";
+import { Calendar, Search, Plus, AlertTriangle, Users, X, FileText } from "lucide-react";
 import GanttTimeline from "@/components/planification/gantt/GanttTimeline";
 import AffairesEnAttente from "@/components/planification/AffairesEnAttente";
 import AffairesPlanifiees from "@/components/planification/AffairesPlanifiees";
 import TemplateSelectorModal from "@/components/planification/TemplateSelectorModal";
+import GestionTemplatesModal from "@/components/planification/GestionTemplatesModal";
 import type { ActivitePlanification, AffectationPlanification } from "@/types/planification";
 
 interface PlanificationClientProps {
@@ -42,6 +43,7 @@ export default function PlanificationClient({
   const [searchTerm, setSearchTerm] = useState("");
   const [showActiviteModal, setShowActiviteModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showGestionTemplatesModal, setShowGestionTemplatesModal] = useState(false);
   const [showAffectationsModal, setShowAffectationsModal] = useState(false);
   const [selectedActiviteForAffectations, setSelectedActiviteForAffectations] = useState<ActivitePlanification | null>(null);
   const [editingActivite, setEditingActivite] = useState<ActivitePlanification | null>(null);
