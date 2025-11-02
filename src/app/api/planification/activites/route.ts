@@ -48,8 +48,14 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Erreur lors de la récupération des activités:", error);
+      console.error("Détails de l'erreur:", JSON.stringify(error, null, 2));
       return NextResponse.json(
-        { error: "Erreur lors de la récupération des activités" },
+        { 
+          error: "Erreur lors de la récupération des activités",
+          details: error.message,
+          code: error.code,
+          hint: error.hint
+        },
         { status: 500 }
       );
     }
