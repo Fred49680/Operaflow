@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClientSupabase } from "@/lib/supabase/client";
@@ -86,6 +86,14 @@ export default function HeaderClient({
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  // Fermer tous les menus déroulants quand la route change
+  useEffect(() => {
+    setRhMenuOpen({});
+    setAdminMenuOpen(false);
+    setUserMenuOpen(false);
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const handleLogout = async () => {
     const supabase = createClientSupabase();
