@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Edit, Save, FileText } from "lucide-react";
+import { ArrowLeft, Edit, Save, FileText, Upload, X } from "lucide-react";
 import type { Affaire } from "@/types/affaires";
 
 interface AffaireDetailClientProps {
@@ -24,6 +24,8 @@ export default function AffaireDetailClient({
   const [isEditing, setIsEditing] = useState(false);
   const [affaire, setAffaire] = useState(initialAffaire);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   const getStatutBadge = (statut: string) => {
     const styles: Record<string, string> = {
@@ -114,6 +116,24 @@ export default function AffaireDetailClient({
   // Calculer les totaux
   const totalBPU = affaire.bpu?.reduce((sum, l) => sum + (l.montant_total_ht || 0), 0) || 0;
   const totalDepensesTTC = affaire.depenses?.reduce((sum, d) => sum + (d.montant_ttc || 0), 0) || 0;
+  
+  // Calculer le montant total selon le type de valorisation
+  const montantTotalCalcule = (() => {
+    if (!affaire.type_valorisation) return affaire.montant_total || 0;
+    
+    switch (affaire.type_valorisation) {
+      case "BPU":
+        return totalBPU;
+      case "dépense":
+        return totalDepensesTTC;
+      case "mixte":
+        return totalBPU + totalDepensesTTC;
+      case "forfait":
+        return affaire.montant_total || 0;
+      default:
+        return affaire.montant_total || 0;
+    }
+  })();
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
@@ -537,7 +557,7 @@ export default function AffaireDetailClient({
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold">Montant total de l'affaire</span>
                   <span className="text-2xl font-bold text-primary">
-                    {affaire.montant_total ? `${affaire.montant_total.toFixed(2)} €` : "-"}
+                    {montantTotalCalcule > 0 ? `${montantTotalCalcule.toFixed(2)} €` : "-"}
                   </span>
                 </div>
               </div>
@@ -708,13 +728,23 @@ export default function AffaireDetailClient({
         {/* Onglet Documents */}
         {activeTab === "documents" && (
           <div className="card">
-            <h2 className="text-xl font-semibold text-secondary mb-4">Documents</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-secondary">Documents</h2>
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Téléverser un document
+              </button>
+            </div>
+            
             {affaire.documents && affaire.documents.length > 0 ? (
               <div className="space-y-2">
                 {affaire.documents.map((doc) => (
                   <div
                     key={doc.id}
-                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <FileText className="h-5 w-5 text-gray-400" />
@@ -723,6 +753,7 @@ export default function AffaireDetailClient({
                         <div className="text-sm text-gray-500">
                           {doc.type_document || "Document"} •{" "}
                           {doc.taille_octets ? `${(doc.taille_octets / 1024).toFixed(1)} KB` : ""}
+                          {doc.created_at && ` • ${new Date(doc.created_at).toLocaleDateString("fr-FR")}`}
                         </div>
                       </div>
                     </div>
@@ -740,8 +771,159 @@ export default function AffaireDetailClient({
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">Aucun document</p>
+              <div className="text-center py-12">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 mb-4">Aucun document</p>
+                <button
+                  onClick={() => setShowUploadModal(true)}
+                  className="btn-primary inline-flex items-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Téléverser un document
+                </button>
+              </div>
             )}
+          </div>
+        )}
+
+        {/* Modal Upload Document */}
+        {showUploadModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="flex justify-between items-center p-6 border-b">
+                <h3 className="text-lg font-semibold text-secondary">Téléverser un document</h3>
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setUploading(true);
+                  
+                  try {
+                    const formData = new FormData(e.currentTarget);
+                    const file = formData.get("file") as File;
+                    const typeDocument = formData.get("type_document") as string;
+                    const description = formData.get("description") as string;
+                    
+                    if (!file) {
+                      alert("Veuillez sélectionner un fichier");
+                      setUploading(false);
+                      return;
+                    }
+                    
+                    // Upload via API
+                    const uploadFormData = new FormData();
+                    uploadFormData.append("file", file);
+                    uploadFormData.append("affaire_id", affaire.id);
+                    uploadFormData.append("type_document", typeDocument || "");
+                    uploadFormData.append("description", description || "");
+                    
+                    const response = await fetch(`/api/affaires/${affaire.id}/documents`, {
+                      method: "POST",
+                      body: uploadFormData,
+                    });
+                    
+                    if (!response.ok) {
+                      const error = await response.json();
+                      throw new Error(error.error || "Erreur lors du téléversement");
+                    }
+                    
+                    const result = await response.json();
+                    
+                    // Rafraîchir la liste des documents
+                    router.refresh();
+                    setShowUploadModal(false);
+                    
+                    // Recharger la page pour voir le nouveau document
+                    window.location.reload();
+                  } catch (error) {
+                    console.error("Erreur upload:", error);
+                    alert(error instanceof Error ? error.message : "Erreur lors du téléversement");
+                  } finally {
+                    setUploading(false);
+                  }
+                }}
+                className="p-6 space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fichier <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="file"
+                    name="file"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">PDF, Word, Excel, Images (max 50 MB)</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Type de document
+                  </label>
+                  <select
+                    name="type_document"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="">Sélectionner...</option>
+                    <option value="devis">Devis</option>
+                    <option value="facture">Facture</option>
+                    <option value="rapport">Rapport</option>
+                    <option value="contrat">Contrat</option>
+                    <option value="planning">Planning</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description (optionnel)
+                  </label>
+                  <textarea
+                    name="description"
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    placeholder="Description du document..."
+                  />
+                </div>
+                
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setShowUploadModal(false)}
+                    className="btn-secondary"
+                    disabled={uploading}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary flex items-center gap-2"
+                    disabled={uploading}
+                  >
+                    {uploading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Téléversement...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4" />
+                        Téléverser
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </div>
