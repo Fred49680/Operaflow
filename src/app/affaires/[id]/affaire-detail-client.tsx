@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Edit, Save, FileText, Upload, X, Plus, Trash2, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, Edit, Save, FileText, Upload, X, Plus, Trash2, FileSpreadsheet, DollarSign, Receipt, FileBarChart } from "lucide-react";
 import type { Affaire } from "@/types/affaires";
 
 interface AffaireDetailClientProps {
@@ -444,12 +444,15 @@ export default function AffaireDetailClient({
 
               {/* Section Valorisation intégrée */}
               <div className="mt-8 pt-8 border-t border-gray-200">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-secondary">Valorisation</h2>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <DollarSign className="h-6 w-6 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-secondary">Valorisation</h2>
                 </div>
                 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                     Type de valorisation
                   </label>
                   {isEditing ? (
@@ -457,7 +460,7 @@ export default function AffaireDetailClient({
                       name="type_valorisation"
                       value={affaire.type_valorisation || ""}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all bg-white"
                     >
                       <option value="">Sélectionner...</option>
                       <option value="BPU">BPU (Bordereau de Prix Unitaires)</option>
@@ -466,8 +469,10 @@ export default function AffaireDetailClient({
                       <option value="mixte">Mixte (BPU + Dépense)</option>
                     </select>
                   ) : (
-                    <div className="px-3 py-2 bg-gray-50 rounded">
-                      {affaire.type_valorisation || "Non défini"}
+                    <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                      <span className="text-base font-semibold text-gray-800">
+                        {affaire.type_valorisation || "Non défini"}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -475,12 +480,17 @@ export default function AffaireDetailClient({
                 {/* BPU Section */}
                 {(affaire.type_valorisation === "BPU" || affaire.type_valorisation === "mixte") && (
                   <div className="mb-6">
-                    <div className="flex justify-between items-center mb-3">
-                      <h3 className="text-lg font-semibold">Bordereau de Prix Unitaires</h3>
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-50 rounded-lg">
+                          <FileBarChart className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-800">Bordereau de Prix Unitaires</h3>
+                      </div>
                       {isEditing && (
                         <button
                           onClick={() => setShowBpuImportModal(true)}
-                          className="btn-secondary flex items-center gap-2 text-sm"
+                          className="btn-secondary flex items-center gap-2 text-sm hover:bg-blue-50 hover:text-blue-600 transition-colors"
                           type="button"
                         >
                           <FileSpreadsheet className="h-4 w-4" />
@@ -489,43 +499,44 @@ export default function AffaireDetailClient({
                       )}
                     </div>
                     {affaire.bpu && affaire.bpu.length > 0 ? (
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
                         <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
+                          <thead className="bg-gradient-to-r from-blue-50 to-blue-100">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unité</th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantité</th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Prix unitaire</th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total HT</th>
+                              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Code</th>
+                              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Libellé</th>
+                              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Unité</th>
+                              <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Quantité</th>
+                              <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Prix unitaire</th>
+                              <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Total HT</th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
+                          <tbody className="bg-white divide-y divide-gray-100">
                             {affaire.bpu.map((ligne) => (
-                              <tr key={ligne.id}>
-                                <td className="px-4 py-3 text-sm">{ligne.code_bpu || "-"}</td>
-                                <td className="px-4 py-3 text-sm">{ligne.libelle_bpu}</td>
-                                <td className="px-4 py-3 text-sm">{ligne.unite || "-"}</td>
-                                <td className="px-4 py-3 text-sm text-right">{ligne.quantite_prevue}</td>
-                                <td className="px-4 py-3 text-sm text-right">{ligne.prix_unitaire_ht.toFixed(2)} €</td>
-                                <td className="px-4 py-3 text-sm font-semibold text-right">{ligne.montant_total_ht.toFixed(2)} €</td>
+                              <tr key={ligne.id} className="hover:bg-blue-50/50 transition-colors">
+                                <td className="px-4 py-3 text-sm font-medium text-gray-900">{ligne.code_bpu || "-"}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700">{ligne.libelle_bpu}</td>
+                                <td className="px-4 py-3 text-sm text-gray-600">{ligne.unite || "-"}</td>
+                                <td className="px-4 py-3 text-sm text-right font-medium text-gray-700">{ligne.quantite_prevue}</td>
+                                <td className="px-4 py-3 text-sm text-right text-gray-700">{ligne.prix_unitaire_ht.toFixed(2)} €</td>
+                                <td className="px-4 py-3 text-sm font-bold text-right text-primary">{ligne.montant_total_ht.toFixed(2)} €</td>
                               </tr>
                             ))}
-                            <tr className="bg-gray-50 font-semibold">
-                              <td colSpan={5} className="px-4 py-3 text-right">Total BPU HT</td>
-                              <td className="px-4 py-3 text-right">{totalBPU.toFixed(2)} €</td>
+                            <tr className="bg-gradient-to-r from-primary/10 to-primary/5 font-bold border-t-2 border-primary/20">
+                              <td colSpan={5} className="px-4 py-4 text-right text-gray-700">Total BPU HT</td>
+                              <td className="px-4 py-4 text-right text-xl text-primary">{totalBPU.toFixed(2)} €</td>
                             </tr>
                           </tbody>
                         </table>
                       </div>
                     ) : (
-                      <div className="text-center py-8 border border-gray-200 rounded-lg">
-                        <p className="text-gray-500 mb-4">Aucune ligne BPU</p>
+                      <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+                        <FileBarChart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500 mb-4 font-medium">Aucune ligne BPU</p>
                         {isEditing && (
                           <button
                             onClick={() => setShowBpuImportModal(true)}
-                            className="btn-primary inline-flex items-center gap-2"
+                            className="btn-primary inline-flex items-center gap-2 shadow-md hover:shadow-lg transition-shadow"
                             type="button"
                           >
                             <FileSpreadsheet className="h-4 w-4" />
@@ -540,72 +551,94 @@ export default function AffaireDetailClient({
                 {/* Dépenses Section */}
                 {affaire.type_valorisation === "dépense" || affaire.type_valorisation === "mixte" ? (
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-3">Dépenses</h3>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-orange-50 rounded-lg">
+                        <Receipt className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-800">Dépenses</h3>
+                    </div>
                     {affaire.depenses && affaire.depenses.length > 0 ? (
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
                         <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
+                          <thead className="bg-gradient-to-r from-orange-50 to-orange-100">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Catégorie</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Montant HT</th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">TVA</th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total TTC</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Catégorie</th>
+                              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Libellé</th>
+                              <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Montant HT</th>
+                              <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">TVA</th>
+                              <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Total TTC</th>
+                              <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Date</th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
+                          <tbody className="bg-white divide-y divide-gray-100">
                             {affaire.depenses.map((dep) => (
-                              <tr key={dep.id}>
-                                <td className="px-4 py-3 text-sm">{dep.categorie || "-"}</td>
-                                <td className="px-4 py-3 text-sm">{dep.libelle}</td>
-                                <td className="px-4 py-3 text-sm text-right">{dep.montant_ht.toFixed(2)} €</td>
-                                <td className="px-4 py-3 text-sm text-right">{dep.taux_tva}%</td>
-                                <td className="px-4 py-3 text-sm text-right">{dep.montant_ttc.toFixed(2)} €</td>
-                                <td className="px-4 py-3 text-sm">
+                              <tr key={dep.id} className="hover:bg-orange-50/50 transition-colors">
+                                <td className="px-4 py-3 text-sm font-medium text-gray-900">{dep.categorie || "-"}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700">{dep.libelle}</td>
+                                <td className="px-4 py-3 text-sm text-right text-gray-700">{dep.montant_ht.toFixed(2)} €</td>
+                                <td className="px-4 py-3 text-sm text-right text-gray-600">{dep.taux_tva}%</td>
+                                <td className="px-4 py-3 text-sm font-bold text-right text-orange-600">{dep.montant_ttc.toFixed(2)} €</td>
+                                <td className="px-4 py-3 text-sm text-gray-600">
                                   {new Date(dep.date_depense).toLocaleDateString("fr-FR")}
                                 </td>
                               </tr>
                             ))}
-                            <tr className="bg-gray-50 font-semibold">
-                              <td colSpan={4} className="px-4 py-3 text-right">Total Dépenses</td>
-                              <td className="px-4 py-3 text-right">{totalDepensesTTC.toFixed(2)} €</td>
+                            <tr className="bg-gradient-to-r from-orange-50 to-orange-100/50 font-bold border-t-2 border-orange-200">
+                              <td colSpan={4} className="px-4 py-4 text-right text-gray-700">Total Dépenses</td>
+                              <td className="px-4 py-4 text-right text-xl text-orange-600">{totalDepensesTTC.toFixed(2)} €</td>
                               <td></td>
                             </tr>
                           </tbody>
                         </table>
                       </div>
                     ) : (
-                      <p className="text-gray-500">Aucune dépense</p>
+                      <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+                        <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500 font-medium">Aucune dépense</p>
+                      </div>
                     )}
                   </div>
                 ) : null}
 
                 {affaire.type_valorisation === "forfait" ? (
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-3">Montant forfaitaire</h3>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-purple-50 rounded-lg">
+                        <DollarSign className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-800">Montant forfaitaire</h3>
+                    </div>
                     {isEditing ? (
-                      <input
-                        type="number"
-                        name="montant_total"
-                        value={affaire.montant_total || ""}
-                        onChange={handleChange}
-                        step="0.01"
-                        min="0"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      />
+                      <div className="relative">
+                        <input
+                          type="number"
+                          name="montant_total"
+                          value={affaire.montant_total || ""}
+                          onChange={handleChange}
+                          step="0.01"
+                          min="0"
+                          className="w-full px-4 py-4 text-2xl font-bold text-primary border-2 border-primary/20 rounded-xl focus:ring-2 focus:ring-primary focus:border-primary transition-all bg-white"
+                          placeholder="0.00"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-primary">€</span>
+                      </div>
                     ) : (
-                      <div className="text-2xl font-bold text-primary">
-                        {affaire.montant_total ? `${affaire.montant_total.toFixed(2)} €` : "-"}
+                      <div className="px-6 py-5 bg-gradient-to-r from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl">
+                        <div className="text-3xl font-bold text-purple-700">
+                          {affaire.montant_total ? `${affaire.montant_total.toFixed(2)} €` : "-"}
+                        </div>
                       </div>
                     )}
                   </div>
                 ) : null}
 
-                <div className="mt-6 p-4 bg-primary/10 rounded-lg">
+                <div className="mt-8 p-6 bg-gradient-to-r from-primary via-primary-dark to-primary rounded-xl shadow-lg border border-primary/20">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold">Montant total de l'affaire</span>
-                    <span className="text-2xl font-bold text-primary">
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-6 w-6 text-white" />
+                      <span className="text-xl font-bold text-white">Montant total de l'affaire</span>
+                    </div>
+                    <span className="text-3xl font-extrabold text-white drop-shadow-sm">
                       {montantTotalCalcule > 0 ? `${montantTotalCalcule.toFixed(2)} €` : "-"}
                     </span>
                   </div>
