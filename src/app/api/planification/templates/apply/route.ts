@@ -101,9 +101,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Trier par niveau hiérarchique et ordre
-    tachesAvecDates.sort((a, b) => {
-      const niveauA = taches.find((t) => t.id === a._template_tache_id)?.niveau_hierarchie || 0;
-      const niveauB = taches.find((t) => t.id === b._template_tache_id)?.niveau_hierarchie || 0;
+    tachesAvecDates.sort((a: { _template_tache_id: string; _ordre: number; affaire_id: string; parent_id: string | null; libelle: string; description?: string | null; date_debut_prevue: string; date_fin_prevue: string; heures_prevues: number; type_horaire: string; duree_jours_ouvres?: number | null; calcul_auto_date_fin: boolean; activite_precedente_id: string | null; type_dependance?: string | null }, b: { _template_tache_id: string; _ordre: number; affaire_id: string; parent_id: string | null; libelle: string; description?: string | null; date_debut_prevue: string; date_fin_prevue: string; heures_prevues: number; type_horaire: string; duree_jours_ouvres?: number | null; calcul_auto_date_fin: boolean; activite_precedente_id: string | null; type_dependance?: string | null }) => {
+      const niveauA = taches.find((t: { id: string }) => t.id === a._template_tache_id)?.niveau_hierarchie || 0;
+      const niveauB = taches.find((t: { id: string }) => t.id === b._template_tache_id)?.niveau_hierarchie || 0;
       if (niveauA !== niveauB) return niveauA - niveauB;
       return (a._ordre || 0) - (b._ordre || 0);
     });
