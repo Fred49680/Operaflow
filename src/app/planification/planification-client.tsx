@@ -433,6 +433,12 @@ export default function PlanificationClient({
           </div>
         )}
 
+        {/* Modal Gestion Templates */}
+        <GestionTemplatesModal
+          isOpen={showGestionTemplatesModal}
+          onClose={() => setShowGestionTemplatesModal(false)}
+        />
+
         {/* Modal Sélection Template (avant création) */}
         {showTemplateModal && (
           <TemplateSelectorModal
