@@ -113,7 +113,7 @@ SELECT
     END AS jours_restants
 FROM public.formations f
 LEFT JOIN public.collaborateurs c ON f.collaborateur_id = c.id
-LEFT JOIN public.catalogue_formations cf ON f.catalogue_formation_id = cf.id
+LEFT JOIN public.tbl_catalogue_formations cf ON f.catalogue_formation_id = cf.id
 WHERE f.date_echeance_validite IS NOT NULL
     AND f.date_echeance_validite <= CURRENT_DATE + INTERVAL '90 days';
 
