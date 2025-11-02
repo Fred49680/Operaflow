@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 
 // GET : Récupérer tous les templates
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createServerClient();
     
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
 
     // Créer les tâches du template si fournies
     if (taches && Array.isArray(taches) && taches.length > 0) {
-      const tachesToInsert = taches.map((tache: any) => ({
+      const tachesToInsert = taches.map((tache: { libelle: string; description?: string; duree_jours_ouvres?: number; type_horaire?: string; heures_prevues?: number; parent_template_tache_id?: string; numero_hierarchique?: string; niveau_hierarchie?: number; ordre_affichage?: number; tache_precedente_id?: string; type_dependance?: string }) => ({
         template_id: template.id,
         parent_template_tache_id: tache.parent_template_tache_id || null,
         numero_hierarchique: tache.numero_hierarchique || null,

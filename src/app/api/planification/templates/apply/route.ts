@@ -56,36 +56,28 @@ export async function POST(request: NextRequest) {
     const taches = template.taches || [];
     
     // Créer les activités (dans l'ordre hiérarchique)
-    const tachesAvecDates = taches.map((tache: any) => {
-      let dateDebut = new Date(dateRef);
+    const tachesAvecDates = taches.map((tache: { id: string; libelle: string; description?: string; duree_jours_ouvres?: number; heures_prevues?: number; type_horaire?: string; tache_precedente_id?: string; type_dependance?: string; parent_template_tache_id?: string; niveau_hierarchie?: number; ordre_affichage?: number }) => {
+      const dateDebut = new Date(dateRef);
       
       // Si la tâche a une dépendance, calculer la date de début
       if (tache.tache_precedente_id && tache.type_dependance) {
         // Trouver la tâche précédente dans le template
-        const tachePrecedente = taches.find((t: any) => t.id === tache.tache_precedente_id);
+        const tachePrecedente = taches.find((t) => t.id === tache.tache_precedente_id);
         if (tachePrecedente) {
-          const dateDebutPrec = new Date(dateRef);
           // Calcul basique selon le type de dépendance
           // Note: pour un calcul précis, on devrait recalculer après insertion
-          switch (tache.type_dependance) {
-            case 'FS':
-              dateDebut = new Date(dateRef); // Simplifié, sera recalculé par le trigger
-              break;
-            case 'SS':
-              dateDebut = new Date(dateRef);
-              break;
-            // etc.
-          }
+          // Les dates seront ajustées automatiquement par les triggers SQL
         }
       }
       
       // Calculer date de fin si durée en jours ouvrés
-      let dateFin = new Date(dateDebut);
+      const dateFin = new Date(dateDebut);
       if (tache.duree_jours_ouvres) {
         // Appeler la fonction SQL pour calculer
         // Pour l'instant, on ajoute simplement les jours (sera recalculé par le trigger)
-        dateFin = new Date(dateDebut);
-        dateFin.setDate(dateFin.getDate() + tache.duree_jours_ouvres * 1.4); // Approximation (1.4 pour weekends)
+        dateFin.setDate(dateFin.getDate() + Math.ceil(tache.duree_jours_ouvres * 1.4)); // Approximation (1.4 pour weekends)
+      } else {
+        dateFin.setDate(dateFin.getDate() + 1); // 1 jour par défaut
       }
 
       return {
@@ -109,20 +101,20 @@ export async function POST(request: NextRequest) {
     });
 
     // Trier par niveau hiérarchique et ordre
-    tachesAvecDates.sort((a: any, b: any) => {
-      const niveauA = taches.find((t: any) => t.id === a._template_tache_id)?.niveau_hierarchie || 0;
-      const niveauB = taches.find((t: any) => t.id === b._template_tache_id)?.niveau_hierarchie || 0;
+    tachesAvecDates.sort((a, b) => {
+      const niveauA = taches.find((t) => t.id === a._template_tache_id)?.niveau_hierarchie || 0;
+      const niveauB = taches.find((t) => t.id === b._template_tache_id)?.niveau_hierarchie || 0;
       if (niveauA !== niveauB) return niveauA - niveauB;
       return (a._ordre || 0) - (b._ordre || 0);
     });
 
     // Insérer les activités de niveau 0 d'abord, puis leurs enfants
-    const activitesCrees: any[] = [];
+    const activitesCrees: Array<{ id: string }> = [];
     const mapTemplateToActivite = new Map<string, string>(); // template_tache_id -> activite_id
 
     // Premier passage : créer toutes les activités de niveau 0
     for (const tacheData of tachesAvecDates) {
-      const tacheTemplate = taches.find((t: any) => t.id === tacheData._template_tache_id);
+      const tacheTemplate = taches.find((t) => t.id === tacheData._template_tache_id);
       if (tacheTemplate && tacheTemplate.niveau_hierarchie === 0) {
         const { data: activite, error } = await supabase
           .from("tbl_planification_activites")
@@ -150,8 +142,8 @@ export async function POST(request: NextRequest) {
 
     // Deuxième passage : créer les sous-tâches avec parent_id
     for (const tacheData of tachesAvecDates) {
-      const tacheTemplate = taches.find((t: any) => t.id === tacheData._template_tache_id);
-      if (tacheTemplate && tacheTemplate.niveau_hierarchie > 0) {
+      const tacheTemplate = taches.find((t) => t.id === tacheData._template_tache_id);
+      if (tacheTemplate && tacheTemplate.niveau_hierarchie && tacheTemplate.niveau_hierarchie > 0) {
         const parentActiviteId = mapTemplateToActivite.get(tacheTemplate.parent_template_tache_id || '');
         const activitePrecedenteId = tacheTemplate.tache_precedente_id 
           ? mapTemplateToActivite.get(tacheTemplate.tache_precedente_id)
