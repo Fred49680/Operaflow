@@ -72,7 +72,9 @@ export default function GanttBar({
     if (activite.type_horaire === "nuit") return "bg-blue-500";
     if (activite.type_horaire === "weekend") return "bg-orange-500";
     if (activite.type_horaire === "ferie") return "bg-red-500";
-    return "bg-indigo-500";
+    if (activite.type_horaire === "3x8") return "bg-purple-500";
+    if (activite.type_horaire === "accelerer") return "bg-yellow-500";
+    return "bg-indigo-500"; // jour par défaut (HN 5/7)
   }, [activite.statut, activite.type_horaire]);
 
   // Calculer le pourcentage d'avancement pour la barre de progression
@@ -89,12 +91,24 @@ export default function GanttBar({
       <div
         className={`${couleur} h-full rounded-md shadow-sm hover:shadow-md transition-shadow relative overflow-hidden ${drag.isDragging || resize.isResizing ? "opacity-80 shadow-lg" : ""}`}
       >
-        {/* Barre de progression (partie complétée) */}
-        {pourcentageAvancement > 0 && (
+        {/* Barre de progression (partie complétée) - basée sur déclarations d'avancement chantier */}
+        {pourcentageAvancement > 0 && pourcentageAvancement < 100 && (
           <div
-            className="absolute left-0 top-0 h-full bg-black bg-opacity-30 transition-all"
-            style={{ width: `${pourcentageAvancement}%` }}
+            className="absolute left-0 top-0 h-full bg-black bg-opacity-40 transition-all duration-300 z-10"
+            style={{ width: `${Math.min(pourcentageAvancement, 100)}%` }}
           />
+        )}
+        
+        {/* Barre 100% complète (fond différent) */}
+        {pourcentageAvancement >= 100 && (
+          <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-r from-green-600 to-green-500 opacity-80 z-10" />
+        )}
+        
+        {/* Indicateur de progression en pourcentage */}
+        {pourcentageAvancement > 0 && (
+          <div className="absolute right-1 top-0.5 text-[10px] font-bold text-white drop-shadow-md z-20">
+            {Math.round(pourcentageAvancement)}%
+          </div>
         )}
 
         {/* Libellé de l'activité */}

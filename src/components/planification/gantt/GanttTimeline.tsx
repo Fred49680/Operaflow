@@ -115,11 +115,11 @@ export default function GanttTimeline({
 
       {/* Légende des couleurs */}
       <div className="border-t border-gray-200 bg-gray-50 p-3">
-        <div className="flex items-center gap-4 text-xs text-gray-600">
+        <div className="flex items-center gap-4 text-xs text-gray-600 flex-wrap">
           <span className="font-semibold">Légende :</span>
           <div className="flex items-center gap-1">
             <div className="w-4 h-4 bg-indigo-500 rounded"></div>
-            <span>Jour</span>
+            <span>Jour (HN 5/7)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-4 h-4 bg-blue-500 rounded"></div>
@@ -132,6 +132,14 @@ export default function GanttTimeline({
           <div className="flex items-center gap-1">
             <div className="w-4 h-4 bg-red-500 rounded"></div>
             <span>Férié</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-4 h-4 bg-purple-500 rounded"></div>
+            <span>3x8</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+            <span>Accéléré</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-4 h-4 bg-green-500 rounded"></div>

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Search, Plus, AlertTriangle, Users, X } from "lucide-react";
 import GanttTimeline from "@/components/planification/gantt/GanttTimeline";
 import AffairesEnAttente from "@/components/planification/AffairesEnAttente";
 import AffairesPlanifiees from "@/components/planification/AffairesPlanifiees";
+import TemplateSelectorModal from "@/components/planification/TemplateSelectorModal";
 import type { ActivitePlanification, AffectationPlanification } from "@/types/planification";
 
 interface PlanificationClientProps {
@@ -28,7 +29,6 @@ export default function PlanificationClient({
   userId,
 }: PlanificationClientProps) {
   // Suppression des avertissements pour variables préfixées avec _
-  void _affectations;
   void _collaborateurs;
   const router = useRouter();
   const [activeView, setActiveView] = useState<"gantt" | "suivi" | "alertes">("gantt");
@@ -41,6 +41,9 @@ export default function PlanificationClient({
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [showActiviteModal, setShowActiviteModal] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showAffectationsModal, setShowAffectationsModal] = useState(false);
+  const [selectedActiviteForAffectations, setSelectedActiviteForAffectations] = useState<ActivitePlanification | null>(null);
   const [editingActivite, setEditingActivite] = useState<ActivitePlanification | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -69,7 +72,8 @@ export default function PlanificationClient({
   // Fonction pour ouvrir le modal de création
   const handleCreateActivite = () => {
     setEditingActivite(null);
-    setShowActiviteModal(true);
+    // Proposer d'abord le choix du template
+    setShowTemplateModal(true);
   };
 
   // Fonction pour mettre à jour une activité
@@ -375,13 +379,30 @@ export default function PlanificationClient({
           </div>
         )}
 
+        {/* Modal Sélection Template (avant création) */}
+        {showTemplateModal && (
+          <TemplateSelectorModal
+            affaires={affaires}
+            onSelectTemplate={handleApplyTemplate}
+            onSkipTemplate={() => {
+              setShowTemplateModal(false);
+              setShowActiviteModal(true);
+            }}
+            onClose={() => {
+              setShowTemplateModal(false);
+              setShowActiviteModal(false);
+              setEditingActivite(null);
+            }}
+          />
+        )}
+
         {/* Modal Création/Édition Activité */}
         {showActiviteModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between p-6 border-b">
                 <h2 className="text-xl font-bold text-primary">
-                  {editingActivite ? "Modifier l'activité" : "Nouvelle activité"}
+                  {editingActivite.id ? "Modifier l'activité" : "Nouvelle activité"}
                 </h2>
                 <button
                   onClick={() => {
@@ -536,10 +557,12 @@ export default function PlanificationClient({
                       defaultValue={editingActivite?.type_horaire || "jour"}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                     >
-                      <option value="jour">Jour</option>
+                      <option value="jour">Jour (HN 5/7)</option>
                       <option value="nuit">Nuit</option>
                       <option value="weekend">Week-end</option>
                       <option value="ferie">Férié</option>
+                      <option value="3x8">3x8</option>
+                      <option value="accelerer">Accéléré</option>
                     </select>
                   </div>
 

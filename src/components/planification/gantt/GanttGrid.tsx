@@ -60,44 +60,52 @@ export default function GanttGrid({
 
         {/* Lignes horizontales pour les activités */}
         <div className="absolute inset-0">
-          {activites.map((activite, index) => (
-            <div
-              key={activite.id}
-              className="absolute border-b border-gray-100"
-              style={{
-                top: `${index * 48 + 8}px`,
-                left: 0,
-                width: "100%",
-                height: "40px",
-              }}
-            />
-          ))}
+          {activites.map((activite, index) => {
+            const niveau = activite.niveau_hierarchie || 0;
+            const decalageVertical = niveau * 4;
+            return (
+              <div
+                key={activite.id}
+                className="absolute border-b border-gray-100"
+                style={{
+                  top: `${index * 48 + 8 + decalageVertical}px`,
+                  left: 0,
+                  width: "100%",
+                  height: "40px",
+                }}
+              />
+            );
+          })}
         </div>
 
         {/* Barres d'activités */}
         <div className="absolute inset-0">
-          {activites.map((activite, index) => (
-            <div
-              key={activite.id}
-              className="absolute"
-              style={{
-                top: `${index * 48 + 8}px`,
-                left: 0,
-                width: "100%",
-                height: "32px",
-              }}
-            >
-              <GanttBar
-                activite={activite}
-                dateDebutTimeline={dateDebut}
-                dateFinTimeline={dateFin}
-                largeurTotale={largeurTotale}
-                onClick={() => onActiviteClick?.(activite)}
-                onDragEnd={onDragEnd}
-                onResizeEnd={onResizeEnd}
-              />
-            </div>
-          ))}
+          {activites.map((activite, index) => {
+            const niveau = activite.niveau_hierarchie || 0;
+            const decalageVertical = niveau * 4; // 4px de décalage par niveau
+            return (
+              <div
+                key={activite.id}
+                className="absolute"
+                style={{
+                  top: `${index * 48 + 8 + decalageVertical}px`,
+                  left: `${niveau * 10}px`, // Décalage horizontal selon hiérarchie
+                  width: `calc(100% - ${niveau * 10}px)`,
+                  height: "32px",
+                }}
+              >
+                <GanttBar
+                  activite={activite}
+                  dateDebutTimeline={dateDebut}
+                  dateFinTimeline={dateFin}
+                  largeurTotale={largeurTotale - (niveau * 10)}
+                  onClick={() => onActiviteClick?.(activite)}
+                  onDragEnd={onDragEnd}
+                  onResizeEnd={onResizeEnd}
+                />
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
