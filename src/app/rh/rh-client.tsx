@@ -194,52 +194,52 @@ export default function RHPageClient({
         {/* Statistiques */}
         {hasRHAccess && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="card">
+            <div className="card border-l-4 border-l-primary bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-blue-100 rounded-lg">
                   <Users className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Total collaborateurs</p>
+                  <p className="text-sm text-gray-600 mb-1">Total collaborateurs</p>
                   <p className="text-2xl font-bold text-primary">
                     {collaborateurs.length}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="card">
+            <div className="card border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-green-100 rounded-lg">
                   <Users className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Actifs</p>
+                  <p className="text-sm text-gray-600 mb-1">Actifs</p>
                   <p className="text-2xl font-bold text-green-600">
                     {collaborateurs.filter((c) => c.statut === "actif").length}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="card">
+            <div className="card border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-50 to-white hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-orange-100 rounded-lg">
                   <AlertTriangle className="h-6 w-6 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Échéances proches</p>
+                  <p className="text-sm text-gray-600 mb-1">Échéances proches</p>
                   <p className="text-2xl font-bold text-orange-600">
                     {alertes.filter((a) => a.statut_alerte === "echeance_proche").length}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="card">
+            <div className="card border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-white hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-red-100 rounded-lg">
                   <Calendar className="h-6 w-6 text-red-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Expirées</p>
+                  <p className="text-sm text-gray-600 mb-1">Expirées</p>
                   <p className="text-2xl font-bold text-red-600">
                     {alertes.filter((a) => a.statut_alerte === "expiree").length}
                   </p>
@@ -253,25 +253,25 @@ export default function RHPageClient({
         <div className="card overflow-hidden">
           <div className="overflow-x-auto -mx-6 sm:mx-0">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
                 <tr>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Collaborateur
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden sm:table-cell">
                     Fonction
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden md:table-cell">
                     Site
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden lg:table-cell">
                     Contrat
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Statut
                   </th>
                   {hasRHAccess && (
-                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden lg:table-cell">
                       Responsable
                     </th>
                   )}
@@ -288,7 +288,7 @@ export default function RHPageClient({
                   filteredCollaborateurs.map((collab) => (
                     <tr 
                       key={collab.id} 
-                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                      className="hover:bg-primary/5 cursor-pointer transition-colors duration-150"
                       onClick={() => handleRowClick(collab.id)}
                     >
                       <td className="px-3 sm:px-6 py-4">
@@ -320,18 +320,18 @@ export default function RHPageClient({
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <span
                           onClick={(e) => handleStatutClick(e, collab)}
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full transition-all ${
+                          className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border transition-all ${
                             collab.statut === "actif" && hasRHAccess
-                              ? "bg-green-100 text-green-800 hover:bg-green-200 cursor-pointer"
+                              ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200 cursor-pointer"
                               : collab.statut === "actif"
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-green-100 text-green-800 border-green-300"
                               : collab.statut === "A renouveller"
-                              ? "bg-orange-100 text-orange-800 border border-orange-200"
+                              ? "bg-orange-100 text-orange-800 border-orange-300"
                               : collab.statut === "inactif"
-                              ? "bg-gray-100 text-gray-800"
+                              ? "bg-gray-100 text-gray-800 border-gray-300"
                               : collab.statut === "suspendu"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
+                              ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+                              : "bg-red-100 text-red-800 border-red-300"
                           }`}
                         >
                           {collab.statut}

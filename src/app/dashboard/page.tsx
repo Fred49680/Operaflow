@@ -79,7 +79,7 @@ export default async function DashboardPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Carte Rôles */}
-          <div className="card">
+          <div className="card border-l-4 border-l-primary bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
             <h2 className="text-xl font-semibold text-secondary mb-4">
               Mes rôles
             </h2>
@@ -101,7 +101,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Carte Statut */}
-          <div className="card">
+          <div className="card border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow">
             <h2 className="text-xl font-semibold text-secondary mb-4">
               Statut du compte
             </h2>
@@ -132,7 +132,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Carte Actions rapides */}
-          <div className="card">
+          <div className="card border-l-4 border-l-purple-500 bg-gradient-to-r from-purple-50 to-white hover:shadow-lg transition-shadow">
             <h2 className="text-xl font-semibold text-secondary mb-4">
               Actions rapides
             </h2>
@@ -158,7 +158,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Modules disponibles selon les rôles */}
-        <div className="mt-8 card">
+        <div className="mt-8 card border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50 to-white">
           <h2 className="text-xl font-semibold text-secondary mb-4">
             Modules disponibles
           </h2>

@@ -54,9 +54,9 @@ export default function PartenairesClient({
 
   const getTypeBadge = (type: string) => {
     const styles: Record<string, string> = {
-      client: "bg-blue-100 text-blue-800",
-      fournisseur: "bg-green-100 text-green-800",
-      mixte: "bg-purple-100 text-purple-800",
+      client: "bg-blue-100 text-blue-800 border border-blue-300",
+      fournisseur: "bg-green-100 text-green-800 border border-green-300",
+      mixte: "bg-purple-100 text-purple-800 border border-purple-300",
     };
 
     const labels: Record<string, string> = {
@@ -66,7 +66,7 @@ export default function PartenairesClient({
     };
 
     return (
-      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${styles[type] || styles.client}`}>
+      <span className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${styles[type] || styles.client}`}>
         {labels[type] || type}
       </span>
     );
@@ -102,10 +102,10 @@ export default function PartenairesClient({
 
   const getStatutBadge = (statut: string, partenaireId: string) => {
     const styles: Record<string, string> = {
-      actif: "bg-green-100 text-green-800 hover:bg-green-200",
-      inactif: "bg-gray-100 text-gray-800 hover:bg-gray-200",
-      suspendu: "bg-orange-100 text-orange-800 hover:bg-orange-200",
-      archive: "bg-gray-200 text-gray-600 hover:bg-gray-300",
+      actif: "bg-green-100 text-green-800 border-green-300 hover:bg-green-200",
+      inactif: "bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200",
+      suspendu: "bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200",
+      archive: "bg-gray-200 text-gray-600 border-gray-400 hover:bg-gray-300",
     };
 
     const labels: Record<string, string> = {
@@ -118,7 +118,7 @@ export default function PartenairesClient({
     return (
       <span
         onClick={(e) => handleToggleStatut(e, partenaireId, statut)}
-        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full cursor-pointer transition-colors ${styles[statut] || styles.actif}`}
+        className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border cursor-pointer transition-colors ${styles[statut] || styles.actif}`}
         title={statut === "actif" || statut === "inactif" ? "Cliquer pour changer le statut" : ""}
       >
         {loading === partenaireId ? "..." : labels[statut] || statut}
@@ -149,20 +149,20 @@ export default function PartenairesClient({
 
         {/* Statistiques */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="card">
-            <div className="text-sm text-gray-600">Total</div>
+          <div className="card border-l-4 border-l-primary bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Total</div>
             <div className="text-2xl font-bold text-primary">{stats.total}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Clients</div>
+          <div className="card border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Clients</div>
             <div className="text-2xl font-bold text-blue-600">{stats.clients}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Fournisseurs</div>
+          <div className="card border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Fournisseurs</div>
             <div className="text-2xl font-bold text-green-600">{stats.fournisseurs}</div>
           </div>
-          <div className="card">
-            <div className="text-sm text-gray-600">Actifs</div>
+          <div className="card border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50 to-white hover:shadow-lg transition-shadow">
+            <div className="text-sm text-gray-600 mb-1">Actifs</div>
             <div className="text-2xl font-bold text-green-600">{stats.actifs}</div>
           </div>
         </div>
@@ -217,21 +217,21 @@ export default function PartenairesClient({
         <div className="card overflow-hidden">
           <div className="overflow-x-auto -mx-6 sm:mx-0">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-primary/10 to-primary/5">
                 <tr>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Raison sociale
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden md:table-cell">
                     Type
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden lg:table-cell">
                     SIRET
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider hidden xl:table-cell">
                     Contact
                   </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold text-secondary uppercase tracking-wider">
                     Statut
                   </th>
                 </tr>
@@ -247,7 +247,7 @@ export default function PartenairesClient({
                   filteredPartenaires.map((partenaire) => (
                     <tr
                       key={partenaire.id}
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="hover:bg-primary/5 cursor-pointer transition-colors duration-150"
                       onClick={() => router.push(`/admin/partenaires/${partenaire.id}`)}
                     >
                       <td className="px-3 sm:px-6 py-4">

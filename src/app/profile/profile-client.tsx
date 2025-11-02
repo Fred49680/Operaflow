@@ -44,15 +44,15 @@ export default function ProfileClient({
 
   const getStatusBadge = (statut: string) => {
     const styles = {
-      actif: "bg-green-100 text-green-800",
-      inactif: "bg-gray-100 text-gray-800",
-      suspendu: "bg-red-100 text-red-800",
-      en_attente: "bg-yellow-100 text-yellow-800",
+      actif: "bg-green-100 text-green-800 border border-green-300",
+      inactif: "bg-gray-100 text-gray-800 border border-gray-300",
+      suspendu: "bg-red-100 text-red-800 border border-red-300",
+      en_attente: "bg-yellow-100 text-yellow-800 border border-yellow-300",
     };
 
     return (
       <span
-        className={`px-3 py-1 rounded-full text-sm font-semibold ${
+        className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
           styles[statut as keyof typeof styles] || styles.inactif
         }`}
       >
