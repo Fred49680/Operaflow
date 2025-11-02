@@ -60,7 +60,21 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json(data || []);
+    // Transformer les données pour correspondre aux types attendus
+    const affairesWithRelations = (data || []).map((affaire: any) => ({
+      ...affaire,
+      partenaire: Array.isArray(affaire.partenaire) && affaire.partenaire.length > 0
+        ? affaire.partenaire[0]
+        : (!Array.isArray(affaire.partenaire) ? affaire.partenaire : null),
+      site: Array.isArray(affaire.site) && affaire.site.length > 0
+        ? affaire.site[0]
+        : (!Array.isArray(affaire.site) ? affaire.site : null),
+      charge_affaires: Array.isArray(affaire.charge_affaires) && affaire.charge_affaires.length > 0
+        ? affaire.charge_affaires[0]
+        : (!Array.isArray(affaire.charge_affaires) ? affaire.charge_affaires : null),
+    }));
+
+    return NextResponse.json({ affaires: affairesWithRelations });
   } catch (error) {
     console.error("Erreur GET affaires:", error);
     return NextResponse.json(

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Edit, Save, FileText, Upload, X, Plus, Trash2, FileSpreadsheet, DollarSign, Receipt, FileBarChart } from "lucide-react";
+import { ArrowLeft, Edit, Save, FileText, Upload, X, Plus, Trash2, FileSpreadsheet, DollarSign, Receipt, FileBarChart, Calendar } from "lucide-react";
 import type { Affaire } from "@/types/affaires";
 
 interface AffaireDetailClientProps {
@@ -55,6 +55,7 @@ export default function AffaireDetailClient({
   const getStatutBadge = (statut: string) => {
     const styles: Record<string, string> = {
       cree: "bg-gray-100 text-gray-800",
+      en_attente_planification: "bg-amber-100 text-amber-800",
       pre_planifie: "bg-blue-100 text-blue-800",
       planifie: "bg-yellow-100 text-yellow-800",
       en_cours: "bg-green-100 text-green-800",
@@ -66,6 +67,7 @@ export default function AffaireDetailClient({
 
     const labels: Record<string, string> = {
       cree: "Créée",
+      en_attente_planification: "En attente de planification",
       pre_planifie: "Pré-planifiée",
       planifie: "Planifiée",
       en_cours: "En cours",
@@ -184,13 +186,51 @@ export default function AffaireDetailClient({
               <p className="text-gray-600">{affaire.description || "Aucune description"}</p>
             </div>
             {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="btn-primary flex items-center gap-2 w-full sm:w-auto"
-              >
-                <Edit className="h-4 w-4" />
-                Modifier
-              </button>
+              <div className="flex gap-2 flex-col sm:flex-row w-full sm:w-auto">
+                {affaire.statut === "cree" && (
+                  <button
+                    onClick={async () => {
+                      if (!confirm("Envoyer cette affaire à la planification ? Elle sera visible par les planificateurs.")) {
+                        return;
+                      }
+                      setLoading(true);
+                      try {
+                        const response = await fetch(`/api/affaires/${affaire.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ statut: "en_attente_planification" }),
+                        });
+
+                        if (response.ok) {
+                          const updated = await response.json();
+                          setAffaire(updated.affaire || updated);
+                          router.refresh();
+                          alert("Affaire envoyée à la planification avec succès");
+                        } else {
+                          throw new Error("Erreur lors de l'envoi");
+                        }
+                      } catch (error) {
+                        console.error("Erreur:", error);
+                        alert("Erreur lors de l'envoi à la planification");
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    className="btn-primary flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700"
+                    disabled={loading}
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Envoyer à la planification
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="btn-primary flex items-center justify-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Modifier
+                </button>
+              </div>
             )}
           </div>
         </div>

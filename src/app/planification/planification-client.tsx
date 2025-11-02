@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Search, Plus, AlertTriangle, Users, X } from "lucide-react";
 import GanttTimeline from "@/components/planification/gantt/GanttTimeline";
+import AffairesEnAttente from "@/components/planification/AffairesEnAttente";
 import type { ActivitePlanification, AffectationPlanification } from "@/types/planification";
 
 interface PlanificationClientProps {
@@ -12,6 +13,8 @@ interface PlanificationClientProps {
   sites?: Array<{ site_id: string; site_code: string; site_label: string }>;
   affaires?: Array<{ id: string; numero: string; libelle: string; statut: string }>;
   collaborateurs?: Array<{ id: string; nom: string; prenom: string }>;
+  isPlanificateur?: boolean;
+  userId?: string;
 }
 
 export default function PlanificationClient({
@@ -20,6 +23,8 @@ export default function PlanificationClient({
   sites = [],
   affaires = [],
   collaborateurs: _collaborateurs = [],
+  isPlanificateur = false,
+  userId,
 }: PlanificationClientProps) {
   // Suppression des avertissements pour variables préfixées avec _
   void _affectations;
@@ -227,7 +232,7 @@ export default function PlanificationClient({
         {/* Contenu selon vue active */}
         {activeView === "gantt" && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <h3 className="text-lg font-semibold text-secondary">
                 Planning Gantt ({filteredActivites.length} activité{filteredActivites.length > 1 ? "s" : ""})
               </h3>
@@ -244,6 +249,9 @@ export default function PlanificationClient({
                 </select>
               </div>
             </div>
+            
+            {/* Section Affaires en attente de planification - visible uniquement pour planificateurs */}
+            {isPlanificateur && <AffairesEnAttente userId={userId} />}
 
             {filteredActivites.length > 0 ? (
               <GanttTimeline

@@ -15,6 +15,12 @@ export default async function PlanificationPage() {
     redirect("/login");
   }
 
+  // Vérifier si l'utilisateur est planificateur ou admin
+  const userRoles = await getUserRoles(user.id);
+  const isPlanificateur = userRoles.some((role) => 
+    role === "Planificateur" || role === "Administrateur" || role === "Responsable d'Activité"
+  );
+
   // Charger les activités planifiées
   const { data: activites } = await supabase
     .from("tbl_planification_activites")
@@ -79,6 +85,8 @@ export default async function PlanificationPage() {
       sites={sites || []}
       affaires={affaires || []}
       collaborateurs={collaborateurs || []}
+      isPlanificateur={isPlanificateur}
+      userId={user.id}
     />
   );
 }

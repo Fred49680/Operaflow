@@ -2,6 +2,7 @@
 
 export type StatutAffaire = 
   | 'cree'
+  | 'en_attente_planification'
   | 'pre_planifie'
   | 'planifie'
   | 'en_cours'
