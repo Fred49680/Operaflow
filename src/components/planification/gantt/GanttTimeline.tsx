@@ -12,6 +12,8 @@ interface GanttTimelineProps {
   dateFin?: Date;
   vue?: "jour" | "semaine" | "mois";
   onActiviteClick?: (activite: ActivitePlanification) => void;
+  onDragEnd?: (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => void;
+  onResizeEnd?: (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => void;
 }
 
 export default function GanttTimeline({
@@ -20,6 +22,8 @@ export default function GanttTimeline({
   dateFin: dateFinProp,
   vue = "semaine",
   onActiviteClick,
+  onDragEnd,
+  onResizeEnd,
 }: GanttTimelineProps) {
   // Calculer la plage de dates si non fournie
   const { dateDebut, dateFin } = useMemo(() => {
@@ -89,6 +93,8 @@ export default function GanttTimeline({
               dateFin={dateFin}
               vue={vue}
               onActiviteClick={onActiviteClick}
+              onDragEnd={onDragEnd}
+              onResizeEnd={onResizeEnd}
             />
           </div>
         </div>

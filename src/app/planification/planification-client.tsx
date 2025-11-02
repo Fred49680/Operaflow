@@ -31,6 +31,7 @@ export default function PlanificationClient({
   void _collaborateurs;
   const router = useRouter();
   const [activeView, setActiveView] = useState<"gantt" | "suivi" | "alertes">("gantt");
+  const [vueGantt, setVueGantt] = useState<"jour" | "semaine" | "mois">("semaine");
   const [filters, setFilters] = useState({
     site: "",
     affaire: "",
@@ -83,6 +84,36 @@ export default function PlanificationClient({
       }
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
+    }
+  };
+
+  // Handler pour le drag & drop
+  const handleDragEnd = async (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => {
+    try {
+      setSaving(true);
+      await handleUpdateActivite(activiteId, {
+        date_debut_prevue: nouvelleDateDebut.toISOString(),
+        date_fin_prevue: nouvelleDateFin.toISOString(),
+      });
+    } catch (error) {
+      console.error("Erreur lors du déplacement:", error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handler pour le redimensionnement
+  const handleResizeEnd = async (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => {
+    try {
+      setSaving(true);
+      await handleUpdateActivite(activiteId, {
+        date_debut_prevue: nouvelleDateDebut.toISOString(),
+        date_fin_prevue: nouvelleDateFin.toISOString(),
+      });
+    } catch (error) {
+      console.error("Erreur lors du redimensionnement:", error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -238,6 +269,15 @@ export default function PlanificationClient({
               </h3>
               <div className="flex items-center gap-2">
                 <select
+                  value={vueGantt}
+                  onChange={(e) => setVueGantt(e.target.value as "jour" | "semaine" | "mois")}
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                >
+                  <option value="jour">Vue Jour</option>
+                  <option value="semaine">Vue Semaine</option>
+                  <option value="mois">Vue Mois</option>
+                </select>
+                <select
                   value={filters.statut || ""}
                   onChange={(e) => setFilters({ ...filters, statut: e.target.value })}
                   className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
@@ -247,6 +287,12 @@ export default function PlanificationClient({
                   <option value="lancee">Lancée</option>
                   <option value="terminee">Terminée</option>
                 </select>
+                {saving && (
+                  <span className="text-sm text-gray-500 flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                    Enregistrement...
+                  </span>
+                )}
               </div>
             </div>
             
@@ -256,12 +302,14 @@ export default function PlanificationClient({
             {filteredActivites.length > 0 ? (
               <GanttTimeline
                 activites={filteredActivites}
-                vue="semaine"
+                vue={vueGantt}
                 onActiviteClick={(activite) => {
                   // Ouvrir modal de détails ou édition
                   setEditingActivite(activite);
                   setShowActiviteModal(true);
                 }}
+                onDragEnd={isPlanificateur ? handleDragEnd : undefined}
+                onResizeEnd={isPlanificateur ? handleResizeEnd : undefined}
               />
             ) : (
               <div className="card text-center py-12">

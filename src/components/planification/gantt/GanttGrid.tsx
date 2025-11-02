@@ -11,6 +11,8 @@ interface GanttGridProps {
   dateFin: Date;
   vue: "jour" | "semaine" | "mois";
   onActiviteClick?: (activite: ActivitePlanification) => void;
+  onDragEnd?: (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => void;
+  onResizeEnd?: (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => void;
 }
 
 export default function GanttGrid({
@@ -19,6 +21,8 @@ export default function GanttGrid({
   dateFin,
   vue,
   onActiviteClick,
+  onDragEnd,
+  onResizeEnd,
 }: GanttGridProps) {
   // Calculer les colonnes selon la vue
   const colonnes = useMemo(() => {
@@ -89,6 +93,8 @@ export default function GanttGrid({
                 dateFinTimeline={dateFin}
                 largeurTotale={largeurTotale}
                 onClick={() => onActiviteClick?.(activite)}
+                onDragEnd={onDragEnd}
+                onResizeEnd={onResizeEnd}
               />
             </div>
           ))}
