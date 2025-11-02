@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import type { Partenaire } from "@/types/partenaires";
 
