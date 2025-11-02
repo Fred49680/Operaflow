@@ -749,7 +749,6 @@ export default function PartenaireDetailClient({
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expire le</th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden xl:table-cell">Site</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
