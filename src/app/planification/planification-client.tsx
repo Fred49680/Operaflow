@@ -61,6 +61,32 @@ export default function PlanificationClient({
       .catch((err) => console.error("Erreur chargement templates:", err));
   }, []);
 
+  // Réinitialiser les états quand on ouvre/ferme la modal
+  useEffect(() => {
+    if (showActiviteModal && editingActivite) {
+      const initCalculAuto = editingActivite.calcul_auto_date_fin || false;
+      const initDateDebut = editingActivite.date_debut_prevue ? new Date(editingActivite.date_debut_prevue).toISOString().slice(0, 16) : "";
+      const initDuree = editingActivite.duree_jours_ouvres?.toString() || "";
+      
+      setDateDebut(initDateDebut);
+      setDureeJoursOuvres(initDuree);
+      setCalculAutoDateFin(initCalculAuto);
+      
+      if (initCalculAuto && initDateDebut && initDuree) {
+        calculerDateFin(initDateDebut, parseInt(initDuree));
+      } else {
+        setDateFinCalculee("");
+      }
+    } else if (showActiviteModal && !editingActivite) {
+      // Nouvelle activité
+      setDateDebut("");
+      setDureeJoursOuvres("");
+      setCalculAutoDateFin(false);
+      setDateFinCalculee("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showActiviteModal, editingActivite]);
+
   // Filtrage des activités
   const filteredActivites = useMemo(() => {
     return activites.filter((activite) => {
