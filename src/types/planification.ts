@@ -168,5 +168,9 @@ export interface GanttTask {
   collaborateur_id?: string;
   type_horaire?: TypeHoraire;
   statut?: StatutActivite;
+  
+  // Propriétés pour les événements (conversion depuis dhtmlx-gantt)
+  date_debut_prevue?: string;
+  date_fin_prevue?: string;
 }
 

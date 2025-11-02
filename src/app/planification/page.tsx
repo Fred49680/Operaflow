@@ -16,7 +16,7 @@ export default async function PlanificationPage() {
   }
 
   // Charger les activités planifiées
-  const { data: activites, error: errorActivites } = await supabase
+  const { data: activites } = await supabase
     .from("tbl_planification_activites")
     .select(`
       *,
@@ -28,7 +28,7 @@ export default async function PlanificationPage() {
     .order("date_debut_prevue", { ascending: true });
 
   // Charger les affectations
-  const { data: affectations, error: errorAffectations } = await supabase
+  const { data: affectations } = await supabase
     .from("tbl_planification_affectations")
     .select(`
       *,

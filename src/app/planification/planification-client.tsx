@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Filter, Search, Plus, AlertTriangle, Users, Briefcase, X } from "lucide-react";
+import { Calendar, Search, Plus, AlertTriangle, Users, X } from "lucide-react";
 import GanttChart from "@/components/planification/GanttChart";
 import type { ActivitePlanification, AffectationPlanification, GanttTask } from "@/types/planification";
 
@@ -16,10 +16,10 @@ interface PlanificationClientProps {
 
 export default function PlanificationClient({
   activites,
-  affectations,
+  affectations: _affectations,
   sites = [],
   affaires = [],
-  collaborateurs = [],
+  collaborateurs: _collaborateurs = [],
 }: PlanificationClientProps) {
   const router = useRouter();
   const [activeView, setActiveView] = useState<"gantt" | "suivi" | "alertes">("gantt");
@@ -32,7 +32,6 @@ export default function PlanificationClient({
   const [searchTerm, setSearchTerm] = useState("");
   const [showActiviteModal, setShowActiviteModal] = useState(false);
   const [editingActivite, setEditingActivite] = useState<ActivitePlanification | null>(null);
-  const [activitesList, setActivitesList] = useState<ActivitePlanification[]>(activites);
   const [saving, setSaving] = useState(false);
 
   // Filtrage des activités
@@ -71,8 +70,8 @@ export default function PlanificationClient({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date_debut_prevue: task.date_debut_prevue,
-          date_fin_prevue: task.date_fin_prevue,
+          date_debut_prevue: task.date_debut_prevue || task.start_date,
+          date_fin_prevue: task.date_fin_prevue || task.end_date,
           pourcentage_avancement: task.progress,
         }),
       });
@@ -90,9 +89,12 @@ export default function PlanificationClient({
   const handleTaskCreate = async (task: Partial<GanttTask>) => {
     // Ouvrir le modal avec les données pré-remplies
     setEditingActivite({
-      ...task as any,
+      ...task,
       affaire_id: filters.affaire || "",
-    } as ActivitePlanification);
+      libelle: task.text || "",
+      date_debut_prevue: task.date_debut_prevue || task.start_date || "",
+      date_fin_prevue: task.date_fin_prevue || task.end_date || "",
+    } as unknown as ActivitePlanification);
     setShowActiviteModal(true);
   };
 

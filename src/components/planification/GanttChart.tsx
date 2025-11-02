@@ -21,7 +21,6 @@ export default function GanttChart({
   height = 600,
 }: GanttChartProps) {
   const ganttContainer = useRef<HTMLDivElement>(null);
-  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (!ganttContainer.current) return;
@@ -54,7 +53,7 @@ export default function GanttChart({
     ];
 
     // Couleurs selon type horaire ou statut
-    gantt.templates.task_class = function (start: Date, end: Date, task: any) {
+    gantt.templates.task_class = function (start: Date, end: Date, task: { type_horaire?: string; statut?: string }) {
       if (task.type_horaire === "nuit") return "gantt_nuit";
       if (task.type_horaire === "weekend") return "gantt_weekend";
       if (task.type_horaire === "ferie") return "gantt_ferie";
@@ -91,26 +90,30 @@ export default function GanttChart({
     gantt.parse({ data: tasks, links: [] });
 
     // Événements Gantt
-    gantt.attachEvent("onAfterTaskUpdate", (id: string, task: any) => {
+    gantt.attachEvent("onAfterTaskUpdate", (id: string, task: { activite_id?: string; affaire_id?: string; start_date: Date; end_date: Date; progress: number }) => {
       if (onTaskUpdate) {
         onTaskUpdate({
           id,
           activite_id: task.activite_id,
           affaire_id: task.affaire_id,
-          date_debut_prevue: task.start_date.toISOString(),
-          date_fin_prevue: task.end_date.toISOString(),
+          date_debut_prevue: task.start_date?.toISOString(),
+          date_fin_prevue: task.end_date?.toISOString(),
+          start_date: task.start_date?.toISOString(),
+          end_date: task.end_date?.toISOString(),
           progress: task.progress * 100,
         });
       }
     });
 
-    gantt.attachEvent("onAfterTaskAdd", (id: string, task: any) => {
+    gantt.attachEvent("onAfterTaskAdd", (id: string, task: { text: string; start_date: Date; end_date: Date }) => {
       if (onTaskCreate) {
         onTaskCreate({
           id,
           text: task.text,
-          date_debut_prevue: task.start_date.toISOString(),
-          date_fin_prevue: task.end_date.toISOString(),
+          date_debut_prevue: task.start_date?.toISOString(),
+          date_fin_prevue: task.end_date?.toISOString(),
+          start_date: task.start_date?.toISOString(),
+          end_date: task.end_date?.toISOString(),
         });
       }
     });
@@ -121,11 +124,10 @@ export default function GanttChart({
       }
     });
 
-    setIsReady(true);
-
     // Nettoyage
     return () => {
-      if (ganttContainer.current) {
+      const container = ganttContainer.current;
+      if (container) {
         gantt.clearAll();
       }
     };
