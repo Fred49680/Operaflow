@@ -45,52 +45,24 @@ CREATE POLICY "Users can read activities based on role"
                     )
                 )
             ) OR
-            -- Chargé d'Affaires voit les activités de ses affaires (sans passer par collaborateurs)
-            EXISTS (
-                SELECT 1 FROM public.tbl_affaires a
-                JOIN public.user_roles ur ON ur.user_id = (select auth.uid())
-                JOIN public.roles r ON ur.role_id = r.id
-                WHERE a.id = tbl_planification_activites.affaire_id
-                AND r.name = 'Chargé d''Affaires'
-                -- Vérifier si l'utilisateur est le chargé d'affaires via la relation directe
-                AND EXISTS (
-                    SELECT 1 FROM public.user_roles ur2
-                    JOIN public.collaborateurs c ON c.user_id = ur2.user_id
-                    WHERE ur2.user_id = (select auth.uid())
-                    AND c.id = a.charge_affaires_id
-                )
-            ) OR
-            -- Chef de Chantier voit les activités où il est affecté ou de ses affaires
-            EXISTS (
-                SELECT 1 FROM public.user_roles ur
-                JOIN public.roles r ON ur.role_id = r.id
-                WHERE ur.user_id = (select auth.uid()) AND r.name = 'Chef de Chantier'
-                AND (
-                    -- Activités où il est affecté
-                    EXISTS (
-                        SELECT 1 FROM public.tbl_planification_affectations pa
-                        JOIN public.user_roles ur2 ON ur2.user_id = (select auth.uid())
-                        JOIN public.collaborateurs c ON c.user_id = ur2.user_id
-                        WHERE pa.activite_id = tbl_planification_activites.id
-                        AND pa.collaborateur_id = c.id
-                    ) OR
-                    -- Activités de ses affaires
-                    EXISTS (
-                        SELECT 1 FROM public.tbl_affaires a
-                        JOIN public.user_roles ur2 ON ur2.user_id = (select auth.uid())
-                        JOIN public.collaborateurs c ON c.user_id = ur2.user_id
-                        WHERE a.id = tbl_planification_activites.affaire_id
-                        AND a.charge_affaires_id = c.id
-                    )
-                )
-            ) OR
-            -- Techniciens voient les activités où ils sont affectés
+            -- Chargé d'Affaires / Chef de Chantier : voir les activités via affectations (évite récursion)
+            -- Utilisation d'une jointure directe avec user_id pour éviter la table collaborateurs
             EXISTS (
                 SELECT 1 FROM public.tbl_planification_affectations pa
-                JOIN public.user_roles ur ON ur.user_id = (select auth.uid())
-                JOIN public.collaborateurs c ON c.user_id = ur.user_id
                 WHERE pa.activite_id = tbl_planification_activites.id
-                AND pa.collaborateur_id = c.id
+                AND pa.collaborateur_id IN (
+                    SELECT c.id FROM public.collaborateurs c 
+                    WHERE c.user_id = (select auth.uid())
+                )
+            ) OR
+            -- Chargé d'Affaires / Chef de Chantier : voir les activités de leurs affaires
+            EXISTS (
+                SELECT 1 FROM public.tbl_affaires a
+                WHERE a.id = tbl_planification_activites.affaire_id
+                AND a.charge_affaires_id IN (
+                    SELECT c.id FROM public.collaborateurs c 
+                    WHERE c.user_id = (select auth.uid())
+                )
             )
         )
     );
