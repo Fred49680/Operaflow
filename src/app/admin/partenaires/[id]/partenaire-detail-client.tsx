@@ -70,27 +70,6 @@ export default function PartenaireDetailClient({
     );
   };
 
-  const getStatutDocumentBadge = (statut: string) => {
-    const styles: Record<string, string> = {
-      valide: "bg-green-100 text-green-800",
-      expire: "bg-red-100 text-red-800",
-      en_attente: "bg-yellow-100 text-yellow-800",
-      a_renouveler: "bg-orange-100 text-orange-800",
-    };
-
-    const labels: Record<string, string> = {
-      valide: "Valide",
-      expire: "Expiré",
-      en_attente: "En attente",
-      a_renouveler: "À renouveler",
-    };
-
-    return (
-      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${styles[statut] || styles.valide}`}>
-        {labels[statut] || statut}
-      </span>
-    );
-  };
 
   const handleSave = async () => {
     setLoading(true);
