@@ -7,6 +7,7 @@ import {
   Briefcase,
   Calendar,
   BarChart3,
+  TrendingUp,
 } from "lucide-react";
 
 export default async function Header() {
