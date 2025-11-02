@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Edit, Save, Plus, X, FileText, CheckCircle } from "lucide-react";
-import type { Partenaire, ContactPartenaire, DocumentPartenaire } from "@/types/partenaires";
+import type { Partenaire, ContactPartenaire } from "@/types/partenaires";
 
 interface PartenaireDetailClientProps {
   partenaire: Partenaire;
@@ -1001,8 +1001,8 @@ function ContactModal({
   );
 }
 
-// Modal pour créer/modifier un document
-function DocumentModal({
+// Fonction supprimée - Modal Document non utilisée
+/*function DocumentModal({
   document,
   sites,
   onSave,
