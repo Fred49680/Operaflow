@@ -431,7 +431,7 @@ export default function CreateAffaireClient({
                     <option value="">Sélectionner...</option>
                     {sites.map((site) => (
                       <option key={site.site_id} value={site.site_id}>
-                        {site.site_code} - {site.site_label}
+                        {site.site_label}
                       </option>
                     ))}
                   </select>
@@ -451,7 +451,6 @@ export default function CreateAffaireClient({
                     {partenaires.map((partenaire) => (
                       <option key={partenaire.id} value={partenaire.id}>
                         {partenaire.raison_sociale}
-                        {partenaire.code_interne && ` (${partenaire.code_interne})`}
                       </option>
                     ))}
                   </select>
