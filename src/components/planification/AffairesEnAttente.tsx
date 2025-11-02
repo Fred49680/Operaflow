@@ -45,7 +45,8 @@ export default function AffairesEnAttente({ userId, onCreateActivite }: Affaires
 
       if (response.ok) {
         await fetchAffaires();
-        router.refresh();
+        // Rafraîchir la page pour mettre à jour les activités et affaires planifiées
+        window.location.reload();
       } else {
         alert("Erreur lors de l'acceptation");
       }
