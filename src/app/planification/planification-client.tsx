@@ -536,7 +536,16 @@ export default function PlanificationClient({
                             alert(`Template appliqué avec succès ! ${data.count} tâche(s) créée(s).`);
                             setShowActiviteModal(false);
                             setEditingActivite(null);
-                            router.refresh();
+                            // Réinitialiser les filtres pour voir les nouvelles activités
+                            setFilters({
+                              site: "",
+                              affaire: "",
+                              responsable: "",
+                              statut: "",
+                            });
+                            setSearchTerm("");
+                            // Forcer un rafraîchissement complet
+                            window.location.reload();
                           } else {
                             const error = await response.json();
                             alert(`Erreur: ${error.error || "Erreur inconnue"}`);
