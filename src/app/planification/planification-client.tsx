@@ -31,6 +31,7 @@ export default function PlanificationClient({
 }: PlanificationClientProps) {
   // Suppression des avertissements pour variables préfixées avec _
   void _collaborateurs;
+  void _affectations;
   const router = useRouter();
   const [activeView, setActiveView] = useState<"gantt" | "alertes">("gantt");
   const [vueGantt, setVueGantt] = useState<"jour" | "semaine" | "mois">("semaine");
@@ -44,8 +45,6 @@ export default function PlanificationClient({
   const [showActiviteModal, setShowActiviteModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showGestionTemplatesModal, setShowGestionTemplatesModal] = useState(false);
-  const [showAffectationsModal, setShowAffectationsModal] = useState(false);
-  const [selectedActiviteForAffectations, setSelectedActiviteForAffectations] = useState<ActivitePlanification | null>(null);
   const [editingActivite, setEditingActivite] = useState<ActivitePlanification | null>(null);
   const [saving, setSaving] = useState(false);
   const [templates, setTemplates] = useState<Array<{ id: string; nom_template: string; description?: string }>>([]);
@@ -167,22 +166,6 @@ export default function PlanificationClient({
     }
   };
 
-  // Fonction pour supprimer une activité
-  const handleDeleteActivite = async (activiteId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette activité ?")) return;
-
-    try {
-      const response = await fetch(`/api/planification/activites/${activiteId}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        router.refresh();
-      }
-    } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">

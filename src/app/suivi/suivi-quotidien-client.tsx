@@ -8,12 +8,10 @@ import {
   Calendar, 
   Clock, 
   CheckCircle, 
-  XCircle, 
   AlertCircle,
   TrendingUp,
   History,
   Search,
-  Filter,
   X
 } from "lucide-react";
 import type { ActivitePlanification } from "@/types/planification";
@@ -148,7 +146,7 @@ export default function SuiviQuotidienClient({
     setSaving(true);
     try {
       let newStatut = activite.statut;
-      let updates: any = {};
+      const updates: Record<string, unknown> = {};
 
       switch (action) {
         case "lancer":
