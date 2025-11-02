@@ -142,48 +142,6 @@ export default function CreatePartenaireClient() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                SIREN
-              </label>
-              <input
-                type="text"
-                name="siren"
-                value={formData.siren || ""}
-                onChange={handleChange}
-                maxLength={9}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Forme juridique
-              </label>
-              <input
-                type="text"
-                name="forme_juridique"
-                value={formData.forme_juridique || ""}
-                onChange={handleChange}
-                placeholder="Ex: SARL, SA, EURL"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Secteur d'activité
-              </label>
-              <input
-                type="text"
-                name="secteur_activite"
-                value={formData.secteur_activite || ""}
-                onChange={handleChange}
-                placeholder="Ex: BTP, Énergie, Maintenance"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              />
-            </div>
-
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Adresse
@@ -258,35 +216,6 @@ export default function CreatePartenaireClient() {
                 name="email_principal"
                 value={formData.email_principal || ""}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Site web
-              </label>
-              <input
-                type="url"
-                name="site_web"
-                value={formData.site_web || ""}
-                onChange={handleChange}
-                placeholder="https://"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Capital social (€)
-              </label>
-              <input
-                type="number"
-                name="capital_social"
-                value={formData.capital_social || ""}
-                onChange={handleChange}
-                step="0.01"
-                min="0"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
               />
             </div>
