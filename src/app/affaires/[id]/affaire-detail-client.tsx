@@ -187,16 +187,6 @@ export default function AffaireDetailClient({
               Informations générales
             </button>
             <button
-              onClick={() => setActiveTab("valorisation")}
-              className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
-                activeTab === "valorisation"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              Valorisation
-            </button>
-            <button
               onClick={() => setActiveTab("lots")}
               className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
                 activeTab === "lots"
@@ -451,6 +441,176 @@ export default function AffaireDetailClient({
                   </button>
                 </div>
               )}
+
+              {/* Section Valorisation intégrée */}
+              <div className="mt-8 pt-8 border-t border-gray-200">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-secondary">Valorisation</h2>
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Type de valorisation
+                  </label>
+                  {isEditing ? (
+                    <select
+                      name="type_valorisation"
+                      value={affaire.type_valorisation || ""}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    >
+                      <option value="">Sélectionner...</option>
+                      <option value="BPU">BPU (Bordereau de Prix Unitaires)</option>
+                      <option value="forfait">Forfait</option>
+                      <option value="dépense">Dépense</option>
+                      <option value="mixte">Mixte (BPU + Dépense)</option>
+                    </select>
+                  ) : (
+                    <div className="px-3 py-2 bg-gray-50 rounded">
+                      {affaire.type_valorisation || "Non défini"}
+                    </div>
+                  )}
+                </div>
+
+                {/* BPU Section */}
+                {(affaire.type_valorisation === "BPU" || affaire.type_valorisation === "mixte") && (
+                  <div className="mb-6">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-lg font-semibold">Bordereau de Prix Unitaires</h3>
+                      {isEditing && (
+                        <button
+                          onClick={() => setShowBpuImportModal(true)}
+                          className="btn-secondary flex items-center gap-2 text-sm"
+                          type="button"
+                        >
+                          <FileSpreadsheet className="h-4 w-4" />
+                          Importer depuis Excel
+                        </button>
+                      )}
+                    </div>
+                    {affaire.bpu && affaire.bpu.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unité</th>
+                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantité</th>
+                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Prix unitaire</th>
+                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total HT</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {affaire.bpu.map((ligne) => (
+                              <tr key={ligne.id}>
+                                <td className="px-4 py-3 text-sm">{ligne.code_bpu || "-"}</td>
+                                <td className="px-4 py-3 text-sm">{ligne.libelle_bpu}</td>
+                                <td className="px-4 py-3 text-sm">{ligne.unite || "-"}</td>
+                                <td className="px-4 py-3 text-sm text-right">{ligne.quantite_prevue}</td>
+                                <td className="px-4 py-3 text-sm text-right">{ligne.prix_unitaire_ht.toFixed(2)} €</td>
+                                <td className="px-4 py-3 text-sm font-semibold text-right">{ligne.montant_total_ht.toFixed(2)} €</td>
+                              </tr>
+                            ))}
+                            <tr className="bg-gray-50 font-semibold">
+                              <td colSpan={5} className="px-4 py-3 text-right">Total BPU HT</td>
+                              <td className="px-4 py-3 text-right">{totalBPU.toFixed(2)} €</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 border border-gray-200 rounded-lg">
+                        <p className="text-gray-500 mb-4">Aucune ligne BPU</p>
+                        {isEditing && (
+                          <button
+                            onClick={() => setShowBpuImportModal(true)}
+                            className="btn-primary inline-flex items-center gap-2"
+                            type="button"
+                          >
+                            <FileSpreadsheet className="h-4 w-4" />
+                            Importer depuis Excel
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Dépenses Section */}
+                {affaire.type_valorisation === "dépense" || affaire.type_valorisation === "mixte" ? (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-3">Dépenses</h3>
+                    {affaire.depenses && affaire.depenses.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Catégorie</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
+                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Montant HT</th>
+                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">TVA</th>
+                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total TTC</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {affaire.depenses.map((dep) => (
+                              <tr key={dep.id}>
+                                <td className="px-4 py-3 text-sm">{dep.categorie || "-"}</td>
+                                <td className="px-4 py-3 text-sm">{dep.libelle}</td>
+                                <td className="px-4 py-3 text-sm text-right">{dep.montant_ht.toFixed(2)} €</td>
+                                <td className="px-4 py-3 text-sm text-right">{dep.taux_tva}%</td>
+                                <td className="px-4 py-3 text-sm text-right">{dep.montant_ttc.toFixed(2)} €</td>
+                                <td className="px-4 py-3 text-sm">
+                                  {new Date(dep.date_depense).toLocaleDateString("fr-FR")}
+                                </td>
+                              </tr>
+                            ))}
+                            <tr className="bg-gray-50 font-semibold">
+                              <td colSpan={4} className="px-4 py-3 text-right">Total Dépenses</td>
+                              <td className="px-4 py-3 text-right">{totalDepensesTTC.toFixed(2)} €</td>
+                              <td></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">Aucune dépense</p>
+                    )}
+                  </div>
+                ) : null}
+
+                {affaire.type_valorisation === "forfait" ? (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-3">Montant forfaitaire</h3>
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        name="montant_total"
+                        value={affaire.montant_total || ""}
+                        onChange={handleChange}
+                        step="0.01"
+                        min="0"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      />
+                    ) : (
+                      <div className="text-2xl font-bold text-primary">
+                        {affaire.montant_total ? `${affaire.montant_total.toFixed(2)} €` : "-"}
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+
+                <div className="mt-6 p-4 bg-primary/10 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold">Montant total de l'affaire</span>
+                    <span className="text-2xl font-bold text-primary">
+                      {montantTotalCalcule > 0 ? `${montantTotalCalcule.toFixed(2)} €` : "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
