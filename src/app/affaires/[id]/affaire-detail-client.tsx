@@ -1512,8 +1512,110 @@ export default function AffaireDetailClient({
           </div>
         )}
 
-        {/* Modal Upload Document */}
-        {showUploadModal && (
+          {/* Modal Import BPU */}
+          {showBpuImportModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div className="flex justify-between items-center p-6 border-b">
+                  <h3 className="text-lg font-semibold text-secondary">Importer BPU depuis Excel</h3>
+                  <button
+                    onClick={() => setShowBpuImportModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setImportingBpu(true);
+                    try {
+                      const formData = new FormData(e.currentTarget);
+                      const file = formData.get("file") as File;
+
+                      if (!file) {
+                        alert("Veuillez sélectionner un fichier Excel.");
+                        setImportingBpu(false);
+                        return;
+                      }
+
+                      const importFormData = new FormData();
+                      importFormData.append("file", file);
+
+                      const response = await fetch(`/api/affaires/${affaire.id}/bpu/import`, {
+                        method: "POST",
+                        body: importFormData,
+                      });
+
+                      if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || "Erreur lors de l'importation du BPU.");
+                      }
+
+                      const result = await response.json();
+                      alert(`BPU importé avec succès ! ${result.count || 0} ligne(s) importée(s).`);
+                      router.refresh();
+                      setShowBpuImportModal(false);
+                      window.location.reload(); // Recharger pour voir les nouvelles données
+                    } catch (error) {
+                      console.error("Erreur importation BPU:", error);
+                      alert(error instanceof Error ? error.message : "Erreur lors de l'importation du BPU.");
+                    } finally {
+                      setImportingBpu(false);
+                    }
+                  }}
+                  className="p-6 space-y-4"
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Fichier Excel (.xlsx, .xls, .csv) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="file"
+                      name="file"
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      accept=".xlsx,.xls,.csv"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Colonnes attendues : "Code BPU", "Libellé", "Unité", "PU", "Quantité".
+                      Les noms de colonnes sont détectés automatiquement.
+                    </p>
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4 border-t">
+                    <button
+                      type="button"
+                      onClick={() => setShowBpuImportModal(false)}
+                      className="btn-secondary"
+                      disabled={importingBpu}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn-primary flex items-center gap-2"
+                      disabled={importingBpu}
+                    >
+                      {importingBpu ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Importation...
+                        </>
+                      ) : (
+                        <>
+                          <FileSpreadsheet className="h-4 w-4" />
+                          Importer
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Upload Document */}
+          {showUploadModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
               <div className="flex justify-between items-center p-6 border-b">
