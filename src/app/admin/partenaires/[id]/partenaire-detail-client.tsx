@@ -157,7 +157,32 @@ export default function PartenaireDetailClient({
     }
   };
 
-  const handleDeleteContact = async (contactId: string) => {
+  const handleToggleContactStatut = async (contactId: string, currentStatut: string) => {
+    setLoading(true);
+    try {
+      const newStatut = currentStatut === "actif" ? "inactif" : "actif";
+      const response = await fetch(`/api/partenaires/${partenaire.id}/contacts/${contactId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statut: newStatut }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la modification");
+      }
+
+      setContacts(contacts.map((c) => c.id === contactId ? { ...c, statut: newStatut } : c));
+      router.refresh();
+    } catch (error) {
+      console.error("Erreur modification statut contact:", error);
+      alert("Erreur lors de la modification");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteContact = async (contactId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!confirm("Êtes-vous sûr de vouloir supprimer ce contact ?")) return;
 
     setLoading(true);
@@ -612,12 +637,18 @@ export default function PartenaireDetailClient({
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden lg:table-cell">Email</th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Principal</th>
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Statut</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {contacts.map((contact) => (
-                      <tr key={contact.id}>
+                      <tr
+                        key={contact.id}
+                        onClick={() => {
+                          setEditingContact(contact);
+                          setShowContactModal(true);
+                        }}
+                        className="cursor-pointer hover:bg-gray-50 transition-colors"
+                      >
                         <td className="px-4 py-3 text-sm font-medium">
                           {contact.prenom} {contact.nom}
                           {contact.est_contact_principal && (
@@ -632,7 +663,11 @@ export default function PartenaireDetailClient({
                         </td>
                         <td className="px-4 py-3 text-sm hidden lg:table-cell">
                           {contact.email ? (
-                            <a href={`mailto:${contact.email}`} className="text-primary hover:underline">
+                            <a
+                              href={`mailto:${contact.email}`}
+                              className="text-primary hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               {contact.email}
                             </a>
                           ) : (
@@ -646,33 +681,22 @@ export default function PartenaireDetailClient({
                             <span className="text-gray-400">-</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            contact.statut === "actif" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
-                          }`}>
+                        <td
+                          className="px-4 py-3 text-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleContactStatut(contact.id, contact.statut);
+                          }}
+                        >
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full cursor-pointer transition-colors ${
+                              contact.statut === "actif"
+                                ? "bg-green-100 text-green-800 hover:bg-green-200"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}
+                          >
                             {contact.statut === "actif" ? "Actif" : "Inactif"}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => {
-                                setEditingContact(contact);
-                                setShowContactModal(true);
-                              }}
-                              className="text-primary hover:text-primary-dark"
-                              title="Modifier"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteContact(contact.id)}
-                              className="text-red-600 hover:text-red-800"
-                              title="Supprimer"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
                         </td>
                       </tr>
                     ))}
@@ -816,23 +840,32 @@ export default function PartenaireDetailClient({
           <div className="card">
             <h2 className="text-xl font-semibold text-secondary mb-4">Sites liés</h2>
             {partenaire.sites && partenaire.sites.length > 0 ? (
-              <div className="space-y-2">
-                {partenaire.sites.map((site) => (
-                  <div key={site.site_id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                    <div>
-                      <div className="font-medium">{site.site_code} - {site.site_label}</div>
-                    </div>
-                    <Link
-                      href={`/rh/sites#${site.site_id}`}
-                      className="text-primary hover:text-primary-dark text-sm"
-                    >
-                      Voir le site
-                    </Link>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Code</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {partenaire.sites.map((site) => (
+                      <tr
+                        key={site.site_id}
+                        onClick={() => {
+                          window.location.href = `/rh/sites#${site.site_id}`;
+                        }}
+                        className="cursor-pointer hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-4 py-3 text-sm font-medium">{site.site_code}</td>
+                        <td className="px-4 py-3 text-sm">{site.site_label}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
-              <p className="text-gray-500">Aucun site lié à ce partenaire</p>
+              <p className="text-gray-500 text-center py-8">Aucun site lié à ce partenaire</p>
             )}
           </div>
         )}
