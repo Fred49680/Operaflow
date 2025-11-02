@@ -48,6 +48,10 @@ export default function PlanificationClient({
   const [editingActivite, setEditingActivite] = useState<ActivitePlanification | null>(null);
   const [saving, setSaving] = useState(false);
   const [templates, setTemplates] = useState<Array<{ id: string; nom_template: string; description?: string }>>([]);
+  const [calculAutoDateFin, setCalculAutoDateFin] = useState(false);
+  const [dateDebut, setDateDebut] = useState("");
+  const [dureeJoursOuvres, setDureeJoursOuvres] = useState("");
+  const [dateFinCalculee, setDateFinCalculee] = useState("");
   
   // Charger les templates au montage
   useEffect(() => {
@@ -737,7 +741,13 @@ export default function PlanificationClient({
                           type="number"
                           name="duree_jours_ouvres"
                           min="1"
-                          defaultValue={editingActivite?.duree_jours_ouvres || ""}
+                          value={dureeJoursOuvres || (editingActivite?.duree_jours_ouvres || "")}
+                          onChange={(e) => {
+                            setDureeJoursOuvres(e.target.value);
+                            if (calculAutoDateFin && dateDebut && e.target.value) {
+                              calculerDateFin(dateDebut, parseInt(e.target.value));
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                           placeholder="Ex: 5"
                         />
