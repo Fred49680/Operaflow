@@ -136,7 +136,16 @@ export default function PlanificationClient({
         setShowTemplateModal(false);
         setShowActiviteModal(false);
         setEditingActivite(null);
-        router.refresh();
+        // Réinitialiser les filtres pour voir les nouvelles activités
+        setFilters({
+          site: "",
+          affaire: "",
+          responsable: "",
+          statut: "",
+        });
+        setSearchTerm("");
+        // Forcer un rafraîchissement complet
+        window.location.reload();
       } else {
         const error = await response.json();
         alert(`Erreur: ${error.error || "Erreur inconnue"}`);
@@ -159,7 +168,8 @@ export default function PlanificationClient({
       });
 
       if (response.ok) {
-        router.refresh();
+        // Rafraîchir les données après mise à jour
+        window.location.reload();
       }
     } catch (error) {
       console.error("Erreur lors de la mise à jour:", error);
@@ -613,7 +623,16 @@ export default function PlanificationClient({
                     if (response.ok) {
                       setShowActiviteModal(false);
                       setEditingActivite(null);
-                      router.refresh();
+                      // Réinitialiser les filtres pour voir la nouvelle activité
+                      setFilters({
+                        site: "",
+                        affaire: "",
+                        responsable: "",
+                        statut: "",
+                      });
+                      setSearchTerm("");
+                      // Forcer un rafraîchissement complet
+                      window.location.reload();
                     } else {
                       const error = await response.json();
                       alert(`Erreur: ${error.error || "Erreur inconnue"}`);
