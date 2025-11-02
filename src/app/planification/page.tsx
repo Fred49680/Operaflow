@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
+import { getUserRoles } from "@/lib/auth/middleware";
 import PlanificationClient from "./planification-client";
 import type { ActivitePlanification, AffectationPlanification } from "@/types/planification";
 
