@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { format, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfWeek, endOfWeek } from "date-fns";
-import { fr } from "date-fns/locale";
 
 interface GanttHeaderProps {
   dateDebut: Date;
