@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       dateDebutActuelle: Date = dateDebutBase
     ): Promise<string | null> => {
       const dateDebut = new Date(dateDebutActuelle);
-      const dateFin = new Date(dateDebut);
+      let dateFin = new Date(dateDebut);
 
       // Calculer la date de fin si durée en jours ouvrés
       if (tacheTemplate.duree_jours_ouvres) {
