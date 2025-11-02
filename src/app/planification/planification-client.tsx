@@ -597,10 +597,12 @@ export default function PlanificationClient({
                   }
 
                   try {
-                    const url = editingActivite
+                    // Vérifier si on est en mode édition (editingActivite avec un ID)
+                    const isEditMode = editingActivite && editingActivite.id;
+                    const url = isEditMode
                       ? `/api/planification/activites/${editingActivite.id}`
                       : "/api/planification/activites";
-                    const method = editingActivite ? "PATCH" : "POST";
+                    const method = isEditMode ? "PATCH" : "POST";
 
                     const response = await fetch(url, {
                       method,
