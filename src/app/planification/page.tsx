@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
+import PlanificationClient from "./planification-client";
+import type { ActivitePlanification, AffectationPlanification } from "@/types/planification";
 
 export default async function PlanificationPage() {
   const supabase = await createServerClient();
@@ -13,51 +15,71 @@ export default async function PlanificationPage() {
     redirect("/login");
   }
 
-  return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-2">
-            Planification
-          </h1>
-          <p className="text-lg text-secondary">
-            Planification et suivi des activités
-          </p>
-        </div>
+  // Charger les activités planifiées
+  const { data: activites, error: errorActivites } = await supabase
+    .from("tbl_planification_activites")
+    .select(`
+      *,
+      affaire:tbl_affaires!tbl_planification_activites_affaire_id_fkey(id, numero, libelle),
+      lot:tbl_affaires_lots(id, numero_lot, libelle_lot),
+      site:tbl_sites!tbl_planification_activites_site_id_fkey(site_id, site_code, site_label),
+      responsable:collaborateurs!tbl_planification_activites_responsable_id_fkey(id, nom, prenom)
+    `)
+    .order("date_debut_prevue", { ascending: true });
 
-        <div className="card">
-          <div className="text-center py-12">
-            <div className="mb-4">
-              <svg
-                className="mx-auto h-16 w-16 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-semibold text-secondary mb-2">
-              Module en cours de développement
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Ce module sera disponible prochainement
-            </p>
-            <a
-              href="/dashboard"
-              className="btn-primary inline-block"
-            >
-              Retour au tableau de bord
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
+  // Charger les affectations
+  const { data: affectations, error: errorAffectations } = await supabase
+    .from("tbl_planification_affectations")
+    .select(`
+      *,
+      activite:tbl_planification_activites!tbl_planification_affectations_activite_id_fkey(id, libelle),
+      collaborateur:collaborateurs!tbl_planification_affectations_collaborateur_id_fkey(id, nom, prenom, email)
+    `)
+    .order("date_debut_affectation", { ascending: true });
+
+  // Charger les sites pour les filtres
+  const { data: sites } = await supabase
+    .from("tbl_sites")
+    .select("site_id, site_code, site_label")
+    .eq("actif", true)
+    .order("site_code");
+
+  // Charger les affaires pour les filtres
+  const { data: affaires } = await supabase
+    .from("tbl_affaires")
+    .select("id, numero, libelle, statut")
+    .order("numero");
+
+  // Charger les collaborateurs pour les filtres (responsables)
+  const { data: collaborateurs } = await supabase
+    .from("collaborateurs")
+    .select("id, nom, prenom")
+    .eq("statut", "actif")
+    .order("nom");
+
+  // Transformation des données pour gérer les relations Supabase (arrays)
+  const activitesTransformed: ActivitePlanification[] = (activites || []).map((act) => ({
+    ...act,
+    affaire: Array.isArray(act.affaire) ? act.affaire[0] || null : act.affaire || null,
+    lot: Array.isArray(act.lot) ? act.lot[0] || null : act.lot || null,
+    site: Array.isArray(act.site) ? act.site[0] || null : act.site || null,
+    responsable: Array.isArray(act.responsable) ? act.responsable[0] || null : act.responsable || null,
+  }));
+
+  const affectationsTransformed: AffectationPlanification[] = (affectations || []).map((aff) => ({
+    ...aff,
+    activite: Array.isArray(aff.activite) ? aff.activite[0] || null : aff.activite || null,
+    collaborateur: Array.isArray(aff.collaborateur) ? aff.collaborateur[0] || null : aff.collaborateur || null,
+  }));
+
+  return (
+    <PlanificationClient
+      activites={activitesTransformed}
+      affectations={affectationsTransformed}
+      sites={sites || []}
+      affaires={affaires || []}
+      collaborateurs={collaborateurs || []}
+    />
   );
 }
 
