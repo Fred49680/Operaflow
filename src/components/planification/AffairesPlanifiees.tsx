@@ -15,6 +15,9 @@ export default function AffairesPlanifiees({ onCreateActivite }: AffairesPlanifi
 
   useEffect(() => {
     fetchData();
+    // Rafraîchir toutes les 5 secondes pour détecter les nouvelles activités
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
