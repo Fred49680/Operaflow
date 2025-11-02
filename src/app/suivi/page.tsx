@@ -16,14 +16,14 @@ export default async function SuiviQuotidienPage() {
     redirect("/login");
   }
 
-  // Vérifier les rôles (Chef de Chantier, Conducteur, Planificateur, Admin)
+  // Vérifier les rôles (Chef de Chantier, Responsable d'Activité, Chargé d'Affaires, Planificateur, Admin)
   const userRoles = await getUserRoles(user.id);
   const hasAccesSuivi = userRoles.some((role) => 
     role === "Chef de Chantier" || 
-    role === "Conducteur de Travaux" || 
+    role === "Responsable d'Activité" ||
+    role === "Chargé d'Affaires" ||
     role === "Planificateur" || 
-    role === "Administrateur" ||
-    role === "Responsable d'Activité"
+    role === "Administrateur"
   );
 
   if (!hasAccesSuivi) {

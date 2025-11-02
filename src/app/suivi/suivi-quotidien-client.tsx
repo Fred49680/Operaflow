@@ -52,7 +52,11 @@ export default function SuiviQuotidienClient({
   const [saving, setSaving] = useState(false);
 
   // Vérifier si l'utilisateur peut lancer/manager les activités
-  const isChefChantier = userRoles.some((r) => r === "Chef de Chantier" || r === "Conducteur de Travaux");
+  const isChefChantier = userRoles.some((r) => 
+    r === "Chef de Chantier" || 
+    r === "Responsable d'Activité" ||
+    r === "Chargé d'Affaires"
+  );
   const isAdmin = userRoles.some((r) => r === "Administrateur");
 
   // Filtrer les activités
