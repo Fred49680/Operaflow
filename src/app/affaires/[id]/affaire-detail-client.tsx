@@ -33,6 +33,11 @@ export default function AffaireDetailClient({
   const [showBpuImportModal, setShowBpuImportModal] = useState(false);
   const [importingBpu, setImportingBpu] = useState(false);
   
+  // États pour le formulaire de lot
+  const [lotFormPourcentage, setLotFormPourcentage] = useState("");
+  const [lotFormMontant, setLotFormMontant] = useState("");
+  const [lotFormError, setLotFormError] = useState("");
+  
   // État pour la pré-planification
   const [isEditingPrePlanif, setIsEditingPrePlanif] = useState(false);
   const [prePlanifData, setPrePlanifData] = useState({
@@ -138,9 +143,10 @@ export default function AffaireDetailClient({
   const totalDepensesTTC = affaire.depenses?.reduce((sum, d) => sum + (d.montant_ttc || 0), 0) || 0;
   
   // Calculer le montant total selon le type de valorisation
+  // Calculer le montant total de l'affaire
   const montantTotalCalcule = (() => {
     if (!affaire.type_valorisation) return affaire.montant_total || 0;
-    
+
     switch (affaire.type_valorisation) {
       case "BPU":
         return totalBPU;
@@ -778,6 +784,9 @@ export default function AffaireDetailClient({
                   onClick={() => {
                     setShowLotModal(false);
                     setEditingLot(null);
+                    setLotFormPourcentage("");
+                    setLotFormMontant("");
+                    setLotFormError("");
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -788,6 +797,36 @@ export default function AffaireDetailClient({
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
+                  
+                  // Calculer les totaux des lots existants (sans le lot en cours d'édition)
+                  const lotsExistants = affaire.lots || [];
+                  const lotsAutres = editingLot 
+                    ? lotsExistants.filter(l => l.id !== editingLot.id)
+                    : lotsExistants;
+                  
+                  const totalPourcentageAutres = lotsAutres.reduce((sum, l) => sum + l.pourcentage_total, 0);
+                  const totalMontantAutres = lotsAutres.reduce((sum, l) => sum + (l.montant_alloue || 0), 0);
+                  
+                  const pourcentage = parseFloat(lotFormPourcentage) || 0;
+                  const montant = parseFloat(lotFormMontant) || 0;
+                  
+                  // Vérifier le total des pourcentages
+                  const totalPourcentage = totalPourcentageAutres + pourcentage;
+                  if (totalPourcentage > 100) {
+                    setLotFormError(`Le total des pourcentages (${totalPourcentage.toFixed(2)}%) dépasse 100%. Maximum autorisé : ${(100 - totalPourcentageAutres).toFixed(2)}%`);
+                    return;
+                  }
+                  
+                  // Vérifier le total des montants si valorisation en euro
+                  if (affaire.type_valorisation && (affaire.type_valorisation === "forfait" || affaire.type_valorisation === "dépense" || affaire.type_valorisation === "mixte")) {
+                    const totalMontant = totalMontantAutres + montant;
+                    if (totalMontant > montantTotalCalcule) {
+                      setLotFormError(`Le total des montants alloués (${totalMontant.toFixed(2)} €) dépasse le montant total de l'affaire (${montantTotalCalcule.toFixed(2)} €). Maximum autorisé : ${(montantTotalCalcule - totalMontantAutres).toFixed(2)} €`);
+                      return;
+                    }
+                  }
+                  
+                  setLotFormError("");
                   setLoading(true);
                   
                   try {
@@ -796,8 +835,8 @@ export default function AffaireDetailClient({
                       numero_lot: formData.get("numero_lot") as string,
                       libelle_lot: formData.get("libelle_lot") as string,
                       description: formData.get("description") as string || null,
-                      pourcentage_total: parseFloat(formData.get("pourcentage_total") as string),
-                      montant_alloue: formData.get("montant_alloue") ? parseFloat(formData.get("montant_alloue") as string) : null,
+                      pourcentage_total: pourcentage,
+                      montant_alloue: lotFormMontant ? montant : null,
                       est_jalon_gantt: formData.get("est_jalon_gantt") === "on",
                       date_debut_previsionnelle: formData.get("date_debut_previsionnelle") as string || null,
                       date_fin_previsionnelle: formData.get("date_fin_previsionnelle") as string || null,
@@ -829,6 +868,9 @@ export default function AffaireDetailClient({
                     router.refresh();
                     setShowLotModal(false);
                     setEditingLot(null);
+                    setLotFormPourcentage("");
+                    setLotFormMontant("");
+                    setLotFormError("");
                     window.location.reload();
                   } catch (error) {
                     console.error("Erreur sauvegarde lot:", error);
@@ -892,37 +934,108 @@ export default function AffaireDetailClient({
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Pourcentage du total <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      name="pourcentage_total"
-                      required
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      defaultValue={editingLot?.pourcentage_total || ""}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    />
-                  </div>
+                {(() => {
+                  // Calculer les totaux des lots existants (sans le lot en cours d'édition)
+                  const lotsExistants = affaire.lots || [];
+                  const lotsAutres = editingLot 
+                    ? lotsExistants.filter(l => l.id !== editingLot.id)
+                    : lotsExistants;
+                  
+                  const totalPourcentageAutres = lotsAutres.reduce((sum, l) => sum + l.pourcentage_total, 0);
+                  const totalMontantAutres = lotsAutres.reduce((sum, l) => sum + (l.montant_alloue || 0), 0);
+                  
+                  // Initialiser les valeurs si le modal vient d'être ouvert avec un lot existant
+                  const currentPourcentage = lotFormPourcentage || editingLot?.pourcentage_total?.toString() || "";
+                  const currentMontant = lotFormMontant || editingLot?.montant_alloue?.toString() || "";
+                  
+                  // Fonction pour calculer le montant à partir du pourcentage
+                  const handlePourcentageChange = (value: string) => {
+                    setLotFormPourcentage(value);
+                    const pourcentage = parseFloat(value) || 0;
+                    
+                    if (pourcentage > 0 && montantTotalCalcule > 0) {
+                      const montantCalcule = (montantTotalCalcule * pourcentage) / 100;
+                      setLotFormMontant(montantCalcule.toFixed(2));
+                    } else {
+                      setLotFormMontant("");
+                    }
+                    
+                    setLotFormError("");
+                  };
+                  
+                  return (
+                    <>
+                      {/* Affichage des totaux existants */}
+                      <div className="bg-gray-50 p-3 rounded-lg mb-4">
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <div className="flex justify-between">
+                            <span>Total pourcentages autres lots :</span>
+                            <span className="font-semibold">{totalPourcentageAutres.toFixed(2)}%</span>
+                          </div>
+                          {affaire.type_valorisation && (affaire.type_valorisation === "forfait" || affaire.type_valorisation === "dépense" || affaire.type_valorisation === "mixte") && (
+                            <div className="flex justify-between">
+                              <span>Total montants autres lots :</span>
+                              <span className="font-semibold">{totalMontantAutres.toFixed(2)} €</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-primary font-semibold border-t pt-1 mt-1">
+                            <span>Montant total affaire :</span>
+                            <span>{montantTotalCalcule.toFixed(2)} €</span>
+                          </div>
+                        </div>
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Montant alloué (€)
-                    </label>
-                    <input
-                      type="number"
-                      name="montant_alloue"
-                      min="0"
-                      step="0.01"
-                      defaultValue={editingLot?.montant_alloue || ""}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    />
-                  </div>
-                </div>
+                      {lotFormError && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                          <p className="text-sm text-red-800">{lotFormError}</p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Pourcentage du total <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            required
+                            min="0"
+                            max={100 - totalPourcentageAutres}
+                            step="0.01"
+                            value={currentPourcentage}
+                            onChange={(e) => handlePourcentageChange(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Maximum disponible : {(100 - totalPourcentageAutres).toFixed(2)}%
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Montant alloué (€)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={currentMontant}
+                            onChange={(e) => {
+                              setLotFormMontant(e.target.value);
+                              setLotFormError("");
+                            }}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            {affaire.type_valorisation && (affaire.type_valorisation === "forfait" || affaire.type_valorisation === "dépense" || affaire.type_valorisation === "mixte") && (
+                              <>Maximum disponible : {(montantTotalCalcule - totalMontantAutres).toFixed(2)} €</>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -968,6 +1081,9 @@ export default function AffaireDetailClient({
                     onClick={() => {
                       setShowLotModal(false);
                       setEditingLot(null);
+                      setLotFormPourcentage("");
+                      setLotFormMontant("");
+                      setLotFormError("");
                     }}
                     className="btn-secondary"
                     disabled={loading}
