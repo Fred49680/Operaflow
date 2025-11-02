@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     const dateDebutBase = new Date(date_debut_base);
 
     // Créer les activités depuis le template
-    const activitesCreees = [];
+    const activitesCreees: string[] = [];
     
     // Fonction récursive pour créer les activités avec leur hiérarchie
     const creerActivite = async (
