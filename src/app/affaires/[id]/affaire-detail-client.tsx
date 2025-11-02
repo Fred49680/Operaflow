@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Edit, Save, FileText, Upload, X } from "lucide-react";
+import { ArrowLeft, Edit, Save, FileText, Upload, X, Plus, Trash2 } from "lucide-react";
 import type { Affaire } from "@/types/affaires";
 
 interface AffaireDetailClientProps {
@@ -26,6 +26,8 @@ export default function AffaireDetailClient({
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showLotModal, setShowLotModal] = useState(false);
+  const [editingLot, setEditingLot] = useState<any>(null);
 
   const getStatutBadge = (statut: string) => {
     const styles: Record<string, string> = {
@@ -568,7 +570,19 @@ export default function AffaireDetailClient({
         {/* Onglet Lots */}
         {activeTab === "lots" && (
           <div className="card">
-            <h2 className="text-xl font-semibold text-secondary mb-4">Découpage par lots / Jalons</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-secondary">Découpage par lots / Jalons</h2>
+              <button
+                onClick={() => {
+                  setEditingLot(null);
+                  setShowLotModal(true);
+                }}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Ajouter un lot
+              </button>
+            </div>
             {affaire.lots && affaire.lots.length > 0 ? (
               <div className="space-y-4">
                 <div className="overflow-x-auto">
@@ -587,7 +601,14 @@ export default function AffaireDetailClient({
                       {affaire.lots
                         .sort((a, b) => (a.ordre_affichage || 0) - (b.ordre_affichage || 0))
                         .map((lot) => (
-                          <tr key={lot.id}>
+                          <tr
+                            key={lot.id}
+                            onClick={() => {
+                              setEditingLot(lot);
+                              setShowLotModal(true);
+                            }}
+                            className="cursor-pointer hover:bg-gray-50 transition-colors"
+                          >
                             <td className="px-4 py-3 text-sm font-medium">{lot.numero_lot}</td>
                             <td className="px-4 py-3 text-sm">
                               <div>{lot.libelle_lot}</div>
@@ -663,8 +684,251 @@ export default function AffaireDetailClient({
                 </div>
               </div>
             ) : (
-              <p className="text-gray-500">Aucun lot défini pour cette affaire</p>
+              <div className="text-center py-12">
+                <p className="text-gray-500 mb-4">Aucun lot défini pour cette affaire</p>
+                <button
+                  onClick={() => {
+                    setEditingLot(null);
+                    setShowLotModal(true);
+                  }}
+                  className="btn-primary inline-flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Ajouter un lot
+                </button>
+              </div>
             )}
+          </div>
+        )}
+
+        {/* Modal Lot */}
+        {showLotModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center p-6 border-b">
+                <h3 className="text-lg font-semibold text-secondary">
+                  {editingLot ? "Modifier le lot" : "Ajouter un lot"}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowLotModal(false);
+                    setEditingLot(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  setLoading(true);
+                  
+                  try {
+                    const formData = new FormData(e.currentTarget);
+                    const lotData = {
+                      numero_lot: formData.get("numero_lot") as string,
+                      libelle_lot: formData.get("libelle_lot") as string,
+                      description: formData.get("description") as string || null,
+                      pourcentage_total: parseFloat(formData.get("pourcentage_total") as string),
+                      montant_alloue: formData.get("montant_alloue") ? parseFloat(formData.get("montant_alloue") as string) : null,
+                      est_jalon_gantt: formData.get("est_jalon_gantt") === "on",
+                      date_debut_previsionnelle: formData.get("date_debut_previsionnelle") as string || null,
+                      date_fin_previsionnelle: formData.get("date_fin_previsionnelle") as string || null,
+                      ordre_affichage: formData.get("ordre_affichage") ? parseInt(formData.get("ordre_affichage") as string) : null,
+                    };
+
+                    let response;
+                    if (editingLot) {
+                      // Mise à jour
+                      response = await fetch(`/api/affaires/${affaire.id}/lots/${editingLot.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(lotData),
+                      });
+                    } else {
+                      // Création
+                      response = await fetch(`/api/affaires/${affaire.id}/lots`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(lotData),
+                      });
+                    }
+                    
+                    if (!response.ok) {
+                      const error = await response.json();
+                      throw new Error(error.error || "Erreur lors de la sauvegarde");
+                    }
+                    
+                    router.refresh();
+                    setShowLotModal(false);
+                    setEditingLot(null);
+                    window.location.reload();
+                  } catch (error) {
+                    console.error("Erreur sauvegarde lot:", error);
+                    alert(error instanceof Error ? error.message : "Erreur lors de la sauvegarde");
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+                className="p-6 space-y-4"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Numéro du lot <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="numero_lot"
+                      required
+                      defaultValue={editingLot?.numero_lot || ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ordre d'affichage
+                    </label>
+                    <input
+                      type="number"
+                      name="ordre_affichage"
+                      min="0"
+                      defaultValue={editingLot?.ordre_affichage || ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Libellé du lot <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="libelle_lot"
+                    required
+                    defaultValue={editingLot?.libelle_lot || ""}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    rows={3}
+                    defaultValue={editingLot?.description || ""}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Pourcentage du total <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="pourcentage_total"
+                      required
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      defaultValue={editingLot?.pourcentage_total || ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Montant alloué (€)
+                    </label>
+                    <input
+                      type="number"
+                      name="montant_alloue"
+                      min="0"
+                      step="0.01"
+                      defaultValue={editingLot?.montant_alloue || ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date de début prévisionnelle
+                    </label>
+                    <input
+                      type="date"
+                      name="date_debut_previsionnelle"
+                      defaultValue={editingLot?.date_debut_previsionnelle ? editingLot.date_debut_previsionnelle.split('T')[0] : ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Date de fin prévisionnelle
+                    </label>
+                    <input
+                      type="date"
+                      name="date_fin_previsionnelle"
+                      defaultValue={editingLot?.date_fin_previsionnelle ? editingLot.date_fin_previsionnelle.split('T')[0] : ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      name="est_jalon_gantt"
+                      defaultChecked={editingLot?.est_jalon_gantt || false}
+                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Jalon pour le diagramme de Gantt</span>
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLotModal(false);
+                      setEditingLot(null);
+                    }}
+                    className="btn-secondary"
+                    disabled={loading}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary flex items-center gap-2"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Enregistrement...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        {editingLot ? "Modifier" : "Ajouter"}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
