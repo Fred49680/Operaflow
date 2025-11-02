@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 
+// Types pour les tâches de template
+type TemplateTache = {
+  id: string;
+  libelle: string;
+  description?: string;
+  duree_jours_ouvres?: number;
+  heures_prevues?: number;
+  type_horaire?: string;
+  tache_precedente_id?: string;
+  type_dependance?: string;
+  parent_template_tache_id?: string;
+  niveau_hierarchie?: number;
+  ordre_affichage?: number;
+};
+
 // POST : Appliquer un template à une affaire
 export async function POST(request: NextRequest) {
   try {
@@ -53,16 +68,16 @@ export async function POST(request: NextRequest) {
     const dateRef = new Date(dateReference);
 
     // Transformer les tâches du template en activités
-    const taches = template.taches || [];
+    const taches: TemplateTache[] = (template.taches || []) as TemplateTache[];
     
     // Créer les activités (dans l'ordre hiérarchique)
-    const tachesAvecDates = taches.map((tache: { id: string; libelle: string; description?: string; duree_jours_ouvres?: number; heures_prevues?: number; type_horaire?: string; tache_precedente_id?: string; type_dependance?: string; parent_template_tache_id?: string; niveau_hierarchie?: number; ordre_affichage?: number }) => {
+    const tachesAvecDates = taches.map((tache: TemplateTache) => {
       const dateDebut = new Date(dateRef);
       
       // Si la tâche a une dépendance, calculer la date de début
       if (tache.tache_precedente_id && tache.type_dependance) {
         // Trouver la tâche précédente dans le template
-        const tachePrecedente = taches.find((t: { id: string }) => t.id === tache.tache_precedente_id);
+        const tachePrecedente = taches.find((t: TemplateTache) => t.id === tache.tache_precedente_id);
         if (tachePrecedente) {
           // Calcul basique selon le type de dépendance
           // Note: pour un calcul précis, on devrait recalculer après insertion
@@ -100,10 +115,28 @@ export async function POST(request: NextRequest) {
       };
     });
 
+    // Type pour les tâches avec dates
+    type TacheAvecDate = {
+      _template_tache_id: string;
+      _ordre: number;
+      affaire_id: string;
+      parent_id: string | null;
+      libelle: string;
+      description?: string | null;
+      date_debut_prevue: string;
+      date_fin_prevue: string;
+      heures_prevues: number;
+      type_horaire: string;
+      duree_jours_ouvres?: number | null;
+      calcul_auto_date_fin: boolean;
+      activite_precedente_id: string | null;
+      type_dependance?: string | null;
+    };
+
     // Trier par niveau hiérarchique et ordre
-    tachesAvecDates.sort((a: { _template_tache_id: string; _ordre: number; affaire_id: string; parent_id: string | null; libelle: string; description?: string | null; date_debut_prevue: string; date_fin_prevue: string; heures_prevues: number; type_horaire: string; duree_jours_ouvres?: number | null; calcul_auto_date_fin: boolean; activite_precedente_id: string | null; type_dependance?: string | null }, b: { _template_tache_id: string; _ordre: number; affaire_id: string; parent_id: string | null; libelle: string; description?: string | null; date_debut_prevue: string; date_fin_prevue: string; heures_prevues: number; type_horaire: string; duree_jours_ouvres?: number | null; calcul_auto_date_fin: boolean; activite_precedente_id: string | null; type_dependance?: string | null }) => {
-      const niveauA = taches.find((t: { id: string }) => t.id === a._template_tache_id)?.niveau_hierarchie || 0;
-      const niveauB = taches.find((t: { id: string }) => t.id === b._template_tache_id)?.niveau_hierarchie || 0;
+    tachesAvecDates.sort((a: TacheAvecDate, b: TacheAvecDate) => {
+      const niveauA = taches.find((t: TemplateTache) => t.id === a._template_tache_id)?.niveau_hierarchie || 0;
+      const niveauB = taches.find((t: TemplateTache) => t.id === b._template_tache_id)?.niveau_hierarchie || 0;
       if (niveauA !== niveauB) return niveauA - niveauB;
       return (a._ordre || 0) - (b._ordre || 0);
     });
@@ -114,7 +147,7 @@ export async function POST(request: NextRequest) {
 
     // Premier passage : créer toutes les activités de niveau 0
     for (const tacheData of tachesAvecDates) {
-      const tacheTemplate = taches.find((t) => t.id === tacheData._template_tache_id);
+      const tacheTemplate = taches.find((t: TemplateTache) => t.id === tacheData._template_tache_id);
       if (tacheTemplate && tacheTemplate.niveau_hierarchie === 0) {
         const { data: activite, error } = await supabase
           .from("tbl_planification_activites")
@@ -142,7 +175,7 @@ export async function POST(request: NextRequest) {
 
     // Deuxième passage : créer les sous-tâches avec parent_id
     for (const tacheData of tachesAvecDates) {
-      const tacheTemplate = taches.find((t) => t.id === tacheData._template_tache_id);
+      const tacheTemplate = taches.find((t: TemplateTache) => t.id === tacheData._template_tache_id);
       if (tacheTemplate && tacheTemplate.niveau_hierarchie && tacheTemplate.niveau_hierarchie > 0) {
         const parentActiviteId = mapTemplateToActivite.get(tacheTemplate.parent_template_tache_id || '');
         const activitePrecedenteId = tacheTemplate.tache_precedente_id 
