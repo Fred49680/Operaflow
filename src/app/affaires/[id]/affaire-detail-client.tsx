@@ -746,22 +746,6 @@ export default function AffaireDetailClient({
                     </tbody>
                   </table>
                 </div>
-                <div className="p-4 bg-primary/10 rounded-lg">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm text-gray-600">Total des pourcentages</span>
-                      <div className="text-xl font-bold text-primary">
-                        {affaire.lots.reduce((sum, l) => sum + l.pourcentage_total, 0).toFixed(2)}%
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-600">Total montants alloués</span>
-                      <div className="text-xl font-bold text-primary">
-                        {affaire.lots.reduce((sum, l) => sum + (l.montant_alloue || 0), 0).toFixed(2)} €
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             ) : (
               <div className="text-center py-12">
