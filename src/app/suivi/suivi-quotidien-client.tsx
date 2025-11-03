@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Play, 
@@ -45,11 +45,14 @@ export default function SuiviQuotidienClient({
   const [filterSite, setFilterSite] = useState("");
   const [filterStatut, setFilterStatut] = useState("");
   const [selectedActivite, setSelectedActivite] = useState<ActivitePlanification | null>(null);
+  const [activiteHistorique, setActiviteHistorique] = useState<ActivitePlanification | null>(null);
   const [showAvancementModal, setShowAvancementModal] = useState(false);
   const [showHistoriqueModal, setShowHistoriqueModal] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionType, setActionType] = useState<"lancer" | "reporter" | "suspendre" | "prolonger" | "terminer" | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loadingHistorique, setLoadingHistorique] = useState(false);
+  const [suivisHistorique, setSuivisHistorique] = useState<typeof suivis>([]);
 
   // Vérifier si l'utilisateur peut lancer/manager les activités
   const isChefChantier = userRoles.some((r) => 
@@ -217,6 +220,38 @@ export default function SuiviQuotidienClient({
     }
   };
 
+  // Fonction pour charger les données à jour de l'activité pour l'historique
+  const loadActiviteHistorique = async (activiteId: string) => {
+    setLoadingHistorique(true);
+    try {
+      // Charger l'activité à jour
+      const responseActivite = await fetch(`/api/planification/activites/${activiteId}`);
+      if (responseActivite.ok) {
+        const data = await responseActivite.json();
+        // L'API retourne directement l'activité, pas dans un objet activite
+        setActiviteHistorique(data);
+      }
+
+      // Charger les suivis quotidiens pour cette activité
+      const responseSuivis = await fetch(`/api/planification/suivi-quotidien?activite_id=${activiteId}`);
+      if (responseSuivis.ok) {
+        const dataSuivis = await responseSuivis.json();
+        // L'API retourne directement le tableau de suivis
+        setSuivisHistorique(Array.isArray(dataSuivis) ? dataSuivis : dataSuivis.suivis || []);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement de l'historique:", error);
+      // En cas d'erreur, utiliser les données existantes
+      const activiteActuelle = activites.find((a) => a.id === activiteId);
+      if (activiteActuelle) {
+        setActiviteHistorique(activiteActuelle);
+        setSuivisHistorique(suivis.filter((s) => s.activite_id === activiteId));
+      }
+    } finally {
+      setLoadingHistorique(false);
+    }
+  };
+
   // Handler pour déclarer avancement
   const handleDeclarerAvancement = async (activiteId: string, pourcentage: number, heuresReelles: number, commentaire?: string) => {
     setSaving(true);
@@ -356,9 +391,11 @@ export default function SuiviQuotidienClient({
                     </h3>
                   </div>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       setSelectedActivite(activite);
                       setShowHistoriqueModal(true);
+                      // Recharger les données à jour de l'activité
+                      await loadActiviteHistorique(activite.id);
                     }}
                     className="p-2 text-gray-400 hover:text-gray-600"
                     title="Historique"
@@ -741,6 +778,8 @@ export default function SuiviQuotidienClient({
                   onClick={() => {
                     setShowHistoriqueModal(false);
                     setSelectedActivite(null);
+                    setActiviteHistorique(null);
+                    setSuivisHistorique([]);
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -749,41 +788,59 @@ export default function SuiviQuotidienClient({
               </div>
 
               <div className="p-6">
-                <div className="mb-4">
-                  <h3 className="font-semibold text-lg mb-2">{selectedActivite.libelle}</h3>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p><span className="font-medium">Affaire:</span> {selectedActivite.affaire?.numero}</p>
-                    <p><span className="font-medium">Statut actuel:</span> {selectedActivite.statut}</p>
-                    <p><span className="font-medium">Avancement:</span> {selectedActivite.pourcentage_avancement || 0}%</p>
-                  </div>
-                </div>
+                {loadingHistorique ? (
+                  <div className="text-center py-8 text-gray-500">Chargement...</div>
+                ) : (
+                  <>
+                    {/* Utiliser les données à jour ou celles de l'activité sélectionnée */}
+                    {(() => {
+                      const activiteDisplay = activiteHistorique || selectedActivite;
+                      const suivisDisplay = suivisHistorique.length > 0 
+                        ? suivisHistorique 
+                        : suivis.filter((s) => s.activite_id === selectedActivite.id);
 
-                <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-3">Déclarations d'avancement</h4>
-                  {suivis.filter((s) => s.activite_id === selectedActivite.id).length === 0 ? (
-                    <p className="text-gray-500 text-sm">Aucune déclaration enregistrée</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {suivis
-                        .filter((s) => s.activite_id === selectedActivite.id)
-                        .map((suivi) => (
-                          <div key={suivi.id} className="border-l-2 border-primary pl-4 py-2">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-sm">
-                                {new Date(suivi.date_journee).toLocaleDateString("fr-FR")}
-                              </span>
-                              <span className="text-sm text-gray-600">
-                                {suivi.heures_reelles}h - {suivi.pourcentage_avancement_journee}%
-                              </span>
+                      return (
+                        <>
+                          <div className="mb-4">
+                            <h3 className="font-semibold text-lg mb-2">{activiteDisplay.libelle}</h3>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <p><span className="font-medium">Affaire:</span> {activiteDisplay.affaire?.numero}</p>
+                              <p><span className="font-medium">Statut actuel:</span> {activiteDisplay.statut}</p>
+                              <p><span className="font-medium">Avancement:</span> {activiteDisplay.pourcentage_avancement || 0}%</p>
                             </div>
-                            {suivi.commentaire && (
-                              <p className="text-sm text-gray-600 mt-1">{suivi.commentaire}</p>
+                          </div>
+
+                          <div className="border-t pt-4">
+                            <h4 className="font-semibold mb-3">Déclarations d'avancement</h4>
+                            {suivisDisplay.length === 0 ? (
+                              <p className="text-gray-500 text-sm">Aucune déclaration enregistrée</p>
+                            ) : (
+                              <div className="space-y-3">
+                                {suivisDisplay
+                                  .sort((a, b) => new Date(b.date_journee).getTime() - new Date(a.date_journee).getTime())
+                                  .map((suivi) => (
+                                    <div key={suivi.id} className="border-l-2 border-primary pl-4 py-2">
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-medium text-sm">
+                                          {new Date(suivi.date_journee).toLocaleDateString("fr-FR")}
+                                        </span>
+                                        <span className="text-sm text-gray-600">
+                                          {suivi.heures_reelles}h - {suivi.pourcentage_avancement_journee}%
+                                        </span>
+                                      </div>
+                                      {suivi.commentaire && (
+                                        <p className="text-sm text-gray-600 mt-1">{suivi.commentaire}</p>
+                                      )}
+                                    </div>
+                                  ))}
+                              </div>
                             )}
                           </div>
-                        ))}
-                    </div>
-                  )}
-                </div>
+                        </>
+                      );
+                    })()}
+                  </>
+                )}
               </div>
             </div>
           </div>
