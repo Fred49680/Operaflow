@@ -246,17 +246,23 @@ export default function AffaireDetailClient({
                               setAffaire(updated.affaire || updated);
                               router.refresh();
                             } else {
-                          throw new Error("Erreur lors de l'envoi");
-                        }
-                      } catch (error) {
-                        console.error("Erreur:", error);
-                        alert("Erreur lors de l'envoi à la planification");
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    className="btn-primary flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700"
-                    disabled={loading}
+                              throw new Error("Erreur lors de l'envoi");
+                            }
+                          } catch (error) {
+                            console.error("Erreur:", error);
+                            setLoading(false);
+                          }
+                        }}
+                        className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors font-medium"
+                      >
+                        Confirmer
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
                   >
                     <Calendar className="h-4 w-4" />
                     Envoyer à la planification
