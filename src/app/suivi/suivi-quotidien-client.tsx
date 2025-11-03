@@ -493,9 +493,9 @@ export default function SuiviQuotidienClient({
                          activite.statut}
                       </span>
                     </div>
-                    <h3 className="font-bold text-lg text-gray-800 mb-1">
+                    <h3 className="font-bold text-xl text-gray-800 mb-1">
                       {activite.numero_hierarchique && (
-                        <span className="text-primary mr-2">{activite.numero_hierarchique}</span>
+                        <span className="text-primary mr-2 text-lg">{activite.numero_hierarchique}</span>
                       )}
                       {activite.libelle}
                     </h3>
@@ -515,7 +515,7 @@ export default function SuiviQuotidienClient({
                 </div>
 
                 {/* Informations */}
-                <div className="space-y-2 mb-4 text-sm text-gray-600">
+                <div className="space-y-2 mb-4 text-base text-gray-600">
                   {activite.affaire && (
                     <div>
                       <span className="font-medium">Affaire:</span> {activite.affaire.numero}
