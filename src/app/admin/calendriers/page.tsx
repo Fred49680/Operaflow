@@ -61,7 +61,7 @@ export default async function CalendriersPage() {
     updated_at: calendrier.updated_at,
     site: Array.isArray(calendrier.site) && calendrier.site.length > 0
       ? calendrier.site[0]
-      : (!Array.isArray(calendrier.site) ? calendrier.site : null),
+      : (!Array.isArray(calendrier.site) && calendrier.site ? calendrier.site : null),
   }));
 
   // Récupérer les sites pour le formulaire
