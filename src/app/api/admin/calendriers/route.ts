@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/supabase";
 
 // GET - Liste des calendriers
 export async function GET(request: Request) {
@@ -56,7 +54,10 @@ export async function GET(request: Request) {
     }
 
     // Transformer les données pour correspondre aux types attendus
-    const calendriersWithRelations = (data || []).map((calendrier: any) => ({
+    const calendriersWithRelations = (data || []).map((calendrier: {
+      site?: Array<{ site_id: string; site_code: string; site_label: string }> | { site_id: string; site_code: string; site_label: string } | null;
+      [key: string]: unknown;
+    }) => ({
       ...calendrier,
       site: Array.isArray(calendrier.site) && calendrier.site.length > 0
         ? calendrier.site[0]

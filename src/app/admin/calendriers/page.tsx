@@ -39,7 +39,10 @@ export default async function CalendriersPage() {
     .order("libelle", { ascending: true });
 
   // Transformer les données
-  const calendriersWithRelations = (calendriers || []).map((calendrier: any) => ({
+  const calendriersWithRelations = (calendriers || []).map((calendrier: {
+    site?: Array<{ site_id: string; site_code: string; site_label: string }> | { site_id: string; site_code: string; site_label: string } | null;
+    [key: string]: unknown;
+  }) => ({
     ...calendrier,
     site: Array.isArray(calendrier.site) && calendrier.site.length > 0
       ? calendrier.site[0]

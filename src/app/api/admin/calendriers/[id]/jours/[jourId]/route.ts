@@ -35,7 +35,14 @@ export async function PATCH(
     const body = await request.json();
     const { type_jour, heures_travail, libelle, est_recurrent } = body;
 
-    const updates: any = {
+    const updates: {
+      updated_by: string;
+      updated_at: string;
+      type_jour?: string;
+      heures_travail?: number;
+      libelle?: string | null;
+      est_recurrent?: boolean;
+    } = {
       updated_by: user.id,
       updated_at: new Date().toISOString(),
     };

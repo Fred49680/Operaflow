@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X, Calendar, Edit2, Trash2, Eye, MapPin, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Plus, X, Calendar, Trash2, Eye, MapPin, Clock, CheckCircle, AlertCircle } from "lucide-react";
 
 interface Site {
   site_id: string;
@@ -51,7 +51,13 @@ export default function CalendriersClient({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    libelle: string;
+    description: string;
+    site_id: string;
+    actif: boolean;
+    annee_reference: number | null;
+  }>({
     libelle: "",
     description: "",
     site_id: "",

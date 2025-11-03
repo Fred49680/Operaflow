@@ -35,7 +35,15 @@ export async function PATCH(
     const body = await request.json();
     const { libelle, description, site_id, actif, annee_reference } = body;
 
-    const updates: any = {
+    const updates: {
+      updated_by: string;
+      updated_at: string;
+      libelle?: string;
+      description?: string | null;
+      site_id?: string | null;
+      actif?: boolean;
+      annee_reference?: number | null;
+    } = {
       updated_by: user.id,
       updated_at: new Date().toISOString(),
     };
