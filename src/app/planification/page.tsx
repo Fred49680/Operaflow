@@ -87,6 +87,13 @@ export default async function PlanificationPage() {
     .eq("est_jalon_gantt", true)
     .order("date_debut_previsionnelle", { ascending: true });
 
+  // Charger les calendriers actifs pour le calcul des heures
+  const { data: calendriers } = await supabase
+    .from("tbl_calendriers")
+    .select("id, libelle, site_id, actif")
+    .eq("actif", true)
+    .order("libelle");
+
   // Debug: Vérifier si les données sont récupérées
   if (activites && activites.length > 0) {
     console.log(`[Planification] ${activites.length} activité(s) récupérée(s) depuis Supabase`);
@@ -137,6 +144,7 @@ export default async function PlanificationPage() {
       sites={sites || []}
       affaires={affaires || []}
       collaborateurs={collaborateurs || []}
+      calendriers={calendriers || []}
       isPlanificateur={isPlanificateur}
       userId={user.id}
     />

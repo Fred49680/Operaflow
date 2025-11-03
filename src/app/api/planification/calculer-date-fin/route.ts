@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { date_debut, duree_jours_ouvres, type_horaire } = body;
+    const { date_debut, duree_jours_ouvres, type_horaire, calendrier_id, site_id } = body;
 
     if (!date_debut || duree_jours_ouvres === undefined || duree_jours_ouvres === null) {
       return NextResponse.json(
@@ -36,15 +36,37 @@ export async function POST(request: NextRequest) {
     switch (typeHoraire) {
       case "jour":
         // HN 5/7 : Exclut weekends et jours fériés
-        // Appeler la fonction SQL si disponible
-        const { data, error } = await supabase.rpc("calculer_date_fin_jours_ouvres", {
-          date_debut_activite: dateDebut.toISOString().split('T')[0],
-          duree_jours_ouvres: dureeJours,
-          site_id_activite: null,
-        });
-        
-        if (!error && data) {
-          return NextResponse.json({ date_fin: data }, { status: 200 });
+        // Si calendrier fourni, utiliser la fonction SQL avec calendrier
+        if (calendrier_id) {
+          // Récupérer le site_id du calendrier si disponible
+          const { data: calendrierData } = await supabase
+            .from("tbl_calendriers")
+            .select("site_id")
+            .eq("id", calendrier_id)
+            .single();
+          
+          const siteIdCalendrier = calendrierData?.site_id || site_id || null;
+          
+          const { data, error } = await supabase.rpc("calculer_date_fin_jours_ouvres", {
+            date_debut_activite: dateDebut.toISOString().split('T')[0],
+            duree_jours_ouvres: dureeJours,
+            site_id_activite: siteIdCalendrier,
+          });
+          
+          if (!error && data) {
+            return NextResponse.json({ date_fin: data }, { status: 200 });
+          }
+        } else {
+          // Appeler la fonction SQL si disponible (sans calendrier spécifique)
+          const { data, error } = await supabase.rpc("calculer_date_fin_jours_ouvres", {
+            date_debut_activite: dateDebut.toISOString().split('T')[0],
+            duree_jours_ouvres: dureeJours,
+            site_id_activite: site_id || null,
+          });
+          
+          if (!error && data) {
+            return NextResponse.json({ date_fin: data }, { status: 200 });
+          }
         }
         
         // Fallback : calcul simple sans jours fériés

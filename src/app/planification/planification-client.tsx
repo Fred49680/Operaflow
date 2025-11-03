@@ -32,8 +32,9 @@ interface PlanificationClientProps {
   affectations: AffectationPlanification[];
   jalons?: JalonGantt[];
   sites?: Array<{ site_id: string; site_code: string; site_label: string }>;
-  affaires?: Array<{ id: string; numero: string; libelle: string; statut: string }>;
+  affaires?: Array<{ id: string; numero: string; libelle: string; statut: string; site_id?: string | null }>;
   collaborateurs?: Array<{ id: string; nom: string; prenom: string }>;
+  calendriers?: Array<{ id: string; libelle: string; site_id: string | null; actif: boolean }>;
   isPlanificateur?: boolean;
   userId?: string;
 }
@@ -45,6 +46,7 @@ export default function PlanificationClient({
   sites = [],
   affaires = [],
   collaborateurs: _collaborateurs = [],
+  calendriers = [],
   isPlanificateur = false,
   userId,
 }: PlanificationClientProps) {
@@ -75,6 +77,8 @@ export default function PlanificationClient({
   const [selectedAffaireGantt, setSelectedAffaireGantt] = useState<string | null>(null);
   const [uniteDuree, setUniteDuree] = useState<"jours" | "semaines">("jours");
   const [typeHoraireSelectionne, setTypeHoraireSelectionne] = useState<string>("jour");
+  const [selectedCalendrierId, setSelectedCalendrierId] = useState<string>("");
+  const [heuresPrevuesAuto, setHeuresPrevuesAuto] = useState<number | null>(null);
   
   // Charger les templates au montage
   useEffect(() => {
@@ -712,7 +716,7 @@ export default function PlanificationClient({
                 <div className="space-y-6">
                   {/* Section 1 : Identification */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Affaire <span className="text-red-500">*</span>
                       </label>
@@ -740,6 +744,37 @@ export default function PlanificationClient({
                       </select>
                     </div>
 
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Calendrier
+                      </label>
+                      <select
+                        value={selectedCalendrierId}
+                        onChange={async (e) => {
+                          setSelectedCalendrierId(e.target.value);
+                          // Recalculer les heures prévues si dates et durée sont définies
+                          if (e.target.value && dateDebut && (dateFinCalculee || (editingActivite?.date_fin_prevue))) {
+                            const dateFin = dateFinCalculee || (editingActivite?.date_fin_prevue ? new Date(editingActivite.date_fin_prevue).toISOString().slice(0, 16) : "");
+                            if (dateFin) {
+                              await calculerHeuresPrevues(dateDebut, dateFin);
+                            }
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      >
+                        <option value="">Aucun calendrier (calcul par défaut)</option>
+                        {calendriers.map((calendrier) => (
+                          <option key={calendrier.id} value={calendrier.id}>
+                            {calendrier.libelle}
+                            {calendrier.site_id ? ` (Site)` : " (Global)"}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Les heures prévues seront calculées automatiquement selon ce calendrier
+                      </p>
+                    </div>
+
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Libellé <span className="text-red-500">*</span>
@@ -765,10 +800,10 @@ export default function PlanificationClient({
                         </label>
                         <select
                           value={uniteDuree}
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             setUniteDuree(e.target.value as "jours" | "semaines");
                             if (calculAutoDateFin && dateDebut && dureeJoursOuvres) {
-                              calculerDateFin(dateDebut, parseInt(dureeJoursOuvres), e.target.value as "jours" | "semaines", typeHoraireSelectionne);
+                              await calculerDateFin(dateDebut, parseInt(dureeJoursOuvres), e.target.value as "jours" | "semaines", typeHoraireSelectionne);
                             }
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white"
@@ -787,10 +822,10 @@ export default function PlanificationClient({
                           min="1"
                           step={uniteDuree === "semaines" ? "0.5" : "1"}
                           value={dureeJoursOuvres || (editingActivite?.duree_jours_ouvres || "")}
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             setDureeJoursOuvres(e.target.value);
                             if (calculAutoDateFin && dateDebut && e.target.value) {
-                              calculerDateFin(dateDebut, parseFloat(e.target.value), uniteDuree, typeHoraireSelectionne);
+                              await calculerDateFin(dateDebut, parseFloat(e.target.value), uniteDuree, typeHoraireSelectionne);
                             }
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white"
@@ -813,10 +848,10 @@ export default function PlanificationClient({
                             name="calcul_auto_date_fin"
                             value="true"
                             checked={calculAutoDateFin || (editingActivite?.calcul_auto_date_fin || false)}
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               setCalculAutoDateFin(e.target.checked);
                               if (e.target.checked && dateDebut && dureeJoursOuvres) {
-                                calculerDateFin(dateDebut, parseFloat(dureeJoursOuvres), uniteDuree, typeHoraireSelectionne);
+                                await calculerDateFin(dateDebut, parseFloat(dureeJoursOuvres), uniteDuree, typeHoraireSelectionne);
                               } else {
                                 setDateFinCalculee("");
                               }
@@ -865,9 +900,13 @@ export default function PlanificationClient({
                         required={!calculAutoDateFin}
                         disabled={calculAutoDateFin}
                         value={calculAutoDateFin ? dateFinCalculee : (editingActivite?.date_fin_prevue ? new Date(editingActivite.date_fin_prevue).toISOString().slice(0, 16) : "")}
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           if (!calculAutoDateFin) {
                             setDateFinCalculee(e.target.value);
+                            // Recalculer les heures prévues si calendrier et date début sont définis
+                            if (selectedCalendrierId && dateDebut && e.target.value) {
+                              await calculerHeuresPrevues(dateDebut, e.target.value);
+                            }
                           }
                         }}
                         className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${
@@ -881,10 +920,10 @@ export default function PlanificationClient({
                       <select
                         name="type_horaire"
                         defaultValue={editingActivite?.type_horaire || "jour"}
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           setTypeHoraireSelectionne(e.target.value);
                           if (calculAutoDateFin && dateDebut && dureeJoursOuvres) {
-                            calculerDateFin(dateDebut, parseInt(dureeJoursOuvres), uniteDuree, e.target.value);
+                            await calculerDateFin(dateDebut, parseInt(dureeJoursOuvres), uniteDuree, e.target.value);
                           }
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
@@ -899,15 +938,30 @@ export default function PlanificationClient({
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Heures prévues</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Heures prévues
+                        {heuresPrevuesAuto !== null && selectedCalendrierId && (
+                          <span className="ml-2 text-xs text-blue-600 font-normal">(calculées automatiquement)</span>
+                        )}
+                      </label>
                       <input
                         type="number"
                         name="heures_prevues"
                         step="0.5"
                         min="0"
-                        defaultValue={editingActivite?.heures_prevues || 0}
+                        value={heuresPrevuesAuto !== null && selectedCalendrierId ? heuresPrevuesAuto : (editingActivite?.heures_prevues || 0)}
+                        onChange={(e) => {
+                          // Si calendrier sélectionné, on peut toujours modifier manuellement
+                          setHeuresPrevuesAuto(null);
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        placeholder={heuresPrevuesAuto !== null && selectedCalendrierId ? heuresPrevuesAuto.toString() : "0"}
                       />
+                      {selectedCalendrierId && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Basé sur le calendrier sélectionné (exclut jours fériés)
+                        </p>
+                      )}
                     </div>
                   </div>
 
