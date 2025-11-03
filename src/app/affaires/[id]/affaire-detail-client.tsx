@@ -1833,6 +1833,64 @@ export default function AffaireDetailClient({
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation "Ajouter un autre jalon ?" */}
+      {showAddAnotherLotModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                  <Plus className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Jalon créé avec succès</h3>
+                  <p className="text-sm text-gray-500">Souhaitez-vous ajouter un autre jalon ?</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-700 mb-4">
+                Le jalon a été créé avec succès. Voulez-vous en ajouter un autre ?
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowAddAnotherLotModal(false);
+                  setShowLotModal(false);
+                  setEditingLot(null);
+                  setLotFormPourcentage("");
+                  setLotFormMontant("");
+                  setLotFormError("");
+                  window.location.reload();
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+              >
+                Non, retourner à l'affaire
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddAnotherLotModal(false);
+                  // Réinitialiser le formulaire mais garder le modal ouvert
+                  setEditingLot(null);
+                  setLotFormPourcentage("");
+                  setLotFormMontant("");
+                  setLotFormError("");
+                  // Le modal reste ouvert (showLotModal reste true)
+                  router.refresh();
+                }}
+                className="px-4 py-2 text-white bg-primary rounded-lg hover:bg-primary-dark font-medium transition-colors flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Oui, ajouter un autre jalon
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
