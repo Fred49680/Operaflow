@@ -332,7 +332,7 @@ export default function SuiviQuotidienClient({
   };
 
   // Handler pour déclarer avancement
-  const handleDeclarerAvancement = async (activiteId: string, pourcentage: number, heuresReelles: number, commentaire?: string) => {
+  const handleDeclarerAvancement = async (activiteId: string, pourcentage: number, commentaire?: string) => {
     setSaving(true);
     try {
       const response = await fetch("/api/planification/suivi-quotidien", {
@@ -342,7 +342,7 @@ export default function SuiviQuotidienClient({
           activite_id: activiteId,
           collaborateur_id: userId,
           date_journee: new Date().toISOString().split("T")[0],
-          heures_reelles: heuresReelles,
+          heures_reelles: 0, // Pas utilisé - suivi en jours uniquement
           pourcentage_avancement_journee: pourcentage,
           commentaire: commentaire || null,
         }),
@@ -669,14 +669,13 @@ export default function SuiviQuotidienClient({
                     const pourcentage = modeAvancement === "auto" 
                       ? pourcentageAuto 
                       : parseFloat(formData.get("pourcentage") as string);
-                    const heures = parseFloat(formData.get("heures") as string);
                     const commentaire = formData.get("commentaire") as string;
-                    handleDeclarerAvancement(selectedActivite.id, pourcentage, heures, commentaire);
+                    handleDeclarerAvancement(selectedActivite.id, pourcentage, commentaire);
                   }}
                 >
                   {/* Sélecteur de mode */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Mode de calcul
                     </label>
                     <div className="flex gap-2">
@@ -687,30 +686,30 @@ export default function SuiviQuotidienClient({
                           // Calculer automatiquement le pourcentage pour une journée
                           setPourcentageAuto(pourcentageParJour);
                         }}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${
                           modeAvancement === "auto"
                             ? "bg-blue-50 border-blue-500 text-blue-700"
                             : "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
                         }`}
                       >
-                        <Zap className={`h-5 w-5 ${modeAvancement === "auto" ? "text-blue-600" : "text-gray-400"}`} />
+                        <Zap className={`h-4 w-4 ${modeAvancement === "auto" ? "text-blue-600" : "text-gray-400"}`} />
                         <span className="font-medium">Automatique</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setModeAvancement("manuel")}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${
                           modeAvancement === "manuel"
                             ? "bg-purple-50 border-purple-500 text-purple-700"
                             : "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
                         }`}
                       >
-                        <Edit className={`h-5 w-5 ${modeAvancement === "manuel" ? "text-purple-600" : "text-gray-400"}`} />
+                        <Edit className={`h-4 w-4 ${modeAvancement === "manuel" ? "text-purple-600" : "text-gray-400"}`} />
                         <span className="font-medium">Manuel</span>
                       </button>
                     </div>
                     {modeAvancement === "auto" && (
-                      <p className="mt-2 text-xs text-gray-500">
+                      <p className="mt-1.5 text-xs text-gray-500">
                         Calcul automatique: {pourcentageParJour.toFixed(2)}% par journée (sur {dureeTotale} jour{dureeTotale > 1 ? 's' : ''})
                       </p>
                     )}
@@ -718,7 +717,7 @@ export default function SuiviQuotidienClient({
 
                   {/* Pourcentage d'avancement */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5 h-5 flex items-center">
                       Pourcentage d'avancement (%) <span className="text-red-500">*</span>
                     </label>
                     {modeAvancement === "auto" ? (
@@ -731,7 +730,7 @@ export default function SuiviQuotidienClient({
                           max="100"
                           step="0.1"
                           required
-                          className="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50/50 font-medium text-blue-700"
+                          className="w-full px-3 py-2 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50/50 font-medium text-blue-700 text-sm"
                         />
                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 font-semibold">
                           Auto
@@ -745,42 +744,21 @@ export default function SuiviQuotidienClient({
                         max="100"
                         step="0.1"
                         required
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium"
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium text-sm"
                         placeholder="Saisir le pourcentage"
                       />
                     )}
                   </div>
 
-                  {/* Heures réelles */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Heures réelles <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        name="heures"
-                        min="0"
-                        step="0.5"
-                        required
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary font-medium"
-                        placeholder="Ex: 8.0"
-                      />
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500 font-medium">
-                        heures
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Commentaire */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5 h-5 flex items-center">
                       Commentaire
                     </label>
                     <textarea
                       name="commentaire"
                       rows={3}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none text-sm"
                       placeholder="Ajouter un commentaire (optionnel)..."
                     />
                   </div>
