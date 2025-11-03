@@ -20,13 +20,22 @@ export async function GET(request: Request) {
     const statut = searchParams.get("statut");
     const userId = searchParams.get("user_id"); // Nouveau paramètre pour chercher par user_id
 
+    // Construire le select selon les besoins
+    let selectFields = `*`;
+    
+    // Si on cherche par user_id uniquement, on n'a pas besoin de la relation responsable
+    if (userId || (!hasRHAccess && !site && !statut)) {
+      // Recherche simple par user_id - pas besoin de relations complexes
+      selectFields = `*`;
+    } else {
+      // Pour les autres cas, on peut essayer d'inclure la relation responsable
+      // Mais on va d'abord essayer sans pour éviter l'erreur
+      selectFields = `*`;
+    }
+
     let query = supabase
       .from("collaborateurs")
-      .select(`
-        *,
-        responsable:collaborateurs!collaborateurs_responsable_id_fkey(id, nom, prenom, email),
-        user:user_id(id, email)
-      `);
+      .select(selectFields);
 
     if (userId) {
       // Chercher par user_id (pour tous les utilisateurs)
