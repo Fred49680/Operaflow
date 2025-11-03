@@ -1,3 +1,215 @@
----
+PRD — Module “Suivi des Activités Terrain”
+
+Projet : OperaFlow
+Version : 3.0
+Auteur : Fred Baudry
+Date : 01/11/2025
+
+🎯 Objectif général
+
+Mettre à disposition des équipes de terrain un outil de pilotage visuel du déroulement des activités planifiées, depuis leur état “en attente de lancement” jusqu’à leur clôture complète, avec :
+
+Un lancement hiérarchisé à partir du Chef de Chantier,
+
+Une interface en tuiles dynamiques représentant les activités,
+
+Un suivi d’avancement journalier automatique ou manuel,
+
+Un historique complet de vie de chaque activité (changements, prolongations, suspensions, etc.),
+
+Une synchronisation automatique avec la planification et les charges RH.
+
+🧩 1. Structure et cycle de vie des activités
+États principaux d’une activité :
+Statut	Description	Déclenchement	Rôle autorisé
+Planifiée (en attente de lancement)	Activité prête à démarrer, affectée mais non lancée	Création par conducteur ou planificateur	Conducteur / Planif
+Lancée	Activité démarrée officiellement sur le terrain	Validation manuelle depuis la tuile	Chef de Chantier ou supérieur
+Reportée	Activité décalée avant son démarrage effectif	Action manuelle depuis la tuile	Chef de Chantier ou supérieur
+Suspendue	Activité temporairement stoppée après démarrage	Action depuis tuile “Lancée”	Chef de Chantier
+Prolongée	Activité prolongée au-delà de la date prévue	Action depuis tuile “Lancée”	Chef de Chantier
+Terminée	Activité clôturée, fin de charge	Automatique (si atteinte date fin) ou manuelle	Chef de Chantier / Conducteur
+Archivée	Activité figée pour historique	Automatique après validation finale	Système
+🧱 2. Interface utilisateur — Vue “Tuiles Activités”
+Présentation
+
+Chaque activité apparaît sous forme d’une tuile interactive affichant :
+
+Nom de l’activité
+
+Affaire / Site
+
+Responsable
+
+Période prévue (début / fin)
+
+Avancement (%)
+
+Statut (code couleur dynamique)
+
+Boutons d’action selon le statut actuel
+
+Icône “Historique” (🕓)
+
+Code couleur par statut :
+Statut	Couleur	Exemple visuel
+Planifiée	Gris clair	“En attente de lancement”
+Lancée	Bleu	“En cours”
+Reportée	Orange	“Décalée”
+Suspendue	Rouge clair	“Pause”
+Prolongée	Violet	“Prolongée”
+Terminée	Vert	“Terminée”
+🧭 3. Logique d’affichage des boutons d’action
+Phase 1 : Activité planifiée (non lancée)
+
+Boutons visibles :
+
+✅ Lancer
+
+⚠️ Reporter
+
+Objectif : permettre au chef de chantier de démarrer ou repousser une tâche avant son exécution.
+
+Phase 2 : Activité lancée
+
+Boutons visibles :
+
+⏸️ Suspendre
+
+➕ Prolonger
+
+📈 Déclarer avancement journalier
+
+✅ Terminer
+
+Objectif : pilotage quotidien, déclaration de progression, et gestion des imprévus.
+
+Phase 3 : Activité terminée
+
+Boutons visibles :
+
+🔍 Historique complet
+
+📄 Exporter / consulter bilan
+
+Objectif : consultation, validation finale, archivage des données.
+
+📅 4. Avancement journalier
+Objectif
+
+Permettre le suivi de la progression physique quotidienne des activités (en jours ou en pourcentage), en automatisant autant que possible la mise à jour.
+
+Deux modes :
+Mode	Description	Calcul
+Automatique (physique)	Calcul basé sur la durée planifiée et les jours déclarés “réalisés”	Nb jours réalisés / Nb jours totaux
+Manuel (réel)	Chef de chantier saisit le % réel d’avancement	Valeur saisie librement (0–100%)
+Déclenchement automatique :
+
+Chaque jour où l’activité est marquée “Lancée”, OperaFlow incrémente le compteur “Jours réalisés”.
+
+Si le total atteint la durée prévue → passage automatique en “Terminée” (sauf prolongation).
+
+Interface :
+
+Bouton “📈 Déclarer avancement du jour”
+
+Saisie libre ou validation automatique selon configuration
+
+Historique visible par date :
+
+29/10 – +1 jour réalisé (auto)
+30/10 – +0,5 jour (manuel)
+31/10 – activité suspendue
+01/11 – reprise, +1 jour
+
+🧠 5. Historique d’activité (“Journal de vie”)
+Objectif
+
+Conserver la traçabilité complète de toutes les actions et décisions prises sur l’activité.
+
+Contenu du journal :
+
+Date / heure
+
+Utilisateur (Chef de Chantier, Conducteur, Admin)
+
+Action effectuée (Lancée, Reportée, Suspendue, Prolongée, Terminé, etc.)
+
+Motif saisi (si applicable)
+
+Commentaire libre
+
+Durée impactée
+
+Exemple :
+Date	Utilisateur	Action	Motif	Commentaire
+28/10/2025	Dupont J.	Lancement	—	Démarrage chantier zone Nord
+29/10/2025	Dupont J.	Suspension	Sécurité	Attente feu vert HSE
+31/10/2025	Dupont J.	Reprise	—	Redémarrage validé
+01/11/2025	Baudry F.	Prolongation	Retard matériel	1 jour ajouté
+🔗 6. Intégrations automatiques OperaFlow
+Module	Fonction
+Planification / Gantt RH	Actualise la charge restante selon avancement ; bloque ou décale les activités suspendues.
+Claims (Incidents)	Lors d’un “Reporté”, proposition de créer un Claim avec motif prérempli.
+RH / Absences	Une absence critique d’un intervenant peut suspendre automatiquement une activité lancée.
+Dashboard Direction	Affiche en temps réel le nombre d’activités lancées, suspendues, terminées, et leur avancement global.
+⚙️ 7. Règles de gestion essentielles
+
+Droit de lancement :
+Seul un utilisateur ayant un rôle ≥ Chef de Chantier peut lancer une activité.
+
+Motif obligatoire :
+Pour les actions “Reportée”, “Suspendue” et “Prolongée”.
+
+Blocage des doublons :
+Une même ressource ne peut être affectée à deux activités “Lancée” sur le même jour.
+
+Prolongation automatique :
+Si activité non terminée à la date prévue, une prolongation automatique d’1 jour peut être proposée avec alerte.
+
+Synchronisation :
+Chaque changement de statut met à jour instantanément la charge et la planification.
+
+Journal non modifiable :
+L’historique des actions est en lecture seule, sauf admin.
+
+🧱 8. Rôles et responsabilités
+Rôle	Actions principales
+Chef de Chantier	Lance, reporte, suspend, prolonge, termine les activités ; déclare les avancements.
+Conducteur de Travaux	Supervise, valide les prolongations et clôtures, suit l’ensemble des tuiles du site.
+Planificateur / RH	Observe les impacts sur la charge et ajuste les plannings.
+Admin App	Peut modifier ou corriger les journaux en cas d’erreur.
+Collaborateur (terrain)	Consulte l’état des activités en cours.
+🧮 9. Indicateurs clés et tableaux de bord
+
+% d’activités lancées vs planifiées
+
+Nombre d’activités reportées / suspendues / prolongées
+
+Temps total de retard cumulé (jours)
+
+Taux d’avancement physique global (%)
+
+Écarts entre avancement réel et prévisionnel
+
+Historique moyen de durée par statut
+
+📅 10. Phasage fonctionnel
+Phase	Livraison	Objectif
+Phase 1	Vue tuiles + Lancer/Reporter	Mise en place du suivi simple et intuitif
+Phase 2	Suivi journalier d’avancement	Automatisation du calcul “physique”
+Phase 3	Historique complet des actions	Journal de vie consultable
+Phase 4	Suspension / prolongation / claims	Gestion des anomalies + lien incident
+Phase 5	Tableaux de bord avancés	Suivi directionnel et RH
+🎯 11. Bénéfices opérationnels
+
+Clarté terrain : les chefs de chantier voient instantanément où en sont leurs activités.
+
+Réactivité : lancement, report ou suspension en un clic depuis la tuile.
+
+Fiabilité : tout est tracé, horodaté, sans saisie complexe.
+
+Pilotage global : la direction suit la productivité réelle et les retards.
+
+Automatisation : calcul automatique de l’avancement physique jour par jour.---
 alwaysApply: true
 ---

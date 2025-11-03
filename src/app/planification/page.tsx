@@ -22,12 +22,12 @@ export default async function PlanificationPage() {
     role === "Planificateur" || role === "Administrateur" || role === "Responsable d'Activité"
   );
 
-  // Charger les activités planifiées avec hiérarchie
+  // Charger les activités planifiées avec hiérarchie et dépendances multiples
   const { data: activites } = await supabase
     .from("tbl_planification_activites")
     .select(`
       *,
-      affaire:tbl_affaires!tbl_planification_activites_affaire_id_fkey(id, numero, libelle, site_id),
+      affaire:tbl_affaires!tbl_planification_activites_affaire_id_fkey(id, numero, libelle, site_id, statut),
       lot:tbl_affaires_lots(id, numero_lot, libelle_lot),
       site:tbl_sites!tbl_planification_activites_site_id_fkey(site_id, site_code, site_label),
       responsable:collaborateurs!tbl_planification_activites_responsable_id_fkey(id, nom, prenom),

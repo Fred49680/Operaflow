@@ -8,6 +8,7 @@ import AffairesEnAttente from "@/components/planification/AffairesEnAttente";
 import AffairesPlanifiees from "@/components/planification/AffairesPlanifiees";
 import TemplateSelectorModal from "@/components/planification/TemplateSelectorModal";
 import GestionTemplatesModal from "@/components/planification/GestionTemplatesModal";
+import DependancesManager from "@/components/planification/DependancesManager";
 import type { ActivitePlanification, AffectationPlanification } from "@/types/planification";
 
 interface PlanificationClientProps {
@@ -596,11 +597,8 @@ export default function PlanificationClient({
                   const parentId = formData.get("parent_id") as string;
                   if (parentId) payload.parent_id = parentId;
                   
-                  // Nouveaux champs dépendances
-                  const activitePrecedenteId = formData.get("activite_precedente_id") as string;
-                  const typeDependance = formData.get("type_dependance") as string;
-                  if (activitePrecedenteId) payload.activite_precedente_id = activitePrecedenteId;
-                  if (typeDependance) payload.type_dependance = typeDependance;
+                  // Note: Les dépendances multiples sont gérées séparément via l'API /dependances
+                  // On ne charge plus activite_precedente_id et type_dependance dans le payload
                   
                   // Nouveaux champs jours ouvrés
                   const dureeJoursOuvresForm = formData.get("duree_jours_ouvres") as string;
@@ -790,50 +788,19 @@ export default function PlanificationClient({
                     </div>
                   </div>
 
-                  {/* Section Dépendances */}
+                  {/* Section Dépendances multiples */}
                   <div className="md:col-span-2 border-t pt-4">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Dépendances</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Tâche précédente
-                        </label>
-                        <select
-                          name="activite_precedente_id"
-                          defaultValue={editingActivite?.activite_precedente_id || ""}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                        >
-                          <option value="">Aucune dépendance</option>
-                          {activites
-                            .filter((a) => a.affaire_id === (editingActivite?.affaire_id || filters.affaire))
-                            .filter((a) => !editingActivite || a.id !== editingActivite.id)
-                            .map((activite) => (
-                              <option key={activite.id} value={activite.id}>
-                                {activite.numero_hierarchique || "•"} {activite.libelle}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Type de dépendance
-                        </label>
-                        <select
-                          name="type_dependance"
-                          defaultValue={editingActivite?.type_dependance || ""}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                        >
-                          <option value="">Sélectionner...</option>
-                          <option value="FS">Fin → Début (FS)</option>
-                          <option value="SS">Début → Début (SS)</option>
-                          <option value="FF">Fin → Fin (FF)</option>
-                          <option value="SF">Début → Fin (SF)</option>
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Les dates seront calculées automatiquement
-                        </p>
-                      </div>
-                    </div>
+                    <DependancesManager
+                      activiteId={editingActivite?.id}
+                      activitesDisponibles={activites
+                        .filter((a) => a.affaire_id === (editingActivite?.affaire_id || filters.affaire))
+                        .filter((a) => !editingActivite || a.id !== editingActivite.id)
+                        .map((a) => ({
+                          id: a.id,
+                          libelle: a.libelle,
+                          numero_hierarchique: a.numero_hierarchique || undefined,
+                        }))}
+                    />
                   </div>
 
                   {/* Section Jours ouvrés */}

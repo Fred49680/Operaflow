@@ -54,9 +54,11 @@ export default function AffairesPlanifiees({ onCreateActivite }: AffairesPlanifi
     );
   }
 
-  // Filtrer les affaires qui n'ont pas encore d'activités
+  // Filtrer les affaires qui n'ont pas encore d'activités OU qui ont des activités mais restent dans le Gantt
+  // Note: Les affaires planifiées restent maintenant dans le Gantt même après création d'activités
   const affairesSansActivites = affaires.filter((affaire) => !activitesAffaires[affaire.id] || activitesAffaires[affaire.id] === 0);
 
+  // Ne pas afficher cette section si toutes les affaires ont des activités (elles restent dans le Gantt)
   if (affairesSansActivites.length === 0) {
     return null;
   }
