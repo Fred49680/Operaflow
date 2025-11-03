@@ -292,6 +292,29 @@ export default function CalendriersClient({
     await fetchSemaineType(calendrier.id);
   };
 
+  const handleCloseDetailModal = async () => {
+    // Sauvegarder automatiquement la semaine type si elle a été modifiée
+    if (selectedCalendrier && semaineType.length > 0) {
+      try {
+        const semaineTypeToSend = semaineType.map((jour) => ({
+          jour_semaine: jour.jour_semaine,
+          heures_travail: jour.heures_travail,
+          type_jour: jour.type_jour,
+        }));
+
+        await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/semaine-type`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ semaine_type: semaineTypeToSend }),
+        });
+      } catch (err) {
+        console.error("Erreur sauvegarde automatique semaine type:", err);
+      }
+    }
+    setDetailModalOpen(false);
+    setSelectedCalendrier(null);
+  };
+
   const handleAddJour = () => {
     if (!selectedCalendrier) return;
     setSelectedJour(null);
@@ -702,39 +725,61 @@ export default function CalendriersClient({
             <div className="p-6 space-y-6">
               {/* Section Semaine Type */}
               <div className="border-b pb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-800">Semaine Type</h4>
-                    <p className="text-sm text-gray-600">
-                      Définissez les heures travaillées pour chaque jour de la semaine
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setSemaineTypeModalOpen(true)}
-                    className="btn-primary flex items-center gap-2 text-sm"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    Configurer
-                  </button>
+                <div className="mb-4">
+                  <h4 className="text-lg font-semibold text-gray-800">Semaine Type</h4>
+                  <p className="text-sm text-gray-600">
+                    Cliquez sur les cellules pour modifier directement. Les modifications seront sauvegardées à la fermeture du modal.
+                  </p>
                 </div>
                 <div className="grid grid-cols-7 gap-2">
-                  {semaineType.map((jour) => (
+                  {semaineType.map((jour, index) => (
                     <div
                       key={jour.jour_semaine}
-                      className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center"
+                      className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-primary transition-colors"
                     >
-                      <div className="text-xs font-medium text-gray-700 mb-1">
+                      <div className="text-xs font-medium text-gray-700 mb-2 text-center">
                         {jour.nom_jour}
                       </div>
-                      <div className="text-sm font-bold text-primary">
-                        {jour.heures_travail_display}
+                      
+                      {/* Type de jour - Éditable */}
+                      <div className="mb-2">
+                        <select
+                          value={jour.type_jour}
+                          onChange={(e) => {
+                            const newSemaineType = [...semaineType];
+                            newSemaineType[index].type_jour = e.target.value;
+                            if (e.target.value === "chome" || e.target.value === "ferie") {
+                              newSemaineType[index].heures_travail = 0;
+                              newSemaineType[index].heures_travail_display = "00:00";
+                            }
+                            setSemaineType(newSemaineType);
+                          }}
+                          className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-primary bg-white"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <option value="ouvre">Ouvré</option>
+                          <option value="chome">Chômé</option>
+                          <option value="ferie">Férié</option>
+                          <option value="reduit">Réduit</option>
+                        </select>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {jour.type_jour === "ouvre"
-                          ? "Ouvré"
-                          : jour.type_jour === "chome"
-                          ? "Chômé"
-                          : jour.type_jour}
+
+                      {/* Heures travaillées - Éditable */}
+                      <div>
+                        <input
+                          type="time"
+                          value={jour.heures_travail_display}
+                          onChange={(e) => {
+                            const newSemaineType = [...semaineType];
+                            const timeValue = e.target.value || "00:00";
+                            newSemaineType[index].heures_travail_display = timeValue;
+                            newSemaineType[index].heures_travail = timeToDecimal(timeValue);
+                            setSemaineType(newSemaineType);
+                          }}
+                          disabled={jour.type_jour === "chome" || jour.type_jour === "ferie"}
+                          className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 text-center font-semibold"
+                          onClick={(e) => e.stopPropagation()}
+                        />
                       </div>
                     </div>
                   ))}
@@ -996,8 +1041,8 @@ export default function CalendriersClient({
         </div>
       )}
 
-      {/* Modal Semaine Type */}
-      {semaineTypeModalOpen && selectedCalendrier && (
+      {/* Modal Semaine Type - Désactivé, édition directe dans le modal principal */}
+      {false && semaineTypeModalOpen && selectedCalendrier && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
