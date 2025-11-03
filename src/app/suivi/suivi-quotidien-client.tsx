@@ -525,32 +525,75 @@ export default function SuiviQuotidienClient({
           </div>
         )}
 
-        {/* Modal Actions (Lancer, Reporter, Suspendre, Prolonger, Terminer) */}
+        {/* Modal Actions (Lancer, Reporter, Suspendre, Prolonger, Terminer) - Design amélioré */}
         {showActionModal && selectedActivite && actionType && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-              <div className="flex items-center justify-between p-6 border-b">
-                <h2 className="text-xl font-bold text-primary">
-                  {actionType === "lancer" && "Lancer l'activité"}
-                  {actionType === "reporter" && "Reporter l'activité"}
-                  {actionType === "suspendre" && "Suspendre l'activité"}
-                  {actionType === "prolonger" && "Prolonger l'activité"}
-                  {actionType === "terminer" && "Terminer l'activité"}
-                </h2>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => {
+            setShowActionModal(false);
+            setSelectedActivite(null);
+            setActionType(null);
+          }}>
+            {/* Overlay avec backdrop blur */}
+            <div className="absolute inset-0 bg-slate-600/40 backdrop-blur-sm" />
+            
+            {/* Modal */}
+            <div
+              className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full z-50 border border-gray-100 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header avec gradient selon l'action */}
+              <div className={`flex items-center gap-4 px-6 py-5 border-b ${
+                actionType === "lancer" ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-100" :
+                actionType === "reporter" ? "bg-gradient-to-r from-orange-50 to-amber-50 border-orange-100" :
+                actionType === "suspendre" ? "bg-gradient-to-r from-red-50 to-rose-50 border-red-100" :
+                actionType === "prolonger" ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100" :
+                "bg-gradient-to-r from-purple-50 to-violet-50 border-purple-100"
+              }`}>
+                {/* Icône de l'action */}
+                <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center ${
+                  actionType === "lancer" ? "bg-green-100 text-green-600" :
+                  actionType === "reporter" ? "bg-orange-100 text-orange-600" :
+                  actionType === "suspendre" ? "bg-red-100 text-red-600" :
+                  actionType === "prolonger" ? "bg-blue-100 text-blue-600" :
+                  "bg-purple-100 text-purple-600"
+                }`}>
+                  {actionType === "lancer" && <Play className="h-6 w-6" />}
+                  {actionType === "reporter" && <Calendar className="h-6 w-6" />}
+                  {actionType === "suspendre" && <Pause className="h-6 w-6" />}
+                  {actionType === "prolonger" && <Clock className="h-6 w-6" />}
+                  {actionType === "terminer" && <CheckCircle className="h-6 w-6" />}
+                </div>
+                
+                {/* Titre */}
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-xl font-bold text-gray-900 mb-0.5">
+                    {actionType === "lancer" && "Lancer l'activité"}
+                    {actionType === "reporter" && "Reporter l'activité"}
+                    {actionType === "suspendre" && "Suspendre l'activité"}
+                    {actionType === "prolonger" && "Prolonger l'activité"}
+                    {actionType === "terminer" && "Terminer l'activité"}
+                  </h2>
+                  <p className="text-sm text-gray-600 truncate">
+                    {selectedActivite.libelle}
+                  </p>
+                </div>
+                
+                {/* Bouton fermer */}
                 <button
                   onClick={() => {
                     setShowActionModal(false);
                     setSelectedActivite(null);
                     setActionType(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="flex-shrink-0 p-1.5 hover:bg-white/60 rounded-lg transition-colors"
+                  aria-label="Fermer"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-5 w-5 text-gray-500 hover:text-gray-700" />
                 </button>
               </div>
 
+              {/* Contenu */}
               <form
-                className="p-6 space-y-4"
+                className="p-6 space-y-5 bg-gray-50/30"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const formData = new FormData(e.currentTarget);
@@ -565,30 +608,52 @@ export default function SuiviQuotidienClient({
                   handleAction(selectedActivite, actionType, motif, dateProlongation);
                 }}
               >
-                <div>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Activité: <span className="font-semibold">{selectedActivite.libelle}</span>
-                  </p>
+                {/* Informations de l'activité */}
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 mb-1">Activité sélectionnée</p>
+                      <p className="text-sm text-gray-600 break-words">
+                        {selectedActivite.libelle}
+                      </p>
+                      {selectedActivite.affaire && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Affaire: {typeof selectedActivite.affaire === 'object' 
+                            ? `${selectedActivite.affaire.numero} - ${selectedActivite.affaire.libelle}`
+                            : selectedActivite.affaire}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
+                {/* Champ motif (si requis) */}
                 {(actionType === "reporter" || actionType === "suspendre" || actionType === "prolonger") && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Motif <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       name="motif"
-                      rows={3}
+                      rows={4}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                      placeholder="Raison du report, suspension ou prolongation..."
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none"
+                      placeholder="Expliquez la raison du report, de la suspension ou de la prolongation..."
                     />
+                    <p className="text-xs text-gray-500 mt-1.5">
+                      Ce motif sera visible dans l'historique de l'activité.
+                    </p>
                   </div>
                 )}
 
+                {/* Champ date prolongation */}
                 {actionType === "prolonger" && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <Clock className="h-4 w-4 inline mr-1.5" />
                       Nouvelle date de fin <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -596,12 +661,34 @@ export default function SuiviQuotidienClient({
                       name="date_prolongation"
                       required
                       min={new Date(selectedActivite.date_fin_prevue).toISOString().split("T")[0]}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                     />
+                    <p className="text-xs text-gray-500 mt-1.5">
+                      Date actuelle de fin: {new Date(selectedActivite.date_fin_prevue).toLocaleDateString("fr-FR")}
+                    </p>
                   </div>
                 )}
 
-                <div className="flex justify-end gap-3 pt-4 border-t">
+                {/* Message de confirmation pour "lancer" et "terminer" */}
+                {(actionType === "lancer" || actionType === "terminer") && (
+                  <div className={`flex items-start gap-3 p-4 rounded-lg border ${
+                    actionType === "lancer" 
+                      ? "bg-green-50 border-green-200 text-green-800" 
+                      : "bg-purple-50 border-purple-200 text-purple-800"
+                  }`}>
+                    <AlertCircle className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
+                      actionType === "lancer" ? "text-green-600" : "text-purple-600"
+                    }`} />
+                    <p className="text-sm font-medium">
+                      {actionType === "lancer" 
+                        ? "Cette action va changer le statut de l'activité en 'Lancée' et activer le suivi quotidien." 
+                        : "Cette action va finaliser l'activité. Assurez-vous que tous les éléments sont terminés."}
+                    </p>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                   <button
                     type="button"
                     onClick={() => {
@@ -609,16 +696,30 @@ export default function SuiviQuotidienClient({
                       setSelectedActivite(null);
                       setActionType(null);
                     }}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    className="px-5 py-2.5 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                    disabled={saving}
                   >
                     Annuler
                   </button>
                   <button
                     type="submit"
-                    className="btn-primary px-4 py-2"
+                    className={`px-5 py-2.5 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                      actionType === "lancer" ? "bg-green-600 hover:bg-green-700 shadow-sm hover:shadow-md" :
+                      actionType === "reporter" ? "bg-orange-600 hover:bg-orange-700 shadow-sm hover:shadow-md" :
+                      actionType === "suspendre" ? "bg-red-600 hover:bg-red-700 shadow-sm hover:shadow-md" :
+                      actionType === "prolonger" ? "bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md" :
+                      "bg-purple-600 hover:bg-purple-700 shadow-sm hover:shadow-md"
+                    }`}
                     disabled={saving}
                   >
-                    {saving ? "Enregistrement..." : "Confirmer"}
+                    {saving ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Enregistrement...
+                      </span>
+                    ) : (
+                      "Confirmer"
+                    )}
                   </button>
                 </div>
               </form>
