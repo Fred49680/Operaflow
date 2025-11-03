@@ -119,31 +119,53 @@ export async function PATCH(
     if (description !== undefined) updates.description = description || null;
     if (date_debut_prevue !== undefined) updates.date_debut_prevue = date_debut_prevue || null;
     if (date_fin_prevue !== undefined) updates.date_fin_prevue = date_fin_prevue || null;
-    // Gestion des dates réelles : la contrainte exige que les deux soient définies ensemble ou NULL
-    if (date_debut_reelle !== undefined || date_fin_reelle !== undefined) {
-      if (date_debut_reelle !== undefined && date_debut_reelle !== null) {
-        // Si on définit date_debut_reelle, on doit aussi avoir date_fin_reelle
-        // Si elle n'est pas fournie, on la met à NULL pour respecter la contrainte
-        updates.date_debut_reelle = date_debut_reelle;
-        if (date_fin_reelle === undefined) {
-          // Si date_fin_reelle n'est pas explicitement fournie, la mettre à NULL
-          updates.date_fin_reelle = null;
-        } else {
-          updates.date_fin_reelle = date_fin_reelle || null;
-        }
-      } else if (date_fin_reelle !== undefined && date_fin_reelle !== null) {
-        // Si on définit date_fin_reelle, on doit aussi avoir date_debut_reelle
-        updates.date_fin_reelle = date_fin_reelle;
-        if (date_debut_reelle === undefined) {
-          // Si date_debut_reelle n'est pas explicitement fournie, la mettre à NULL
+    // Gestion des dates réelles : la contrainte permet date_debut_reelle seul, ou les deux ensemble
+    // date_fin_reelle seule n'est pas autorisée
+    if (date_debut_reelle !== undefined) {
+      if (date_debut_reelle === null) {
+        // Mettre à NULL : si date_fin_reelle est aussi fournie et NULL, on met les deux à NULL
+        if (date_fin_reelle === undefined || date_fin_reelle === null) {
           updates.date_debut_reelle = null;
-        } else {
-          updates.date_debut_reelle = date_debut_reelle || null;
+          // Si date_fin_reelle est fournie explicitement comme NULL, on la met aussi à NULL
+          if (date_fin_reelle === null) {
+            updates.date_fin_reelle = null;
+          }
         }
       } else {
-        // Les deux sont NULL ou undefined, on peut les mettre à NULL
-        updates.date_debut_reelle = null;
-        updates.date_fin_reelle = null;
+        // Définir date_debut_reelle - possible même si date_fin_reelle est NULL
+        updates.date_debut_reelle = date_debut_reelle;
+      }
+    }
+    
+    if (date_fin_reelle !== undefined) {
+      if (date_fin_reelle === null) {
+        // Mettre date_fin_reelle à NULL - nécessite aussi date_debut_reelle à NULL
+        if (date_debut_reelle === null || (date_debut_reelle === undefined && updates.date_debut_reelle === null)) {
+          updates.date_fin_reelle = null;
+        } else {
+          console.warn("Impossible de mettre date_fin_reelle à NULL sans mettre date_debut_reelle à NULL");
+        }
+      } else {
+        // Définir date_fin_reelle - nécessite que date_debut_reelle soit aussi définie
+        if (date_debut_reelle !== undefined && date_debut_reelle !== null) {
+          updates.date_fin_reelle = date_fin_reelle;
+        } else if (updates.date_debut_reelle) {
+          // date_debut_reelle est déjà dans les updates, on peut définir date_fin_reelle
+          updates.date_fin_reelle = date_fin_reelle;
+        } else {
+          // Récupérer l'activité actuelle pour vérifier si date_debut_reelle existe
+          const { data: currentActivity } = await supabase
+            .from("tbl_planification_activites")
+            .select("date_debut_reelle")
+            .eq("id", id)
+            .single();
+          
+          if (currentActivity?.date_debut_reelle) {
+            updates.date_fin_reelle = date_fin_reelle;
+          } else {
+            console.warn("Impossible de définir date_fin_reelle sans date_debut_reelle");
+          }
+        }
       }
     }
     if (responsable_id !== undefined) updates.responsable_id = responsable_id || null;
