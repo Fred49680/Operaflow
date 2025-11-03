@@ -169,10 +169,14 @@ DECLARE
     v_nouveau_statut_affaire VARCHAR(50);
     v_nouveau_statut_lot VARCHAR(50);
 BEGIN
-    -- Ne traiter que si le statut a changé
-    IF TG_OP = 'UPDATE' AND OLD.statut = NEW.statut THEN
-        RETURN NEW;
+    -- Ne traiter que si le statut a changé (pour UPDATE) ou pour INSERT
+    IF TG_OP = 'UPDATE' THEN
+        -- Pour UPDATE, vérifier si le statut a réellement changé
+        IF OLD.statut = NEW.statut THEN
+            RETURN NEW;
+        END IF;
     END IF;
+    -- Pour INSERT, toujours traiter (nouvelle activité avec statut)
 
     -- Récupérer l'affaire et le lot associés
     v_affaire_id := NEW.affaire_id;
@@ -215,10 +219,10 @@ COMMENT ON FUNCTION public.trigger_sync_statut_activite() IS
 -- ============================================================================
 DROP TRIGGER IF EXISTS trigger_sync_statut_activite ON public.tbl_planification_activites;
 
+-- Le trigger est déclenché après INSERT ou UPDATE, la fonction gère déjà la vérification
 CREATE TRIGGER trigger_sync_statut_activite
     AFTER INSERT OR UPDATE OF statut ON public.tbl_planification_activites
     FOR EACH ROW
-    WHEN (NEW.statut IS DISTINCT FROM COALESCE(OLD.statut, ''))
     EXECUTE FUNCTION public.trigger_sync_statut_activite();
 
 -- ============================================================================
