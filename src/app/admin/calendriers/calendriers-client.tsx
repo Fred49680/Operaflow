@@ -715,7 +715,7 @@ export default function CalendriersClient({
                 )}
               </div>
               <button
-                onClick={() => setDetailModalOpen(false)}
+                onClick={handleCloseDetailModal}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <X className="h-6 w-6" />
@@ -728,7 +728,7 @@ export default function CalendriersClient({
                 <div className="mb-4">
                   <h4 className="text-lg font-semibold text-gray-800">Semaine Type</h4>
                   <p className="text-sm text-gray-600">
-                    Cliquez sur les cellules pour modifier directement. Les modifications seront sauvegardées à la fermeture du modal.
+                    Modifiez directement dans les cellules. Les modifications seront sauvegardées automatiquement à la fermeture du modal.
                   </p>
                 </div>
                 <div className="grid grid-cols-7 gap-2">
