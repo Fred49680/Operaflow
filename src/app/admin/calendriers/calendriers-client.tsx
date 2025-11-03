@@ -74,6 +74,9 @@ export default function CalendriersClient({
     libelle: "",
     est_recurrent: false,
   });
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+  const [confirmMessage, setConfirmMessage] = useState("");
 
   const [formData, setFormData] = useState<{
     libelle: string;
@@ -157,34 +160,49 @@ export default function CalendriersClient({
   const handleGenererJoursFeries = async () => {
     if (!selectedCalendrier) return;
 
-    if (!confirm("Générer les jours fériés français de 2025 à 2099 ?")) {
-      return;
-    }
+    setConfirmMessage("Générer les jours fériés français de 2025 à 2099 ?");
+    setConfirmAction(() => async () => {
+      setLoading(true);
+      setError(null);
 
-    setLoading(true);
-    setError(null);
+      try {
+        const response = await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/generer-jours-feries`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ annee_debut: 2025, annee_fin: 2099 }),
+        });
 
-    try {
-      const response = await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/generer-jours-feries`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ annee_debut: 2025, annee_fin: 2099 }),
-      });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Erreur lors de la génération");
+        }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la génération");
+        const data = await response.json();
+        setSuccess(data.message || "Jours fériés générés avec succès");
+        await fetchJours(selectedCalendrier.id);
+        setTimeout(() => setSuccess(null), 5000);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Erreur");
+      } finally {
+        setLoading(false);
       }
+    });
+    setConfirmModalOpen(true);
+  };
 
-      const data = await response.json();
-      setSuccess(data.message || "Jours fériés générés avec succès");
-      await fetchJours(selectedCalendrier.id);
-      setTimeout(() => setSuccess(null), 5000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
-    } finally {
-      setLoading(false);
+  const handleConfirm = () => {
+    if (confirmAction) {
+      confirmAction();
+      setConfirmModalOpen(false);
+      setConfirmAction(null);
+      setConfirmMessage("");
     }
+  };
+
+  const handleCancelConfirm = () => {
+    setConfirmModalOpen(false);
+    setConfirmAction(null);
+    setConfirmMessage("");
   };
 
   const handleCreate = async () => {
