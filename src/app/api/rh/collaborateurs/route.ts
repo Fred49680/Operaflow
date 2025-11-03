@@ -18,6 +18,7 @@ export async function GET(request: Request) {
     const searchParams = new URL(request.url).searchParams;
     const site = searchParams.get("site");
     const statut = searchParams.get("statut");
+    const userId = searchParams.get("user_id"); // Nouveau paramètre pour chercher par user_id
 
     let query = supabase
       .from("collaborateurs")
@@ -27,7 +28,10 @@ export async function GET(request: Request) {
         user:user_id(id, email)
       `);
 
-    if (!hasRHAccess) {
+    if (userId) {
+      // Chercher par user_id (pour tous les utilisateurs)
+      query = query.eq("user_id", userId);
+    } else if (!hasRHAccess) {
       // Les non-RH voient seulement leur propre fiche
       query = query.eq("user_id", user.id);
     } else {

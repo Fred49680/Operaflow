@@ -53,6 +53,22 @@ export default function SuiviQuotidienClient({
   const [saving, setSaving] = useState(false);
   const [loadingHistorique, setLoadingHistorique] = useState(false);
   const [suivisHistorique, setSuivisHistorique] = useState<typeof suivis>([]);
+  const [lanceParCollaborateur, setLanceParCollaborateur] = useState<{ nom: string; prenom: string } | null>(null);
+
+  // Fonction pour formater les statuts en verbe à l'infinitif avec majuscule
+  const formatStatut = (statut: string): string => {
+    const statutsMap: Record<string, string> = {
+      planifiee: "Planifier",
+      lancee: "Lancer",
+      suspendue: "Suspendre",
+      reportee: "Reporter",
+      terminee: "Terminer",
+      annulee: "Annuler",
+      prolongee: "Prolonger",
+      archivee: "Archiver",
+    };
+    return statutsMap[statut] || statut.charAt(0).toUpperCase() + statut.slice(1);
+  };
 
   // Vérifier si l'utilisateur peut lancer/manager les activités
   const isChefChantier = userRoles.some((r) => 
@@ -223,13 +239,45 @@ export default function SuiviQuotidienClient({
   // Fonction pour charger les données à jour de l'activité pour l'historique
   const loadActiviteHistorique = async (activiteId: string) => {
     setLoadingHistorique(true);
+    setLanceParCollaborateur(null);
     try {
       // Charger l'activité à jour
       const responseActivite = await fetch(`/api/planification/activites/${activiteId}`);
       if (responseActivite.ok) {
         const data = await responseActivite.json();
-        // L'API retourne { activite: {...} }
-        setActiviteHistorique(data.activite || data);
+        const activite = data.activite || data;
+        setActiviteHistorique(activite);
+
+        // Charger les informations du collaborateur qui a lancé l'activité
+        // Utiliser updated_by si l'activité est lancée, sinon created_by
+        const userId = activite.statut === "lancee" && activite.updated_by 
+          ? activite.updated_by 
+          : activite.created_by;
+        
+        if (userId) {
+          try {
+            // Chercher le collaborateur par user_id
+            const responseCollab = await fetch(`/api/rh/collaborateurs?user_id=${userId}`);
+            if (responseCollab.ok) {
+              const collaborateurs = await responseCollab.json();
+              if (Array.isArray(collaborateurs) && collaborateurs.length > 0) {
+                const collab = collaborateurs[0];
+                setLanceParCollaborateur({
+                  nom: collab.nom,
+                  prenom: collab.prenom,
+                });
+              } else if (collaborateurs.nom && collaborateurs.prenom) {
+                // Si c'est un objet unique
+                setLanceParCollaborateur({
+                  nom: collaborateurs.nom,
+                  prenom: collaborateurs.prenom,
+                });
+              }
+            }
+          } catch (err) {
+            console.error("Erreur lors de la récupération du collaborateur:", err);
+          }
+        }
       }
 
       // Charger les suivis quotidiens pour cette activité
@@ -780,6 +828,7 @@ export default function SuiviQuotidienClient({
                     setSelectedActivite(null);
                     setActiviteHistorique(null);
                     setSuivisHistorique([]);
+                    setLanceParCollaborateur(null);
                   }}
                   className="text-gray-400 hover:text-gray-600"
                 >
@@ -805,8 +854,25 @@ export default function SuiviQuotidienClient({
                             <h3 className="font-semibold text-lg mb-2">{activiteDisplay.libelle}</h3>
                             <div className="text-sm text-gray-600 space-y-1">
                               <p><span className="font-medium">Affaire:</span> {activiteDisplay.affaire?.numero}</p>
-                              <p><span className="font-medium">Statut actuel:</span> {activiteDisplay.statut}</p>
+                              <p><span className="font-medium">Statut actuel:</span> {formatStatut(activiteDisplay.statut)}</p>
                               <p><span className="font-medium">Avancement:</span> {activiteDisplay.pourcentage_avancement || 0}%</p>
+                              {activiteDisplay.date_debut_reelle && (
+                                <p>
+                                  <span className="font-medium">Date de lancement:</span>{" "}
+                                  {new Date(activiteDisplay.date_debut_reelle).toLocaleDateString("fr-FR", {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </p>
+                              )}
+                              {lanceParCollaborateur && (
+                                <p>
+                                  <span className="font-medium">Lancé par:</span> {lanceParCollaborateur.prenom} {lanceParCollaborateur.nom}
+                                </p>
+                              )}
                             </div>
                           </div>
 
