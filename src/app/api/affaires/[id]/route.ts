@@ -231,3 +231,182 @@ export async function PATCH(
   }
 }
 
+// DELETE - Supprimer une affaire et toutes ses données associées (Administrateur uniquement)
+export async function DELETE(
+  request: Request,
+  { params }: RouteContext
+) {
+  try {
+    const { id } = await params;
+    const supabase = await createServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
+
+    // Vérifier que l'utilisateur est Administrateur
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select("roles(name)")
+      .eq("user_id", user.id);
+
+    const isAdmin = userRoles?.some((ur) => {
+      const role = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+      return role?.name === "Administrateur";
+    });
+
+    if (!isAdmin) {
+      return NextResponse.json(
+        { error: "Seuls les administrateurs peuvent supprimer une affaire" },
+        { status: 403 }
+      );
+    }
+
+    // Utiliser le service role key pour bypasser RLS lors des suppressions
+    const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? createClient<Database>(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY,
+          {
+            auth: {
+              autoRefreshToken: false,
+              persistSession: false,
+            },
+          }
+        )
+      : null;
+
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { error: "Configuration serveur invalide" },
+        { status: 500 }
+      );
+    }
+
+    // Vérifier que l'affaire existe
+    const { data: affaire, error: affaireError } = await supabaseAdmin
+      .from("tbl_affaires")
+      .select("id, numero, libelle")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (affaireError || !affaire) {
+      return NextResponse.json(
+        { error: "Affaire non trouvée" },
+        { status: 404 }
+      );
+    }
+
+    // Supprimer en cascade dans l'ordre (d'abord les dépendances, puis l'affaire)
+    // 1. Récupérer les activités de planification
+    const { data: activites } = await supabaseAdmin
+      .from("tbl_planification_activites")
+      .select("id")
+      .eq("affaire_id", id);
+
+    if (activites && activites.length > 0) {
+      const activiteIds = activites.map((a) => a.id);
+      
+      // Supprimer le suivi quotidien
+      await supabaseAdmin
+        .from("tbl_planification_suivi_quotidien")
+        .delete()
+        .in("activite_id", activiteIds);
+
+      // Supprimer les dépendances
+      await supabaseAdmin
+        .from("tbl_planification_dependances")
+        .delete()
+        .in("activite_id", activiteIds);
+
+      // Supprimer les affectations
+      await supabaseAdmin
+        .from("tbl_planification_affectations")
+        .delete()
+        .in("activite_id", activiteIds);
+
+      // Supprimer les activités
+      await supabaseAdmin
+        .from("tbl_planification_activites")
+        .delete()
+        .eq("affaire_id", id);
+    }
+
+    // 2. Lots
+    await supabaseAdmin
+      .from("tbl_affaires_lots")
+      .delete()
+      .eq("affaire_id", id);
+
+    // 3. BPU
+    await supabaseAdmin
+      .from("tbl_affaires_bpu")
+      .delete()
+      .eq("affaire_id", id);
+
+    // 4. Dépenses
+    await supabaseAdmin
+      .from("tbl_affaires_depenses")
+      .delete()
+      .eq("affaire_id", id);
+
+    // 5. Pré-planification
+    await supabaseAdmin
+      .from("tbl_affaires_pre_planif")
+      .delete()
+      .eq("affaire_id", id);
+
+    // 6. Documents (supprimer aussi les fichiers dans le storage si nécessaire)
+    const { data: documents } = await supabaseAdmin
+      .from("tbl_affaires_documents")
+      .select("fichier_url")
+      .eq("affaire_id", id);
+
+    if (documents) {
+      // Supprimer les fichiers du storage
+      for (const doc of documents) {
+        if (doc.fichier_url) {
+          const filePath = doc.fichier_url.split("/").pop();
+          if (filePath) {
+            await supabaseAdmin.storage
+              .from("affaires-documents")
+              .remove([filePath]);
+          }
+        }
+      }
+    }
+
+    await supabaseAdmin
+      .from("tbl_affaires_documents")
+      .delete()
+      .eq("affaire_id", id);
+
+    // 7. Enfin, supprimer l'affaire elle-même
+    const { error: deleteError } = await supabaseAdmin
+      .from("tbl_affaires")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError) {
+      console.error("Erreur suppression affaire:", deleteError);
+      return NextResponse.json(
+        { error: "Erreur lors de la suppression" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Affaire supprimée avec succès" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Erreur DELETE affaire:", error);
+    return NextResponse.json(
+      { error: "Erreur serveur" },
+      { status: 500 }
+    );
+  }
+}
