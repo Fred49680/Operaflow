@@ -189,6 +189,92 @@ export default function CalendriersClient({
     await fetchJours(calendrier.id);
   };
 
+  const handleAddJour = () => {
+    if (!selectedCalendrier) return;
+    setSelectedJour(null);
+    setJourFormData({
+      date_jour: "",
+      type_jour: "ouvre",
+      heures_travail: 8,
+      libelle: "",
+      est_recurrent: false,
+    });
+    setEditJourModalOpen(true);
+  };
+
+  const handleEditJour = (jour: CalendrierJour) => {
+    setSelectedJour(jour);
+    setJourFormData({
+      date_jour: jour.date_jour,
+      type_jour: jour.type_jour,
+      heures_travail: jour.heures_travail,
+      libelle: jour.libelle || "",
+      est_recurrent: jour.est_recurrent,
+    });
+    setEditJourModalOpen(true);
+  };
+
+  const handleSaveJour = async () => {
+    if (!selectedCalendrier || !jourFormData.date_jour) {
+      setError("La date est requise");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const url = selectedJour
+        ? `/api/admin/calendriers/${selectedCalendrier.id}/jours/${selectedJour.id}`
+        : `/api/admin/calendriers/${selectedCalendrier.id}/jours`;
+      
+      const method = selectedJour ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(jourFormData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la sauvegarde");
+      }
+
+      setSuccess(selectedJour ? "Jour modifié avec succès" : "Jour ajouté avec succès");
+      setEditJourModalOpen(false);
+      setSelectedJour(null);
+      await fetchJours(selectedCalendrier.id);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteJour = async (jour: CalendrierJour) => {
+    if (!selectedCalendrier || !confirm(`Supprimer le jour ${new Date(jour.date_jour).toLocaleDateString("fr-FR")} ?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/jours/${jour.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la suppression");
+      }
+
+      setSuccess("Jour supprimé avec succès");
+      await fetchJours(selectedCalendrier.id);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur");
+    }
+  };
+
   const getTypeJourLabel = (type: string) => {
     const labels: Record<string, string> = {
       ouvre: "Jour ouvré",
