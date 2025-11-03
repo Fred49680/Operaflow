@@ -53,19 +53,34 @@ export default function CalendriersClient({
   const [editJourModalOpen, setEditJourModalOpen] = useState(false);
   const [selectedJour, setSelectedJour] = useState<CalendrierJour | null>(null);
   const [semaineTypeModalOpen, setSemaineTypeModalOpen] = useState(false);
+  // Fonction pour convertir décimal en format HH:mm
+  const decimalToTime = (decimal: number): string => {
+    const hours = Math.floor(decimal);
+    const minutes = Math.round((decimal - hours) * 60);
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+  };
+
+  // Fonction pour convertir format HH:mm en décimal
+  const timeToDecimal = (timeStr: string): number => {
+    if (!timeStr || timeStr === "") return 0;
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    return hours + (minutes || 0) / 60;
+  };
+
   const [semaineType, setSemaineType] = useState<Array<{
     jour_semaine: number;
     nom_jour: string;
     heures_travail: number;
+    heures_travail_display: string; // Format HH:mm pour l'affichage
     type_jour: string;
   }>>([
-    { jour_semaine: 0, nom_jour: "Dimanche", heures_travail: 0, type_jour: "chome" },
-    { jour_semaine: 1, nom_jour: "Lundi", heures_travail: 8, type_jour: "ouvre" },
-    { jour_semaine: 2, nom_jour: "Mardi", heures_travail: 8, type_jour: "ouvre" },
-    { jour_semaine: 3, nom_jour: "Mercredi", heures_travail: 8, type_jour: "ouvre" },
-    { jour_semaine: 4, nom_jour: "Jeudi", heures_travail: 8, type_jour: "ouvre" },
-    { jour_semaine: 5, nom_jour: "Vendredi", heures_travail: 8, type_jour: "ouvre" },
-    { jour_semaine: 6, nom_jour: "Samedi", heures_travail: 0, type_jour: "chome" },
+    { jour_semaine: 0, nom_jour: "Dimanche", heures_travail: 0, heures_travail_display: "00:00", type_jour: "chome" },
+    { jour_semaine: 1, nom_jour: "Lundi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre" },
+    { jour_semaine: 2, nom_jour: "Mardi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre" },
+    { jour_semaine: 3, nom_jour: "Mercredi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre" },
+    { jour_semaine: 4, nom_jour: "Jeudi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre" },
+    { jour_semaine: 5, nom_jour: "Vendredi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre" },
+    { jour_semaine: 6, nom_jour: "Samedi", heures_travail: 0, heures_travail_display: "00:00", type_jour: "chome" },
   ]);
   const [jourFormData, setJourFormData] = useState({
     date_jour: "",
@@ -115,6 +130,7 @@ export default function CalendriersClient({
               ? {
                   ...jour,
                   heures_travail: dbJour.heures_travail,
+                  heures_travail_display: decimalToTime(dbJour.heures_travail),
                   type_jour: dbJour.type_jour,
                 }
               : jour;
@@ -133,10 +149,17 @@ export default function CalendriersClient({
     setError(null);
 
     try {
+      // Convertir les heures en format décimal avant envoi
+      const semaineTypeToSend = semaineType.map((jour) => ({
+        jour_semaine: jour.jour_semaine,
+        heures_travail: jour.heures_travail, // Déjà en décimal
+        type_jour: jour.type_jour,
+      }));
+
       const response = await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/semaine-type`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ semaine_type: semaineType }),
+        body: JSON.stringify({ semaine_type: semaineTypeToSend }),
       });
 
       if (!response.ok) {
@@ -265,7 +288,8 @@ export default function CalendriersClient({
     setJourFormData({
       date_jour: "",
       type_jour: "ouvre",
-      heures_travail: 8,
+      heures_travail: "08:00",
+      heures_travail_decimal: 8,
       libelle: "",
       est_recurrent: false,
     });
@@ -682,7 +706,7 @@ export default function CalendriersClient({
                         {jour.nom_jour}
                       </div>
                       <div className="text-sm font-bold text-primary">
-                        {jour.heures_travail}h
+                        {jour.heures_travail_display}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         {jour.type_jour === "ouvre"
@@ -988,6 +1012,7 @@ export default function CalendriersClient({
                           newSemaineType[index].type_jour = e.target.value;
                           if (e.target.value === "chome" || e.target.value === "ferie") {
                             newSemaineType[index].heures_travail = 0;
+                            newSemaineType[index].heures_travail_display = "00:00";
                           }
                           setSemaineType(newSemaineType);
                         }}
@@ -1004,14 +1029,13 @@ export default function CalendriersClient({
                         Heures travaillées
                       </label>
                       <input
-                        type="number"
-                        min="0"
-                        max="24"
-                        step="0.5"
-                        value={jour.heures_travail}
+                        type="time"
+                        value={jour.heures_travail_display}
                         onChange={(e) => {
                           const newSemaineType = [...semaineType];
-                          newSemaineType[index].heures_travail = parseFloat(e.target.value) || 0;
+                          const timeValue = e.target.value || "00:00";
+                          newSemaineType[index].heures_travail_display = timeValue;
+                          newSemaineType[index].heures_travail = timeToDecimal(timeValue);
                           setSemaineType(newSemaineType);
                         }}
                         disabled={jour.type_jour === "chome" || jour.type_jour === "ferie"}
