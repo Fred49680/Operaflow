@@ -223,6 +223,10 @@ export default async function SafeHeader() {
               href: "/admin/formations/catalogue",
             },
             {
+              label: "Calendriers",
+              href: "/admin/calendriers",
+            },
+            {
               label: "Partenaires",
               href: "/admin/partenaires",
             },
