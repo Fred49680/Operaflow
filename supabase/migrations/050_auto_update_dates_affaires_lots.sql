@@ -143,20 +143,126 @@ BEGIN
 END;
 $$;
 
--- 5️⃣ Créer les triggers sur tbl_planification_activites
+-- 5️⃣ Fonction trigger pour mettre à jour les dates d'un lot après modification d'activité (avec gestion INSERT)
+CREATE OR REPLACE FUNCTION public.trigger_update_dates_lot()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_lot_id UUID;
+  v_dates RECORD;
+  v_should_update BOOLEAN := FALSE;
+BEGIN
+  -- Récupérer le lot_id de l'activité
+  v_lot_id := COALESCE(NEW.lot_id, OLD.lot_id);
+  
+  -- Si l'activité n'est pas liée à un lot, ne rien faire
+  IF v_lot_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+  
+  -- Vérifier si une mise à jour est nécessaire (pour éviter les boucles infinies)
+  IF TG_OP = 'INSERT' THEN
+    v_should_update := TRUE;
+  ELSIF TG_OP = 'UPDATE' THEN
+    v_should_update := (
+      (NEW.date_debut_prevue IS DISTINCT FROM OLD.date_debut_prevue)
+      OR (NEW.date_fin_prevue IS DISTINCT FROM OLD.date_fin_prevue)
+      OR (NEW.date_debut_reelle IS DISTINCT FROM OLD.date_debut_reelle)
+      OR (NEW.date_fin_reelle IS DISTINCT FROM OLD.date_fin_reelle)
+      OR (NEW.lot_id IS DISTINCT FROM OLD.lot_id)
+      OR (NEW.statut IS DISTINCT FROM OLD.statut)
+    );
+  END IF;
+  
+  IF NOT v_should_update THEN
+    RETURN NEW;
+  END IF;
+  
+  -- Calculer les nouvelles dates du lot
+  SELECT * INTO v_dates
+  FROM public.calculer_dates_lot_par_activites(v_lot_id);
+  
+  -- Mettre à jour les dates prévues du lot
+  UPDATE public.tbl_affaires_lots
+  SET 
+    date_debut_previsionnelle = v_dates.date_debut_min,
+    date_fin_previsionnelle = v_dates.date_fin_max,
+    updated_at = NOW()
+  WHERE id = v_lot_id
+    AND (
+      date_debut_previsionnelle IS DISTINCT FROM v_dates.date_debut_min
+      OR date_fin_previsionnelle IS DISTINCT FROM v_dates.date_fin_max
+    );
+  
+  RETURN NEW;
+END;
+$$;
+
+-- 6️⃣ Fonction trigger pour mettre à jour les dates d'une affaire après modification d'activité (avec gestion INSERT)
+CREATE OR REPLACE FUNCTION public.trigger_update_dates_affaire()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_affaire_id UUID;
+  v_dates RECORD;
+  v_should_update BOOLEAN := FALSE;
+BEGIN
+  -- Récupérer l'affaire_id de l'activité
+  v_affaire_id := COALESCE(NEW.affaire_id, OLD.affaire_id);
+  
+  -- Si l'activité n'est pas liée à une affaire, ne rien faire
+  IF v_affaire_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+  
+  -- Vérifier si une mise à jour est nécessaire (pour éviter les boucles infinies)
+  IF TG_OP = 'INSERT' THEN
+    v_should_update := TRUE;
+  ELSIF TG_OP = 'UPDATE' THEN
+    v_should_update := (
+      (NEW.date_debut_prevue IS DISTINCT FROM OLD.date_debut_prevue)
+      OR (NEW.date_fin_prevue IS DISTINCT FROM OLD.date_fin_prevue)
+      OR (NEW.date_debut_reelle IS DISTINCT FROM OLD.date_debut_reelle)
+      OR (NEW.date_fin_reelle IS DISTINCT FROM OLD.date_fin_reelle)
+      OR (NEW.affaire_id IS DISTINCT FROM OLD.affaire_id)
+      OR (NEW.statut IS DISTINCT FROM OLD.statut)
+    );
+  END IF;
+  
+  IF NOT v_should_update THEN
+    RETURN NEW;
+  END IF;
+  
+  -- Calculer les nouvelles dates de l'affaire
+  SELECT * INTO v_dates
+  FROM public.calculer_dates_affaire_par_activites(v_affaire_id);
+  
+  -- Mettre à jour les dates de début et fin de l'affaire
+  UPDATE public.tbl_affaires
+  SET 
+    date_debut = v_dates.date_debut_min,
+    date_fin = v_dates.date_fin_max,
+    updated_at = NOW()
+  WHERE id = v_affaire_id
+    AND (
+      date_debut IS DISTINCT FROM v_dates.date_debut_min
+      OR date_fin IS DISTINCT FROM v_dates.date_fin_max
+    );
+  
+  RETURN NEW;
+END;
+$$;
+
+-- 7️⃣ Créer les triggers sur tbl_planification_activites
 DROP TRIGGER IF EXISTS trigger_update_dates_lot_on_activite ON public.tbl_planification_activites;
 CREATE TRIGGER trigger_update_dates_lot_on_activite
   AFTER INSERT OR UPDATE OF date_debut_prevue, date_fin_prevue, date_debut_reelle, date_fin_reelle, lot_id, statut
   ON public.tbl_planification_activites
   FOR EACH ROW
-  WHEN (
-    (NEW.date_debut_prevue IS DISTINCT FROM COALESCE(OLD.date_debut_prevue, '1900-01-01'::DATE))
-    OR (NEW.date_fin_prevue IS DISTINCT FROM COALESCE(OLD.date_fin_prevue, '1900-01-01'::DATE))
-    OR (NEW.date_debut_reelle IS DISTINCT FROM COALESCE(OLD.date_debut_reelle, NULL))
-    OR (NEW.date_fin_reelle IS DISTINCT FROM COALESCE(OLD.date_fin_reelle, NULL))
-    OR (NEW.lot_id IS DISTINCT FROM COALESCE(OLD.lot_id, NULL))
-    OR (NEW.statut IS DISTINCT FROM COALESCE(OLD.statut, ''))
-  )
   EXECUTE FUNCTION public.trigger_update_dates_lot();
 
 DROP TRIGGER IF EXISTS trigger_update_dates_affaire_on_activite ON public.tbl_planification_activites;
@@ -164,17 +270,9 @@ CREATE TRIGGER trigger_update_dates_affaire_on_activite
   AFTER INSERT OR UPDATE OF date_debut_prevue, date_fin_prevue, date_debut_reelle, date_fin_reelle, affaire_id, statut
   ON public.tbl_planification_activites
   FOR EACH ROW
-  WHEN (
-    (NEW.date_debut_prevue IS DISTINCT FROM COALESCE(OLD.date_debut_prevue, '1900-01-01'::DATE))
-    OR (NEW.date_fin_prevue IS DISTINCT FROM COALESCE(OLD.date_fin_prevue, '1900-01-01'::DATE))
-    OR (NEW.date_debut_reelle IS DISTINCT FROM COALESCE(OLD.date_debut_reelle, NULL))
-    OR (NEW.date_fin_reelle IS DISTINCT FROM COALESCE(OLD.date_fin_reelle, NULL))
-    OR (NEW.affaire_id IS DISTINCT FROM COALESCE(OLD.affaire_id, NULL))
-    OR (NEW.statut IS DISTINCT FROM COALESCE(OLD.statut, ''))
-  )
   EXECUTE FUNCTION public.trigger_update_dates_affaire();
 
--- 6️⃣ Fonction pour initialiser les dates des lots et affaires existants
+-- 8️⃣ Fonction pour initialiser les dates des lots et affaires existants
 CREATE OR REPLACE FUNCTION public.initialiser_dates_lots_affaires()
 RETURNS void
 LANGUAGE plpgsql
@@ -213,7 +311,7 @@ BEGIN
 END;
 $$;
 
--- 7️⃣ Exécuter l'initialisation
+-- 9️⃣ Exécuter l'initialisation
 SELECT public.initialiser_dates_lots_affaires();
 
 -- Commentaires
