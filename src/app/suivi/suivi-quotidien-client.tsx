@@ -222,6 +222,7 @@ export default function SuiviQuotidienClient({
         case "terminer":
           newStatut = "terminee";
           updates.date_fin_reelle = new Date().toISOString();
+          updates.pourcentage_avancement = 100; // Passage automatique à 100% lors de la terminaison
           break;
       }
 
@@ -557,13 +558,13 @@ export default function SuiviQuotidienClient({
                           onClick={() => {
                             if (btn.action === "avancement") {
                               setSelectedActivite(activite);
-                              // Calculer le pourcentage auto par défaut
+                              // Calculer le pourcentage auto par défaut (arrondi à 2 décimales)
                               const dateDebut = new Date(activite.date_debut_prevue);
                               const dateFin = new Date(activite.date_fin_prevue);
                               const dureeTotale = activite.duree_jours_ouvres || 
                                 Math.ceil((dateFin.getTime() - dateDebut.getTime()) / (1000 * 60 * 60 * 24));
                               const pourcentageParJour = dureeTotale > 0 ? (100 / dureeTotale) : 0;
-                              setPourcentageAuto(pourcentageParJour);
+                              setPourcentageAuto(parseFloat(pourcentageParJour.toFixed(2)));
                               setModeAvancement("auto");
                               setShowAvancementModal(true);
                             } else {
@@ -683,8 +684,8 @@ export default function SuiviQuotidienClient({
                         type="button"
                         onClick={() => {
                           setModeAvancement("auto");
-                          // Calculer automatiquement le pourcentage pour une journée
-                          setPourcentageAuto(pourcentageParJour);
+                          // Calculer automatiquement le pourcentage pour une journée (arrondi à 2 décimales)
+                          setPourcentageAuto(parseFloat(pourcentageParJour.toFixed(2)));
                         }}
                         className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all text-sm ${
                           modeAvancement === "auto"
@@ -709,7 +710,7 @@ export default function SuiviQuotidienClient({
                       </button>
                     </div>
                     {modeAvancement === "auto" && (
-                      <p className="mt-1.5 text-xs text-gray-500">
+                      <p className="mt-1.5 text-sm text-gray-500">
                         Calcul automatique: {pourcentageParJour.toFixed(2)}% par journée (sur {dureeTotale} jour{dureeTotale > 1 ? 's' : ''})
                       </p>
                     )}
@@ -724,11 +725,14 @@ export default function SuiviQuotidienClient({
                       <div className="relative">
                         <input
                           type="number"
-                          value={pourcentageAuto}
-                          onChange={(e) => setPourcentageAuto(parseFloat(e.target.value) || 0)}
+                          value={pourcentageAuto.toFixed(2)}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setPourcentageAuto(parseFloat(val.toFixed(2)));
+                          }}
                           min="0"
                           max="100"
-                          step="0.1"
+                          step="0.01"
                           required
                           className="w-full px-3 py-2 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50/50 font-medium text-blue-700 text-sm"
                         />
@@ -871,6 +875,7 @@ export default function SuiviQuotidienClient({
                   e.preventDefault();
                   const formData = new FormData(e.currentTarget);
                   const motif = formData.get("motif") as string;
+                  const retourExperience = formData.get("retour_experience") as string;
                   const dateProlongation = actionType === "prolonger" ? (formData.get("date_prolongation") as string) : undefined;
                   
                   if ((actionType === "reporter" || actionType === "suspendre" || actionType === "prolonger") && !motif) {
@@ -878,7 +883,14 @@ export default function SuiviQuotidienClient({
                     return;
                   }
 
-                  handleAction(selectedActivite, actionType, motif, dateProlongation);
+                  if (actionType === "terminer" && !retourExperience) {
+                    alert("Le retour d'expérience est obligatoire pour terminer l'activité");
+                    return;
+                  }
+
+                  // Pour terminer, utiliser le retour d'expérience comme commentaire
+                  const commentaire = actionType === "terminer" ? retourExperience : motif;
+                  handleAction(selectedActivite, actionType, commentaire, dateProlongation);
                 }}
               >
                 {/* Informations de l'activité */}
@@ -906,14 +918,14 @@ export default function SuiviQuotidienClient({
                 {/* Champ motif (si requis) */}
                 {(actionType === "reporter" || actionType === "suspendre" || actionType === "prolonger") && (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5 h-5 flex items-center">
                       Motif <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       name="motif"
                       rows={4}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none"
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none text-sm"
                       placeholder="Expliquez la raison du report, de la suspension ou de la prolongation..."
                     />
                     <p className="text-xs text-gray-500 mt-1.5">
@@ -922,10 +934,29 @@ export default function SuiviQuotidienClient({
                   </div>
                 )}
 
+                {/* Champ Retour d'expérience (obligatoire pour terminer) */}
+                {actionType === "terminer" && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5 h-5 flex items-center">
+                      Retour d'expérience <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      name="retour_experience"
+                      rows={4}
+                      required
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors resize-none text-sm"
+                      placeholder="Décrivez le retour d'expérience de cette activité (points positifs, difficultés rencontrées, améliorations possibles)..."
+                    />
+                    <p className="text-xs text-gray-500 mt-1.5">
+                      Ce retour d'expérience est obligatoire pour clôturer l'activité.
+                    </p>
+                  </div>
+                )}
+
                 {/* Champ date prolongation */}
                 {actionType === "prolonger" && (
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-1.5 h-5 flex items-center">
                       <Clock className="h-4 w-4 inline mr-1.5" />
                       Nouvelle date de fin <span className="text-red-500">*</span>
                     </label>
@@ -934,7 +965,7 @@ export default function SuiviQuotidienClient({
                       name="date_prolongation"
                       required
                       min={new Date(selectedActivite.date_fin_prevue).toISOString().split("T")[0]}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
+                      className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1.5">
                       Date actuelle de fin: {new Date(selectedActivite.date_fin_prevue).toLocaleDateString("fr-FR")}
