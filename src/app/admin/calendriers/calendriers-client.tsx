@@ -52,6 +52,21 @@ export default function CalendriersClient({
   const [success, setSuccess] = useState<string | null>(null);
   const [editJourModalOpen, setEditJourModalOpen] = useState(false);
   const [selectedJour, setSelectedJour] = useState<CalendrierJour | null>(null);
+  const [semaineTypeModalOpen, setSemaineTypeModalOpen] = useState(false);
+  const [semaineType, setSemaineType] = useState<Array<{
+    jour_semaine: number;
+    nom_jour: string;
+    heures_travail: number;
+    type_jour: string;
+  }>>([
+    { jour_semaine: 0, nom_jour: "Dimanche", heures_travail: 0, type_jour: "chome" },
+    { jour_semaine: 1, nom_jour: "Lundi", heures_travail: 8, type_jour: "ouvre" },
+    { jour_semaine: 2, nom_jour: "Mardi", heures_travail: 8, type_jour: "ouvre" },
+    { jour_semaine: 3, nom_jour: "Mercredi", heures_travail: 8, type_jour: "ouvre" },
+    { jour_semaine: 4, nom_jour: "Jeudi", heures_travail: 8, type_jour: "ouvre" },
+    { jour_semaine: 5, nom_jour: "Vendredi", heures_travail: 8, type_jour: "ouvre" },
+    { jour_semaine: 6, nom_jour: "Samedi", heures_travail: 0, type_jour: "chome" },
+  ]);
   const [jourFormData, setJourFormData] = useState({
     date_jour: "",
     type_jour: "ouvre" as "ouvre" | "ferie" | "chome" | "reduit" | "exceptionnel",
@@ -83,6 +98,92 @@ export default function CalendriersClient({
       }
     } catch (err) {
       console.error("Erreur récupération jours:", err);
+    }
+  };
+
+  const fetchSemaineType = async (calendrierId: string) => {
+    try {
+      const response = await fetch(`/api/admin/calendriers/${calendrierId}/semaine-type`);
+      if (response.ok) {
+        const data = await response.json();
+        const st = data.semaine_type || [];
+        // Mettre à jour la semaine type avec les valeurs de la base
+        setSemaineType((prev) =>
+          prev.map((jour) => {
+            const dbJour = st.find((j: { jour_semaine: number }) => j.jour_semaine === jour.jour_semaine);
+            return dbJour
+              ? {
+                  ...jour,
+                  heures_travail: dbJour.heures_travail,
+                  type_jour: dbJour.type_jour,
+                }
+              : jour;
+          })
+        );
+      }
+    } catch (err) {
+      console.error("Erreur récupération semaine type:", err);
+    }
+  };
+
+  const handleSaveSemaineType = async () => {
+    if (!selectedCalendrier) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/semaine-type`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ semaine_type }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la sauvegarde");
+      }
+
+      setSuccess("Semaine type sauvegardée avec succès");
+      setSemaineTypeModalOpen(false);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenererJoursFeries = async () => {
+    if (!selectedCalendrier) return;
+
+    if (!confirm("Générer les jours fériés français de 2025 à 2099 ?")) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/generer-jours-feries`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ annee_debut: 2025, annee_fin: 2099 }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la génération");
+      }
+
+      const data = await response.json();
+      setSuccess(data.message || "Jours fériés générés avec succès");
+      await fetchJours(selectedCalendrier.id);
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -187,6 +288,7 @@ export default function CalendriersClient({
     setSelectedCalendrier(calendrier);
     setDetailModalOpen(true);
     await fetchJours(calendrier.id);
+    await fetchSemaineType(calendrier.id);
   };
 
   const handleAddJour = () => {
@@ -584,31 +686,98 @@ export default function CalendriersClient({
               </button>
             </div>
 
-            <div className="p-6">
-              <div className="mb-6">
+            <div className="p-6 space-y-6">
+              {/* Section Semaine Type */}
+              <div className="border-b pb-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-gray-800">
-                    Jours définis ({joursCalendrier.length})
-                  </h4>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800">Semaine Type</h4>
+                    <p className="text-sm text-gray-600">
+                      Définissez les heures travaillées pour chaque jour de la semaine
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSemaineTypeModalOpen(true)}
+                    className="btn-primary flex items-center gap-2 text-sm"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Configurer
+                  </button>
+                </div>
+                <div className="grid grid-cols-7 gap-2">
+                  {semaineType.map((jour) => (
+                    <div
+                      key={jour.jour_semaine}
+                      className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center"
+                    >
+                      <div className="text-xs font-medium text-gray-700 mb-1">
+                        {jour.nom_jour}
+                      </div>
+                      <div className="text-sm font-bold text-primary">
+                        {jour.heures_travail}h
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {jour.type_jour === "ouvre"
+                          ? "Ouvré"
+                          : jour.type_jour === "chome"
+                          ? "Chômé"
+                          : jour.type_jour}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Section Jours fériés */}
+              <div className="border-b pb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800">Jours Fériés</h4>
+                    <p className="text-sm text-gray-600">
+                      Génération automatique des jours fériés français
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleGenererJoursFeries}
+                    className="btn-primary flex items-center gap-2 text-sm"
+                    disabled={loading}
+                  >
+                    <Calendar className="h-4 w-4" />
+                    {loading ? "Génération..." : "Générer 2025-2099"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Section Exceptions */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800">
+                      Exceptions ({joursCalendrier.length})
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      Jours spécifiques qui remplacent la semaine type
+                    </p>
+                  </div>
                   <button
                     onClick={handleAddJour}
                     className="btn-primary flex items-center gap-2 text-sm"
                   >
                     <Plus className="h-4 w-4" />
-                    Ajouter un jour
+                    Ajouter une exception
                   </button>
                 </div>
                 {joursCalendrier.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-500 mb-4">
-                      Aucun jour défini pour ce calendrier
+                      Aucune exception définie pour ce calendrier
                     </p>
                     <button
                       onClick={handleAddJour}
                       className="btn-primary flex items-center gap-2 mx-auto"
                     >
                       <Plus className="h-4 w-4" />
-                      Ajouter un jour
+                      Ajouter une exception
                     </button>
                   </div>
                 ) : (
@@ -804,6 +973,97 @@ export default function CalendriersClient({
                 className="btn-primary flex items-center gap-2"
               >
                 {loading ? "Enregistrement..." : selectedJour ? "Modifier" : "Ajouter"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Semaine Type */}
+      {semaineTypeModalOpen && selectedCalendrier && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-secondary">
+                Configuration Semaine Type
+              </h3>
+              <button
+                onClick={() => setSemaineTypeModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="space-y-4">
+                {semaineType.map((jour, index) => (
+                  <div
+                    key={jour.jour_semaine}
+                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200"
+                  >
+                    <div className="w-24 text-sm font-medium text-gray-700">
+                      {jour.nom_jour}
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Type de jour
+                      </label>
+                      <select
+                        value={jour.type_jour}
+                        onChange={(e) => {
+                          const newSemaineType = [...semaineType];
+                          newSemaineType[index].type_jour = e.target.value;
+                          if (e.target.value === "chome" || e.target.value === "ferie") {
+                            newSemaineType[index].heures_travail = 0;
+                          }
+                          setSemaineType(newSemaineType);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                      >
+                        <option value="ouvre">Jour ouvré</option>
+                        <option value="chome">Jour chômé</option>
+                        <option value="ferie">Jour férié</option>
+                        <option value="reduit">Heures réduites</option>
+                      </select>
+                    </div>
+                    <div className="w-32">
+                      <label className="block text-xs text-gray-600 mb-1">
+                        Heures travaillées
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="24"
+                        step="0.5"
+                        value={jour.heures_travail}
+                        onChange={(e) => {
+                          const newSemaineType = [...semaineType];
+                          newSemaineType[index].heures_travail = parseFloat(e.target.value) || 0;
+                          setSemaineType(newSemaineType);
+                        }}
+                        disabled={jour.type_jour === "chome" || jour.type_jour === "ferie"}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 text-sm"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+              <button
+                onClick={() => setSemaineTypeModalOpen(false)}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSaveSemaineType}
+                disabled={loading}
+                className="btn-primary flex items-center gap-2"
+              >
+                {loading ? "Enregistrement..." : "Enregistrer"}
               </button>
             </div>
           </div>
