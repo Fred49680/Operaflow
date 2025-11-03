@@ -33,17 +33,56 @@ export async function POST(request: NextRequest) {
     if (calendrier_id) {
       // Utiliser le calendrier spécifique
       const dateCourante = new Date(dateDebut);
-      const joursTravailles = 0;
+      
+      // Récupérer le site_id du calendrier si disponible
+      const { data: calendrierData } = await supabase
+        .from("tbl_calendriers")
+        .select("site_id")
+        .eq("id", calendrier_id)
+        .single();
+      
+      const siteIdCalendrier = calendrierData?.site_id || site_id || null;
 
       while (dateCourante <= dateFin) {
-        const { data: heures, error } = await supabase.rpc("get_heures_travail_jour_v2", {
-          p_date: dateCourante.toISOString().split('T')[0],
-          p_site_id: site_id || null,
-        });
+        // Vérifier d'abord s'il y a une exception pour ce jour dans le calendrier
+        const dateStr = dateCourante.toISOString().split('T')[0];
+        
+        const { data: exceptionJour } = await supabase
+          .from("tbl_calendrier_jours")
+          .select("heures_travail")
+          .eq("calendrier_id", calendrier_id)
+          .eq("date_jour", dateStr)
+          .single();
+        
+        if (exceptionJour) {
+          // Utiliser l'exception
+          heuresPrevues += parseFloat(exceptionJour.heures_travail.toString());
+        } else {
+          // Utiliser la semaine type
+          const jourSemaine = dateCourante.getDay(); // 0 = dimanche, 6 = samedi
+          
+          const { data: semaineType } = await supabase
+            .from("tbl_calendrier_semaine_type")
+            .select("heures_travail")
+            .eq("calendrier_id", calendrier_id)
+            .eq("jour_semaine", jourSemaine)
+            .single();
+          
+          if (semaineType) {
+            heuresPrevues += parseFloat(semaineType.heures_travail.toString());
+          } else {
+            // Fallback : utiliser la fonction générale
+            const { data: heures, error } = await supabase.rpc("get_heures_travail_jour_v2", {
+              p_date: dateStr,
+              p_site_id: siteIdCalendrier,
+            });
 
-        if (!error && heures !== null && heures !== undefined) {
-          heuresPrevues += parseFloat(heures.toString());
+            if (!error && heures !== null && heures !== undefined) {
+              heuresPrevues += parseFloat(heures.toString());
+            }
+          }
         }
+        
         dateCourante.setDate(dateCourante.getDate() + 1);
       }
     } else if (duree_jours_ouvres) {

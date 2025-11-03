@@ -260,6 +260,7 @@ export default function PlanificationClient({
           date_debut: dateDebutStr,
           duree_jours_ouvres: joursCalcul,
           type_horaire: typeHoraire,
+          calendrier_id: selectedCalendrierId || null,
         }),
       });
 
@@ -272,10 +273,53 @@ export default function PlanificationClient({
             .toISOString()
             .slice(0, 16);
           setDateFinCalculee(formattedDate);
+          
+          // Calculer automatiquement les heures prévues si calendrier sélectionné
+          if (selectedCalendrierId && dateDebutStr && formattedDate) {
+            await calculerHeuresPrevues(dateDebutStr, formattedDate);
+          }
         }
       }
     } catch (error) {
       console.error("Erreur lors du calcul de la date de fin:", error);
+    }
+  };
+
+  // Fonction pour calculer les heures prévues selon le calendrier
+  const calculerHeuresPrevues = async (dateDebutStr: string, dateFinStr: string) => {
+    if (!selectedCalendrierId || !dateDebutStr || !dateFinStr) {
+      return;
+    }
+
+    try {
+      // Récupérer le site_id de l'affaire sélectionnée si disponible
+      const affaireSelectionnee = affaires.find(a => a.id === selectedAffaireId);
+      const siteId = affaireSelectionnee?.site_id || null;
+
+      const response = await fetch("/api/planification/calculer-heures-prevues", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date_debut: dateDebutStr,
+          date_fin: dateFinStr,
+          calendrier_id: selectedCalendrierId,
+          site_id: siteId,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.heures_prevues !== undefined) {
+          setHeuresPrevuesAuto(data.heures_prevues);
+          // Mettre à jour le champ heures_prevues dans le formulaire
+          const heuresInput = document.querySelector('input[name="heures_prevues"]') as HTMLInputElement;
+          if (heuresInput) {
+            heuresInput.value = data.heures_prevues.toString();
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors du calcul des heures prévues:", error);
     }
   };
 
@@ -649,9 +693,10 @@ export default function PlanificationClient({
                       ? new Date(dateFinCalculee).toISOString()
                       : (formData.get("date_fin_prevue") as string),
                     responsable_id: formData.get("responsable_id") || null,
-                    heures_prevues: parseFloat(formData.get("heures_prevues") as string) || 0,
+                    heures_prevues: heuresPrevuesAuto !== null && selectedCalendrierId ? heuresPrevuesAuto : (parseFloat(formData.get("heures_prevues") as string) || 0),
                     type_horaire: formData.get("type_horaire") as string || "jour",
                     coefficient: parseFloat(formData.get("coefficient") as string) || 1.0,
+                    calendrier_id: selectedCalendrierId || null,
                   };
                   
                   // Nouveaux champs hiérarchie
