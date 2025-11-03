@@ -746,7 +746,7 @@ export default function SuiviQuotidienClient({
                         name="pourcentage"
                         min="0"
                         max="100"
-                        step="0.1"
+                        step="0.01"
                         required
                         className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium text-sm"
                         placeholder="Saisir le pourcentage"
