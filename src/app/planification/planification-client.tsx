@@ -518,7 +518,7 @@ export default function PlanificationClient({
             )}
 
             {/* Gantt - affiché uniquement si une affaire est sélectionnée */}
-            {selectedAffaireGantt && (filteredActivites.length > 0 || filteredJalons.length > 0) ? (
+            {selectedAffaireGantt ? (
               <GanttTimeline
                 activites={filteredActivites}
                 jalons={filteredJalons}
@@ -536,11 +536,6 @@ export default function PlanificationClient({
                 onDragEnd={isPlanificateur ? handleDragEnd : undefined}
                 onResizeEnd={isPlanificateur ? handleResizeEnd : undefined}
               />
-            ) : selectedAffaireGantt ? (
-              <div className="card text-center py-12">
-                <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Aucune activité trouvée pour cette affaire</p>
-              </div>
             ) : (
               <div className="card text-center py-12">
                 <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />

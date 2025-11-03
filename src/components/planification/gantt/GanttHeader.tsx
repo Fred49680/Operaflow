@@ -70,14 +70,14 @@ export default function GanttHeader({ dateDebut, dateFin, vue }: GanttHeaderProp
               {getLabel(date)}
               {/* Afficher les jours dans la vue semaine */}
               {vue === "semaine" && joursSemaine[index] && (
-                <div className="absolute bottom-0 left-0 right-0 flex border-t border-gray-200">
+                <div className="absolute bottom-0 left-0 right-0 flex border-t border-gray-200 h-6">
                   {joursSemaine[index].map((jour, jourIndex) => (
                     <div
                       key={jourIndex}
-                      className="flex-1 text-xs text-gray-500 py-1 border-r border-gray-200 last:border-r-0"
+                      className="flex-1 text-xs text-gray-500 py-0.5 border-r border-gray-200 last:border-r-0 text-center"
                       style={{ minWidth: `${100 / 7}%` }}
                     >
-                      {format(jour, "E")}
+                      {format(jour, "dd")}
                     </div>
                   ))}
                 </div>
