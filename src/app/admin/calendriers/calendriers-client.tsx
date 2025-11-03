@@ -999,27 +999,27 @@ export default function CalendriersClient({
       {/* Modal Semaine Type */}
       {semaineTypeModalOpen && selectedCalendrier && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-secondary">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-secondary">
                 Configuration Semaine Type
               </h3>
               <button
                 onClick={() => setSemaineTypeModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                <X className="h-6 w-6" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="p-6">
-              <div className="space-y-4">
+            <div className="p-4 overflow-y-auto flex-1">
+              <div className="space-y-2">
                 {semaineType.map((jour, index) => (
                   <div
                     key={jour.jour_semaine}
-                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200"
+                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
                   >
-                    <div className="w-24 text-sm font-medium text-gray-700">
+                    <div className="w-20 text-xs font-medium text-gray-700">
                       {jour.nom_jour}
                     </div>
                     <div className="flex-1">
@@ -1037,7 +1037,7 @@ export default function CalendriersClient({
                           }
                           setSemaineType(newSemaineType);
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-xs"
                       >
                         <option value="ouvre">Jour ouvré</option>
                         <option value="chome">Jour chômé</option>
@@ -1045,9 +1045,9 @@ export default function CalendriersClient({
                         <option value="reduit">Heures réduites</option>
                       </select>
                     </div>
-                    <div className="w-32">
+                    <div className="w-28">
                       <label className="block text-xs text-gray-600 mb-1">
-                        Heures travaillées
+                        Heures
                       </label>
                       <input
                         type="time"
@@ -1060,7 +1060,7 @@ export default function CalendriersClient({
                           setSemaineType(newSemaineType);
                         }}
                         disabled={jour.type_jour === "chome" || jour.type_jour === "ferie"}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 text-sm"
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 text-xs"
                       />
                     </div>
                   </div>
@@ -1068,17 +1068,17 @@ export default function CalendriersClient({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+            <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200">
               <button
                 onClick={() => setSemaineTypeModalOpen(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-3 py-1.5 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Annuler
               </button>
               <button
                 onClick={handleSaveSemaineType}
                 disabled={loading}
-                className="btn-primary flex items-center gap-2"
+                className="btn-primary flex items-center gap-2 text-sm px-3 py-1.5"
               >
                 {loading ? "Enregistrement..." : "Enregistrer"}
               </button>
