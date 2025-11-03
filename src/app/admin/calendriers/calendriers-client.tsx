@@ -74,9 +74,6 @@ export default function CalendriersClient({
     libelle: "",
     est_recurrent: false,
   });
-  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
-  const [confirmMessage, setConfirmMessage] = useState("");
 
   const [formData, setFormData] = useState<{
     libelle: string;
@@ -157,53 +154,6 @@ export default function CalendriersClient({
     }
   };
 
-  const handleGenererJoursFeries = async () => {
-    if (!selectedCalendrier) return;
-
-    setConfirmMessage("Générer les jours fériés français de 2025 à 2099 ?");
-    setConfirmAction(() => async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/generer-jours-feries`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ annee_debut: 2025, annee_fin: 2099 }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Erreur lors de la génération");
-        }
-
-        const data = await response.json();
-        setSuccess(data.message || "Jours fériés générés avec succès");
-        await fetchJours(selectedCalendrier.id);
-        setTimeout(() => setSuccess(null), 5000);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Erreur");
-      } finally {
-        setLoading(false);
-      }
-    });
-    setConfirmModalOpen(true);
-  };
-
-  const handleConfirm = () => {
-    if (confirmAction) {
-      confirmAction();
-      setConfirmModalOpen(false);
-      setConfirmAction(null);
-      setConfirmMessage("");
-    }
-  };
-
-  const handleCancelConfirm = () => {
-    setConfirmModalOpen(false);
-    setConfirmAction(null);
-    setConfirmMessage("");
-  };
 
   const handleCreate = async () => {
     if (!formData.libelle.trim()) {
@@ -748,21 +698,25 @@ export default function CalendriersClient({
 
               {/* Section Jours fériés */}
               <div className="border-b pb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 className="text-lg font-semibold text-gray-800">Jours Fériés</h4>
-                    <p className="text-sm text-gray-600">
-                      Génération automatique des jours fériés français
-                    </p>
+                <div className="mb-4">
+                  <h4 className="text-lg font-semibold text-gray-800">Jours Fériés</h4>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Génération automatique pour l'année courante et N+1 (24 mois glissant)
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Les jours fériés français sont générés automatiquement lors de la création du calendrier et mis à jour chaque année.
+                  </p>
+                </div>
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <Calendar className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium">Génération automatique active</p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Année courante : {new Date().getFullYear()} | Année suivante : {new Date().getFullYear() + 1}
+                      </p>
+                    </div>
                   </div>
-                  <button
-                    onClick={handleGenererJoursFeries}
-                    className="btn-primary flex items-center gap-2 text-sm"
-                    disabled={loading}
-                  >
-                    <Calendar className="h-4 w-4" />
-                    {loading ? "Génération..." : "Générer 2025-2099"}
-                  </button>
                 </div>
               </div>
 
@@ -1088,44 +1042,6 @@ export default function CalendriersClient({
         </div>
       )}
 
-      {/* Modal de confirmation personnalisé */}
-      {confirmModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-secondary">
-                Confirmation
-              </h3>
-              <button
-                onClick={handleCancelConfirm}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              <p className="text-gray-700 text-base">{confirmMessage}</p>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
-              <button
-                onClick={handleCancelConfirm}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={loading}
-                className="btn-primary"
-              >
-                Confirmer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

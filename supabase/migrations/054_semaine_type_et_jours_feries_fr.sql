@@ -178,30 +178,56 @@ $$;
 COMMENT ON FUNCTION public.generer_jours_feries_fr IS 'Génère automatiquement les jours fériés français pour une année donnée dans un calendrier';
 
 -- ============================================================================
--- 4️⃣ Fonction pour générer les jours fériés pour une plage d'années
+-- 3.1️⃣ Fonction pour générer automatiquement les jours fériés (année courante + N+1)
 -- ============================================================================
-CREATE OR REPLACE FUNCTION public.generer_jours_feries_fr_plage(
-  p_calendrier_id UUID,
-  p_annee_debut INTEGER,
-  p_annee_fin INTEGER
+CREATE OR REPLACE FUNCTION public.generer_jours_feries_auto(
+  p_calendrier_id UUID
 )
 RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_annee INTEGER;
+  v_annee_courante INTEGER;
+  v_annee_suivante INTEGER;
   v_total INTEGER := 0;
 BEGIN
-  FOR v_annee IN p_annee_debut..p_annee_fin LOOP
-    v_total := v_total + public.generer_jours_feries_fr(p_calendrier_id, v_annee);
-  END LOOP;
+  -- Récupérer l'année courante
+  v_annee_courante := EXTRACT(YEAR FROM CURRENT_DATE);
+  v_annee_suivante := v_annee_courante + 1;
+  
+  -- Générer pour l'année courante et N+1 (24 mois glissant)
+  v_total := v_total + public.generer_jours_feries_fr(p_calendrier_id, v_annee_courante);
+  v_total := v_total + public.generer_jours_feries_fr(p_calendrier_id, v_annee_suivante);
   
   RETURN v_total;
 END;
 $$;
 
-COMMENT ON FUNCTION public.generer_jours_feries_fr_plage IS 'Génère les jours fériés français pour une plage d''années';
+COMMENT ON FUNCTION public.generer_jours_feries_auto IS 'Génère automatiquement les jours fériés français pour l''année courante et N+1 (24 mois glissant)';
+
+-- ============================================================================
+-- 4️⃣ Trigger pour générer automatiquement les jours fériés à la création d'un calendrier
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.trigger_generer_jours_feries_auto()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Générer automatiquement les jours fériés pour l'année courante et N+1
+  PERFORM public.generer_jours_feries_auto(NEW.id);
+  RETURN NEW;
+END;
+$$;
+
+COMMENT ON FUNCTION public.trigger_generer_jours_feries_auto IS 'Trigger pour générer automatiquement les jours fériés à la création d''un calendrier';
+
+DROP TRIGGER IF EXISTS trigger_auto_generer_jours_feries ON public.tbl_calendriers;
+CREATE TRIGGER trigger_auto_generer_jours_feries
+  AFTER INSERT ON public.tbl_calendriers
+  FOR EACH ROW
+  EXECUTE FUNCTION public.trigger_generer_jours_feries_auto();
 
 -- ============================================================================
 -- 5️⃣ Fonction pour obtenir les heures travaillées selon semaine type et exceptions
