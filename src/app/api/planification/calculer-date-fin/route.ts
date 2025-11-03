@@ -86,8 +86,6 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json({ date_fin: dateFin.toISOString() }, { status: 200 });
-
-    return NextResponse.json({ date_fin: data }, { status: 200 });
   } catch (error) {
     console.error("Erreur serveur:", error);
     return NextResponse.json(
