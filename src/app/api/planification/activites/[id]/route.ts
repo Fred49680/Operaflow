@@ -109,33 +109,43 @@ export async function PATCH(
     } = body;
 
     // Construire l'objet de mise à jour (seulement les champs fournis)
-    const updates: any = {
+    const updates: Record<string, unknown> = {
       updated_by: user.id,
       updated_at: new Date().toISOString(),
     };
 
+    // Gérer les valeurs null explicitement
     if (libelle !== undefined) updates.libelle = libelle;
-    if (description !== undefined) updates.description = description;
-    if (date_debut_prevue !== undefined) updates.date_debut_prevue = date_debut_prevue;
-    if (date_fin_prevue !== undefined) updates.date_fin_prevue = date_fin_prevue;
-    if (date_debut_reelle !== undefined) updates.date_debut_reelle = date_debut_reelle;
-    if (date_fin_reelle !== undefined) updates.date_fin_reelle = date_fin_reelle;
-    if (responsable_id !== undefined) updates.responsable_id = responsable_id;
-    if (heures_prevues !== undefined) updates.heures_prevues = heures_prevues;
-    if (heures_reelles !== undefined) updates.heures_reelles = heures_reelles;
+    if (description !== undefined) updates.description = description || null;
+    if (date_debut_prevue !== undefined) updates.date_debut_prevue = date_debut_prevue || null;
+    if (date_fin_prevue !== undefined) updates.date_fin_prevue = date_fin_prevue || null;
+    if (date_debut_reelle !== undefined) updates.date_debut_reelle = date_debut_reelle || null;
+    if (date_fin_reelle !== undefined) updates.date_fin_reelle = date_fin_reelle || null;
+    if (responsable_id !== undefined) updates.responsable_id = responsable_id || null;
+    if (heures_prevues !== undefined) updates.heures_prevues = heures_prevues ?? 0;
+    if (heures_reelles !== undefined) updates.heures_reelles = heures_reelles ?? 0;
     if (type_horaire !== undefined) updates.type_horaire = type_horaire;
-    if (coefficient !== undefined) updates.coefficient = coefficient;
-    if (statut !== undefined) updates.statut = statut;
-    if (pourcentage_avancement !== undefined) updates.pourcentage_avancement = pourcentage_avancement;
-    if (activite_precedente_id !== undefined) updates.activite_precedente_id = activite_precedente_id;
-    if (type_dependance !== undefined) updates.type_dependance = type_dependance;
-    if (commentaire !== undefined) updates.commentaire = commentaire;
-    if (lot_id !== undefined) updates.lot_id = lot_id;
-    if (site_id !== undefined) updates.site_id = site_id;
+    if (coefficient !== undefined) updates.coefficient = coefficient ?? 1.0;
+    // Valider le statut
+    const statutsValides = ['planifiee', 'lancee', 'suspendue', 'reportee', 'terminee', 'annulee', 'prolongee', 'archivee'];
+    if (statut !== undefined) {
+      if (statutsValides.includes(statut)) {
+        updates.statut = statut;
+      } else {
+        console.warn(`Statut invalide reçu: ${statut}. Valeurs attendues: ${statutsValides.join(', ')}`);
+        // Ne pas mettre à jour le statut si invalide, mais continuer avec les autres updates
+      }
+    }
+    if (pourcentage_avancement !== undefined) updates.pourcentage_avancement = pourcentage_avancement ?? 0;
+    if (activite_precedente_id !== undefined) updates.activite_precedente_id = activite_precedente_id || null;
+    if (type_dependance !== undefined) updates.type_dependance = type_dependance || null;
+    if (commentaire !== undefined) updates.commentaire = commentaire || null;
+    if (lot_id !== undefined) updates.lot_id = lot_id || null;
+    if (site_id !== undefined) updates.site_id = site_id || null;
     // Nouveaux champs
-    if (parent_id !== undefined) updates.parent_id = parent_id;
-    if (duree_jours_ouvres !== undefined) updates.duree_jours_ouvres = duree_jours_ouvres;
-    if (calcul_auto_date_fin !== undefined) updates.calcul_auto_date_fin = calcul_auto_date_fin;
+    if (parent_id !== undefined) updates.parent_id = parent_id || null;
+    if (duree_jours_ouvres !== undefined) updates.duree_jours_ouvres = duree_jours_ouvres || null;
+    if (calcul_auto_date_fin !== undefined) updates.calcul_auto_date_fin = calcul_auto_date_fin ?? false;
 
     // Validation des dates si fournies
     if (date_debut_prevue && date_fin_prevue && new Date(date_fin_prevue) < new Date(date_debut_prevue)) {
@@ -144,6 +154,10 @@ export async function PATCH(
         { status: 400 }
       );
     }
+
+    // Logger pour debug
+    console.log("[PATCH /api/planification/activites/[id]] Updates:", JSON.stringify(updates, null, 2));
+    console.log("[PATCH /api/planification/activites/[id]] Activity ID:", id);
 
     const { data, error } = await supabase
       .from("tbl_planification_activites")
@@ -159,9 +173,21 @@ export async function PATCH(
       .single();
 
     if (error) {
-      console.error("Erreur lors de la mise à jour de l'activité:", error);
+      console.error("Erreur lors de la mise à jour de l'activité:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        updates,
+        id,
+      });
       return NextResponse.json(
-        { error: "Erreur lors de la mise à jour de l'activité", details: error.message },
+        { 
+          error: "Erreur lors de la mise à jour de l'activité", 
+          details: error.message,
+          code: error.code,
+          hint: error.hint,
+        },
         { status: 500 }
       );
     }
