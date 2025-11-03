@@ -11,9 +11,26 @@ import GestionTemplatesModal from "@/components/planification/GestionTemplatesMo
 import DependancesManager from "@/components/planification/DependancesManager";
 import type { ActivitePlanification, AffectationPlanification } from "@/types/planification";
 
+interface JalonGantt {
+  id: string;
+  affaire_id: string;
+  numero_lot: string;
+  libelle_lot: string;
+  date_debut_previsionnelle?: string | null;
+  date_fin_previsionnelle?: string | null;
+  statut?: string | null;
+  affaire?: {
+    id: string;
+    numero: string;
+    libelle: string;
+    charge_affaires_id?: string | null;
+  } | null;
+}
+
 interface PlanificationClientProps {
   activites: ActivitePlanification[];
   affectations: AffectationPlanification[];
+  jalons?: JalonGantt[];
   sites?: Array<{ site_id: string; site_code: string; site_label: string }>;
   affaires?: Array<{ id: string; numero: string; libelle: string; statut: string }>;
   collaborateurs?: Array<{ id: string; nom: string; prenom: string }>;
@@ -24,6 +41,7 @@ interface PlanificationClientProps {
 export default function PlanificationClient({
   activites,
   affectations: _affectations,
+  jalons = [],
   sites = [],
   affaires = [],
   collaborateurs: _collaborateurs = [],
@@ -53,6 +71,7 @@ export default function PlanificationClient({
   const [dateDebut, setDateDebut] = useState("");
   const [dureeJoursOuvres, setDureeJoursOuvres] = useState("");
   const [dateFinCalculee, setDateFinCalculee] = useState("");
+  const [selectedAffaireId, setSelectedAffaireId] = useState<string>("");
   
   // Charger les templates au montage
   useEffect(() => {
@@ -425,14 +444,20 @@ export default function PlanificationClient({
               </>
             )}
 
-            {filteredActivites.length > 0 ? (
+            {(filteredActivites.length > 0 || jalons.length > 0) ? (
               <GanttTimeline
                 activites={filteredActivites}
+                jalons={jalons}
                 vue={vueGantt}
                 onActiviteClick={(activite) => {
                   // Ouvrir modal de détails ou édition
                   setEditingActivite(activite);
                   setShowActiviteModal(true);
+                }}
+                onJalonClick={(jalon) => {
+                  // Ouvrir modal de détails du jalon ou rediriger vers l'affaire
+                  console.log("Jalon cliqué:", jalon);
+                  // TODO: Implémenter l'action sur clic jalon
                 }}
                 onDragEnd={isPlanificateur ? handleDragEnd : undefined}
                 onResizeEnd={isPlanificateur ? handleResizeEnd : undefined}
@@ -659,8 +684,17 @@ export default function PlanificationClient({
                     </label>
                     <select
                       name="affaire_id"
+                      id="affaire_id"
                       required
                       defaultValue={editingActivite?.affaire_id || filters.affaire}
+                      onChange={(e) => {
+                        setSelectedAffaireId(e.target.value);
+                        // Réinitialiser le jalon si l'affaire change
+                        const lotSelect = document.getElementById("lot_id") as HTMLSelectElement;
+                        if (lotSelect) {
+                          lotSelect.value = "";
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                     >
                       <option value="">Sélectionner une affaire</option>
@@ -670,6 +704,32 @@ export default function PlanificationClient({
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Jalon (optionnel)
+                    </label>
+                    <select
+                      name="lot_id"
+                      id="lot_id"
+                      defaultValue={editingActivite?.lot_id || ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    >
+                      <option value="">Aucun jalon</option>
+                      {(() => {
+                        const affaireId = selectedAffaireId || editingActivite?.affaire_id || filters.affaire;
+                        const jalonsAffaire = affaireId ? jalons.filter(j => j.affaire_id === affaireId) : [];
+                        return jalonsAffaire.map((jalon) => (
+                          <option key={jalon.id} value={jalon.id}>
+                            {jalon.numero_lot} - {jalon.libelle_lot}
+                          </option>
+                        ));
+                      })()}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Sélectionnez un jalon pour lier cette activité à un milestone
+                    </p>
                   </div>
 
                   <div>
@@ -751,6 +811,27 @@ export default function PlanificationClient({
                       <option value="3x8">3x8</option>
                       <option value="accelerer">Accéléré</option>
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Responsable de la tâche
+                    </label>
+                    <select
+                      name="responsable_id"
+                      defaultValue={editingActivite?.responsable_id || ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                    >
+                      <option value="">Aucun responsable</option>
+                      {_collaborateurs.map((collab) => (
+                        <option key={collab.id} value={collab.id}>
+                          {collab.prenom} {collab.nom}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Le responsable verra cette tâche dans son suivi
+                    </p>
                   </div>
 
                   <div className="md:col-span-2">

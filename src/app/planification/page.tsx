@@ -77,6 +77,16 @@ export default async function PlanificationPage() {
     .eq("statut", "actif")
     .order("nom");
 
+  // Charger les jalons (lots avec est_jalon_gantt = true) pour affichage dans le Gantt
+  const { data: jalons } = await supabase
+    .from("tbl_affaires_lots")
+    .select(`
+      *,
+      affaire:tbl_affaires!tbl_affaires_lots_affaire_id_fkey(id, numero, libelle, charge_affaires_id)
+    `)
+    .eq("est_jalon_gantt", true)
+    .order("date_debut_previsionnelle", { ascending: true });
+
   // Debug: Vérifier si les données sont récupérées
   if (activites && activites.length > 0) {
     console.log(`[Planification] ${activites.length} activité(s) récupérée(s) depuis Supabase`);
@@ -113,10 +123,17 @@ export default async function PlanificationPage() {
     dependances: dependancesTransformed.filter((dep) => dep.activite_id === act.id),
   }));
 
+  // Transformer les jalons pour gérer les relations Supabase
+  const jalonsTransformed = (jalons || []).map((jalon) => ({
+    ...jalon,
+    affaire: Array.isArray(jalon.affaire) ? jalon.affaire[0] || null : jalon.affaire || null,
+  }));
+
   return (
     <PlanificationClient
       activites={activitesAvecDependances}
       affectations={affectationsTransformed}
+      jalons={jalonsTransformed}
       sites={sites || []}
       affaires={affaires || []}
       collaborateurs={collaborateurs || []}
