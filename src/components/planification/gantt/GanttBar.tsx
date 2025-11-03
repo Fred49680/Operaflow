@@ -99,7 +99,13 @@ export default function GanttBar({
       className={`relative h-8 group ${drag.isDragging || resize.isResizing ? "cursor-grabbing z-30" : onDragEnd || onResizeEnd ? "cursor-grab" : "cursor-pointer"}`}
       style={{ left: `${left}px`, width: `${width}px` }}
       onMouseDown={onDragEnd ? drag.onMouseDown : undefined}
-      onClick={handleClick}
+      onClick={(e) => {
+        // Si onDragEnd est défini, on permet le drag mais on gère aussi le clic
+        // Le handleClick vérifiera si c'est vraiment un clic (pas un drag)
+        if (!drag.isDragging && !resize.isResizing) {
+          handleClick(e);
+        }
+      }}
     >
       {/* Barre principale */}
       <div
