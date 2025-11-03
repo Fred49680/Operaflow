@@ -367,7 +367,7 @@ export async function DELETE(
 
     if (documents) {
       // Supprimer les fichiers du storage
-      for (const doc of documents) {
+      for (const doc of documents as Array<{ fichier_url: string | null }>) {
         if (doc.fichier_url) {
           const filePath = doc.fichier_url.split("/").pop();
           if (filePath) {
