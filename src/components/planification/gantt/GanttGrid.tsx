@@ -70,12 +70,13 @@ export default function GanttGrid({
                   jours.push(i);
                 }
                 return jours.map((jourIndex) => {
-                  const jourPosition = (jourIndex / 7) * 100;
+                  const jourPosition = (jourIndex * 100) / 7;
+                  const leftValue = `${jourPosition}%`;
                   return (
                     <div
                       key={jourIndex}
                       className="absolute top-0 bottom-0 border-l border-gray-100 border-dashed"
-                      style={{ left: `${jourPosition}%` }}
+                      style={{ left: leftValue }}
                     />
                   );
                 });
