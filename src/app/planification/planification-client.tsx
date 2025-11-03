@@ -106,6 +106,8 @@ export default function PlanificationClient({
       setDureeJoursOuvres("");
       setCalculAutoDateFin(false);
       setDateFinCalculee("");
+      setUniteDuree("jours");
+      setTypeHoraireSelectionne("jour");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showActiviteModal, editingActivite]);
