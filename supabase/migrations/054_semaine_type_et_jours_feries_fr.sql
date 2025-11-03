@@ -57,25 +57,24 @@ DECLARE
   m INTEGER;
   n INTEGER;
   p INTEGER;
-  q INTEGER;
   jour INTEGER;
   mois INTEGER;
 BEGIN
   -- Algorithme de Gauss pour calculer la date de Pâques
-  a := p_annee MOD 19;
+  a := p_annee % 19;
   b := p_annee / 100;
-  c := p_annee MOD 100;
+  c := p_annee % 100;
   d := b / 4;
-  e := b MOD 4;
+  e := b % 4;
   f := (b + 8) / 25;
   g := (b - f + 1) / 3;
-  h := (19 * a + b - d - g + 15) MOD 30;
+  h := (19 * a + b - d - g + 15) % 30;
   i := c / 4;
-  k := c MOD 4;
-  l := (32 + 2 * e + 2 * i - h - k) MOD 7;
+  k := c % 4;
+  l := (32 + 2 * e + 2 * i - h - k) % 7;
   m := (a + 11 * h + 22 * l) / 451;
   n := (h + l - 7 * m + 114) / 31;
-  p := (h + l - 7 * m + 114) MOD 31;
+  p := (h + l - 7 * m + 114) % 31;
   
   jour := p + 1;
   mois := n;
@@ -284,15 +283,29 @@ $$;
 COMMENT ON FUNCTION public.get_heures_travail_jour_v2 IS 'Retourne le nombre d''heures travaillées selon la semaine type et les exceptions';
 
 -- ============================================================================
--- 6️⃣ Triggers pour updated_at
+-- 6️⃣ Fonction pour trigger updated_at (si elle n'existe pas)
 -- ============================================================================
+CREATE OR REPLACE FUNCTION public.update_calendrier_updated_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+-- ============================================================================
+-- 7️⃣ Triggers pour updated_at
+-- ============================================================================
+DROP TRIGGER IF EXISTS trigger_update_semaine_type_updated_at ON public.tbl_calendrier_semaine_type;
 CREATE TRIGGER trigger_update_semaine_type_updated_at
   BEFORE UPDATE ON public.tbl_calendrier_semaine_type
   FOR EACH ROW
-  EXECUTE FUNCTION update_calendrier_updated_at();
+  EXECUTE FUNCTION public.update_calendrier_updated_at();
 
 -- ============================================================================
--- 7️⃣ RLS pour semaine type
+-- 8️⃣ RLS pour semaine type
 -- ============================================================================
 ALTER TABLE public.tbl_calendrier_semaine_type ENABLE ROW LEVEL SECURITY;
 
