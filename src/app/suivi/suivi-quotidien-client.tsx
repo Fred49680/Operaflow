@@ -228,8 +228,8 @@ export default function SuiviQuotidienClient({
       const responseActivite = await fetch(`/api/planification/activites/${activiteId}`);
       if (responseActivite.ok) {
         const data = await responseActivite.json();
-        // L'API retourne directement l'activité, pas dans un objet activite
-        setActiviteHistorique(data);
+        // L'API retourne { activite: {...} }
+        setActiviteHistorique(data.activite || data);
       }
 
       // Charger les suivis quotidiens pour cette activité
