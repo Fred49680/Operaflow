@@ -72,6 +72,8 @@ export default function PlanificationClient({
   const [dureeJoursOuvres, setDureeJoursOuvres] = useState("");
   const [dateFinCalculee, setDateFinCalculee] = useState("");
   const [selectedAffaireId, setSelectedAffaireId] = useState<string>("");
+  const [uniteDuree, setUniteDuree] = useState<"jours" | "semaines">("jours");
+  const [typeHoraireSelectionne, setTypeHoraireSelectionne] = useState<string>("jour");
   
   // Charger les templates au montage
   useEffect(() => {
@@ -93,10 +95,11 @@ export default function PlanificationClient({
       setCalculAutoDateFin(initCalculAuto);
       
       if (initCalculAuto && initDateDebut && initDuree) {
-        calculerDateFin(initDateDebut, parseInt(initDuree));
+        calculerDateFin(initDateDebut, parseInt(initDuree), "jours", editingActivite.type_horaire || "jour");
       } else {
         setDateFinCalculee("");
       }
+      setTypeHoraireSelectionne(editingActivite.type_horaire || "jour");
     } else if (showActiviteModal && !editingActivite) {
       // Nouvelle activité
       setDateDebut("");
@@ -226,15 +229,19 @@ export default function PlanificationClient({
     }
   };
 
-  // Fonction pour calculer la date de fin en jours ouvrés
-  const calculerDateFin = async (dateDebutStr: string, joursOuvres: number) => {
+  // Fonction pour calculer la date de fin en fonction de la durée et du type horaire
+  const calculerDateFin = async (dateDebutStr: string, duree: number, unite: "jours" | "semaines", typeHoraire: string) => {
     try {
+      // Convertir semaines en jours si nécessaire
+      const joursCalcul = unite === "semaines" ? duree * 7 : duree;
+      
       const response = await fetch("/api/planification/calculer-date-fin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           date_debut: dateDebutStr,
-          duree_jours_ouvres: joursOuvres,
+          duree_jours_ouvres: joursCalcul,
+          type_horaire: typeHoraire,
         }),
       });
 
@@ -757,7 +764,7 @@ export default function PlanificationClient({
                       onChange={(e) => {
                         setDateDebut(e.target.value);
                         if (calculAutoDateFin && dureeJoursOuvres && e.target.value) {
-                          calculerDateFin(e.target.value, parseInt(dureeJoursOuvres));
+                          calculerDateFin(e.target.value, parseInt(dureeJoursOuvres), uniteDuree, typeHoraireSelectionne);
                         }
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
@@ -802,6 +809,12 @@ export default function PlanificationClient({
                     <select
                       name="type_horaire"
                       defaultValue={editingActivite?.type_horaire || "jour"}
+                      onChange={(e) => {
+                        setTypeHoraireSelectionne(e.target.value);
+                        if (calculAutoDateFin && dateDebut && dureeJoursOuvres) {
+                          calculerDateFin(dateDebut, parseInt(dureeJoursOuvres), uniteDuree, e.target.value);
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                     >
                       <option value="jour">Jour (HN 5/7)</option>
@@ -884,34 +897,59 @@ export default function PlanificationClient({
                     />
                   </div>
 
-                  {/* Section Jours ouvrés */}
+                  {/* Section Durée avec calcul automatique */}
                   <div className="md:col-span-2 border-t pt-4">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Durée en jours ouvrés</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Durée et calcul automatique</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Durée (jours ouvrés)
+                          Unité de durée
+                        </label>
+                        <select
+                          value={uniteDuree}
+                          onChange={(e) => {
+                            setUniteDuree(e.target.value as "jours" | "semaines");
+                            if (calculAutoDateFin && dateDebut && dureeJoursOuvres) {
+                              calculerDateFin(dateDebut, parseInt(dureeJoursOuvres), e.target.value as "jours" | "semaines", typeHoraireSelectionne);
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        >
+                          <option value="jours">Jours</option>
+                          <option value="semaines">Semaines</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Durée {uniteDuree === "semaines" ? "(semaines)" : "(jours)"}
                         </label>
                         <input
                           type="number"
                           name="duree_jours_ouvres"
                           min="1"
+                          step={uniteDuree === "semaines" ? "0.5" : "1"}
                           value={dureeJoursOuvres || (editingActivite?.duree_jours_ouvres || "")}
                           onChange={(e) => {
                             setDureeJoursOuvres(e.target.value);
                             if (calculAutoDateFin && dateDebut && e.target.value) {
-                              calculerDateFin(dateDebut, parseInt(e.target.value));
+                              calculerDateFin(dateDebut, parseFloat(e.target.value), uniteDuree, typeHoraireSelectionne);
                             }
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                          placeholder="Ex: 5"
+                          placeholder={uniteDuree === "semaines" ? "Ex: 2" : "Ex: 5"}
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Exclut weekends et jours fériés
+                          {typeHoraireSelectionne === "jour" 
+                            ? "Exclut weekends et jours fériés"
+                            : typeHoraireSelectionne === "3x8"
+                            ? "Travail 24/7 (inclut weekends)"
+                            : typeHoraireSelectionne === "weekend" || typeHoraireSelectionne === "ferie"
+                            ? "Inclut tous les jours"
+                            : "Calcul selon le calendrier sélectionné"}
                         </p>
                       </div>
                       <div className="flex items-end">
-                        <label className="flex items-center gap-2 cursor-pointer">
+                        <label className="flex items-center gap-2 cursor-pointer w-full">
                           <input
                             type="checkbox"
                             name="calcul_auto_date_fin"
@@ -920,7 +958,7 @@ export default function PlanificationClient({
                             onChange={(e) => {
                               setCalculAutoDateFin(e.target.checked);
                               if (e.target.checked && dateDebut && dureeJoursOuvres) {
-                                calculerDateFin(dateDebut, parseInt(dureeJoursOuvres));
+                                calculerDateFin(dateDebut, parseFloat(dureeJoursOuvres), uniteDuree, typeHoraireSelectionne);
                               } else {
                                 setDateFinCalculee("");
                               }
