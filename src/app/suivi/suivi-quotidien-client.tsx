@@ -1075,7 +1075,7 @@ export default function SuiviQuotidienClient({
                                           {new Date(suivi.date_journee).toLocaleDateString("fr-FR")}
                                         </span>
                                         <span className="text-sm text-gray-600">
-                                          {suivi.heures_reelles}h - {suivi.pourcentage_avancement_journee}%
+                                          {suivi.pourcentage_avancement_journee}%
                                         </span>
                                       </div>
                                       {suivi.commentaire && (
