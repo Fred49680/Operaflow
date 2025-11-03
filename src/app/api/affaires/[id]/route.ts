@@ -308,7 +308,7 @@ export async function DELETE(
       .eq("affaire_id", id);
 
     if (activites && activites.length > 0) {
-      const activiteIds = activites.map((a) => a.id);
+      const activiteIds = activites.map((a: { id: string }) => a.id);
       
       // Supprimer le suivi quotidien
       await supabaseAdmin
