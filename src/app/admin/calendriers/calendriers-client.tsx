@@ -486,15 +486,12 @@ export default function CalendriersClient({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                   Statut
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                  Actions
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {calendriers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
                     Aucun calendrier défini
                   </td>
                 </tr>
@@ -502,6 +499,7 @@ export default function CalendriersClient({
                 calendriers.map((calendrier) => (
                   <tr
                     key={calendrier.id}
+                    onClick={() => handleViewDetails(calendrier)}
                     className="hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -538,38 +536,15 @@ export default function CalendriersClient({
                           e.stopPropagation();
                           handleToggleActif(calendrier);
                         }}
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                           calendrier.actif
                             ? "bg-green-100 text-green-800 hover:bg-green-200"
                             : "bg-gray-100 text-gray-800 hover:bg-gray-200"
                         }`}
+                        title={`Cliquer pour ${calendrier.actif ? "désactiver" : "activer"}`}
                       >
                         {calendrier.actif ? "Actif" : "Inactif"}
                       </button>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewDetails(calendrier);
-                          }}
-                          className="text-primary hover:text-primary-dark transition-colors"
-                          title="Voir les détails"
-                        >
-                          <Eye className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(calendrier);
-                          }}
-                          className="text-red-600 hover:text-red-800 transition-colors"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
-                      </div>
                     </td>
                   </tr>
                 ))
