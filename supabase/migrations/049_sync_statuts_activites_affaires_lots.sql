@@ -255,6 +255,40 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION public.initialiser_statuts_affaires_par_activites() IS 
 'Initialise les statuts de toutes les affaires en fonction de leurs activités (à exécuter une fois après migration)';
 
--- Exécuter l'initialisation pour les affaires existantes
+-- ============================================================================
+-- 6️⃣ Fonction pour initialiser les statuts des lots existants
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.initialiser_statuts_lots_par_activites()
+RETURNS void AS $$
+DECLARE
+    lot RECORD;
+    nouveau_statut VARCHAR(50);
+BEGIN
+    -- Parcourir tous les lots qui ont des activités
+    FOR lot IN 
+        SELECT DISTINCT lot_id 
+        FROM public.tbl_planification_activites
+        WHERE lot_id IS NOT NULL
+    LOOP
+        nouveau_statut := public.calculer_statut_lot_par_activites(lot.lot_id);
+        
+        -- Mettre à jour seulement si un statut a été calculé
+        IF nouveau_statut IS NOT NULL THEN
+            UPDATE public.tbl_affaires_lots
+            SET 
+                statut = nouveau_statut,
+                updated_at = NOW()
+            WHERE id = lot.lot_id
+            AND (statut IS NULL OR statut != nouveau_statut);
+        END IF;
+    END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON FUNCTION public.initialiser_statuts_lots_par_activites() IS 
+'Initialise les statuts de tous les lots en fonction de leurs activités (à exécuter une fois après migration)';
+
+-- Exécuter l'initialisation pour les affaires et lots existants
 SELECT public.initialiser_statuts_affaires_par_activites();
+SELECT public.initialiser_statuts_lots_par_activites();
 
