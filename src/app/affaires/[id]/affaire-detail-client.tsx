@@ -33,6 +33,7 @@ export default function AffaireDetailClient({
   const [showBpuImportModal, setShowBpuImportModal] = useState(false);
   const [importingBpu, setImportingBpu] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showAddAnotherLotModal, setShowAddAnotherLotModal] = useState(false);
   
   // États pour le formulaire de lot
   const [lotFormPourcentage, setLotFormPourcentage] = useState("");
@@ -874,12 +875,19 @@ export default function AffaireDetailClient({
                     }
                     
                     router.refresh();
-                    setShowLotModal(false);
-                    setEditingLot(null);
-                    setLotFormPourcentage("");
-                    setLotFormMontant("");
-                    setLotFormError("");
-                    window.location.reload();
+                    
+                    // Si c'est une création (pas une modification), demander si on veut ajouter un autre jalon
+                    if (!editingLot) {
+                      setShowAddAnotherLotModal(true);
+                    } else {
+                      // Modification : fermer directement
+                      setShowLotModal(false);
+                      setEditingLot(null);
+                      setLotFormPourcentage("");
+                      setLotFormMontant("");
+                      setLotFormError("");
+                      window.location.reload();
+                    }
                   } catch (error) {
                     console.error("Erreur sauvegarde lot:", error);
                     alert(error instanceof Error ? error.message : "Erreur lors de la sauvegarde");
