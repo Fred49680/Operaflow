@@ -885,7 +885,8 @@ export default function CalendriersClient({
                     setJourFormData({
                       ...jourFormData,
                       type_jour: e.target.value as typeof jourFormData.type_jour,
-                      heures_travail: e.target.value === "ferie" || e.target.value === "chome" ? 0 : jourFormData.heures_travail,
+                      heures_travail: e.target.value === "ferie" || e.target.value === "chome" ? "00:00" : jourFormData.heures_travail,
+                      heures_travail_decimal: e.target.value === "ferie" || e.target.value === "chome" ? 0 : (jourFormData.heures_travail_decimal || timeToDecimal(jourFormData.heures_travail)),
                     })
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
