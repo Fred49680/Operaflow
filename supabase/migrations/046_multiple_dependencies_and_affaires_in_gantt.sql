@@ -207,6 +207,10 @@ GROUP BY a.id, a.numero, a.libelle, a.statut, a.site_id, a.date_debut, a.date_fi
 -- ============================================================================
 ALTER TABLE public.tbl_planification_dependances ENABLE ROW LEVEL SECURITY;
 
+-- Supprimer les politiques existantes si elles existent
+DROP POLICY IF EXISTS "Users can read dependencies based on activity access" ON public.tbl_planification_dependances;
+DROP POLICY IF EXISTS "Users can manage dependencies based on role" ON public.tbl_planification_dependances;
+
 CREATE POLICY "Users can read dependencies based on activity access"
     ON public.tbl_planification_dependances FOR SELECT
     USING (
