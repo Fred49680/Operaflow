@@ -12,7 +12,9 @@ import {
   TrendingUp,
   History,
   Search,
-  X
+  X,
+  Zap,
+  Edit
 } from "lucide-react";
 import type { ActivitePlanification } from "@/types/planification";
 
@@ -56,6 +58,8 @@ export default function SuiviQuotidienClient({
   const [loadingHistorique, setLoadingHistorique] = useState(false);
   const [suivisHistorique, setSuivisHistorique] = useState<typeof suivis>([]);
   const [lanceParCollaborateur, setLanceParCollaborateur] = useState<{ nom: string; prenom: string } | null>(null);
+  const [modeAvancement, setModeAvancement] = useState<"auto" | "manuel">("auto");
+  const [pourcentageAuto, setPourcentageAuto] = useState<number>(0);
 
   // Fonction pour formater les statuts en verbe à l'infinitif avec majuscule
   const formatStatut = (statut: string): string => {
@@ -550,11 +554,19 @@ export default function SuiviQuotidienClient({
                   {actionButtons.map((btn) => (
                     <button
                       key={btn.action}
-                      onClick={() => {
-                        if (btn.action === "avancement") {
-                          setSelectedActivite(activite);
-                          setShowAvancementModal(true);
-                        } else {
+                          onClick={() => {
+                            if (btn.action === "avancement") {
+                              setSelectedActivite(activite);
+                              // Calculer le pourcentage auto par défaut
+                              const dateDebut = new Date(activite.date_debut_prevue);
+                              const dateFin = new Date(activite.date_fin_prevue);
+                              const dureeTotale = activite.duree_jours_ouvres || 
+                                Math.ceil((dateFin.getTime() - dateDebut.getTime()) / (1000 * 60 * 60 * 24));
+                              const pourcentageParJour = dureeTotale > 0 ? (100 / dureeTotale) : 0;
+                              setPourcentageAuto(pourcentageParJour);
+                              setModeAvancement("auto");
+                              setShowAvancementModal(true);
+                            } else {
                           setSelectedActivite(activite);
                           setActionType(btn.action as any);
                           setShowActionModal(true);
@@ -579,97 +591,234 @@ export default function SuiviQuotidienClient({
           </div>
         )}
 
-        {/* Modal Déclarer avancement */}
-        {showAvancementModal && selectedActivite && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-              <div className="flex items-center justify-between p-6 border-b">
-                <h2 className="text-xl font-bold text-primary">Déclarer avancement</h2>
-                <button
-                  onClick={() => {
-                    setShowAvancementModal(false);
-                    setSelectedActivite(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
+        {/* Modal Déclarer avancement - Design amélioré */}
+        {showAvancementModal && selectedActivite && (() => {
+          // Calculer la durée en jours ouvrés pour le mode auto
+          const dateDebut = new Date(selectedActivite.date_debut_prevue);
+          const dateFin = new Date(selectedActivite.date_fin_prevue);
+          const dureeTotale = selectedActivite.duree_jours_ouvres || 
+            Math.ceil((dateFin.getTime() - dateDebut.getTime()) / (1000 * 60 * 60 * 24));
+          const pourcentageParJour = dureeTotale > 0 ? (100 / dureeTotale) : 0;
 
-              <form
-                className="p-6 space-y-4"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.currentTarget);
-                  const pourcentage = parseFloat(formData.get("pourcentage") as string);
-                  const heures = parseFloat(formData.get("heures") as string);
-                  const commentaire = formData.get("commentaire") as string;
-                  handleDeclarerAvancement(selectedActivite.id, pourcentage, heures, commentaire);
-                }}
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => {
+              setShowAvancementModal(false);
+              setSelectedActivite(null);
+              setModeAvancement("auto");
+              setPourcentageAuto(0);
+            }}>
+              {/* Overlay avec backdrop blur */}
+              <div className="absolute inset-0 bg-slate-600/40 backdrop-blur-sm" />
+              
+              {/* Modal */}
+              <div
+                className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col border border-gray-100 z-50"
+                onClick={(e) => e.stopPropagation()}
               >
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Pourcentage d'avancement (%) <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="pourcentage"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Heures réelles <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    name="heures"
-                    min="0"
-                    step="0.5"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Commentaire
-                  </label>
-                  <textarea
-                    name="commentaire"
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4 border-t">
+                {/* Header avec gradient */}
+                <div className="flex items-center justify-between px-6 py-5 bg-gradient-to-r from-blue-500/10 to-blue-600/10 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <TrendingUp className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900">Déclarer avancement</h2>
+                  </div>
                   <button
-                    type="button"
                     onClick={() => {
                       setShowAvancementModal(false);
                       setSelectedActivite(null);
+                      setModeAvancement("auto");
+                      setPourcentageAuto(0);
                     }}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    className="p-2 hover:bg-white/50 rounded-lg transition-all duration-200 hover:scale-110"
+                    aria-label="Fermer"
                   >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn-primary px-4 py-2"
-                    disabled={saving}
-                  >
-                    {saving ? "Enregistrement..." : "Enregistrer"}
+                    <X className="h-5 w-5 text-gray-500 hover:text-gray-700" />
                   </button>
                 </div>
-              </form>
+
+                {/* Informations de l'activité */}
+                <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    {selectedActivite.numero_hierarchique && (
+                      <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">
+                        {selectedActivite.numero_hierarchique}
+                      </span>
+                    )}
+                    <h3 className="font-semibold text-gray-800 text-sm">{selectedActivite.libelle}</h3>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    {selectedActivite.affaire && (
+                      <p><span className="font-medium">Affaire:</span> {selectedActivite.affaire.numero}</p>
+                    )}
+                    <p>
+                      <span className="font-medium">Durée prévue:</span> {dureeTotale} jour{dureeTotale > 1 ? 's' : ''} ouvré{dureeTotale > 1 ? 's' : ''}
+                    </p>
+                    <p>
+                      <span className="font-medium">Avancement actuel:</span> {selectedActivite.pourcentage_avancement || 0}%
+                    </p>
+                  </div>
+                </div>
+
+                {/* Contenu du formulaire */}
+                <form
+                  className="flex-1 overflow-y-auto p-6 space-y-5"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const pourcentage = modeAvancement === "auto" 
+                      ? pourcentageAuto 
+                      : parseFloat(formData.get("pourcentage") as string);
+                    const heures = parseFloat(formData.get("heures") as string);
+                    const commentaire = formData.get("commentaire") as string;
+                    handleDeclarerAvancement(selectedActivite.id, pourcentage, heures, commentaire);
+                  }}
+                >
+                  {/* Sélecteur de mode */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                      Mode de calcul
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setModeAvancement("auto");
+                          // Calculer automatiquement le pourcentage pour une journée
+                          setPourcentageAuto(pourcentageParJour);
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                          modeAvancement === "auto"
+                            ? "bg-blue-50 border-blue-500 text-blue-700"
+                            : "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
+                        }`}
+                      >
+                        <Zap className={`h-5 w-5 ${modeAvancement === "auto" ? "text-blue-600" : "text-gray-400"}`} />
+                        <span className="font-medium">Automatique</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModeAvancement("manuel")}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                          modeAvancement === "manuel"
+                            ? "bg-purple-50 border-purple-500 text-purple-700"
+                            : "bg-white border-gray-300 text-gray-700 hover:border-gray-400"
+                        }`}
+                      >
+                        <Edit className={`h-5 w-5 ${modeAvancement === "manuel" ? "text-purple-600" : "text-gray-400"}`} />
+                        <span className="font-medium">Manuel</span>
+                      </button>
+                    </div>
+                    {modeAvancement === "auto" && (
+                      <p className="mt-2 text-xs text-gray-500">
+                        Calcul automatique: {pourcentageParJour.toFixed(2)}% par journée (sur {dureeTotale} jour{dureeTotale > 1 ? 's' : ''})
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Pourcentage d'avancement */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Pourcentage d'avancement (%) <span className="text-red-500">*</span>
+                    </label>
+                    {modeAvancement === "auto" ? (
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={pourcentageAuto}
+                          onChange={(e) => setPourcentageAuto(parseFloat(e.target.value) || 0)}
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          required
+                          className="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50/50 font-medium text-blue-700"
+                        />
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 font-semibold">
+                          Auto
+                        </div>
+                      </div>
+                    ) : (
+                      <input
+                        type="number"
+                        name="pourcentage"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        required
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium"
+                        placeholder="Saisir le pourcentage"
+                      />
+                    )}
+                  </div>
+
+                  {/* Heures réelles */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Heures réelles <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        name="heures"
+                        min="0"
+                        step="0.5"
+                        required
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary font-medium"
+                        placeholder="Ex: 8.0"
+                      />
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500 font-medium">
+                        heures
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Commentaire */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Commentaire
+                    </label>
+                    <textarea
+                      name="commentaire"
+                      rows={3}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+                      placeholder="Ajouter un commentaire (optionnel)..."
+                    />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAvancementModal(false);
+                        setSelectedActivite(null);
+                        setModeAvancement("auto");
+                        setPourcentageAuto(0);
+                      }}
+                      className="px-6 py-2.5 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 font-medium transition-colors"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 font-medium shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={saving}
+                    >
+                      {saving ? (
+                        <span className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 animate-spin" />
+                          Enregistrement...
+                        </span>
+                      ) : (
+                        "Enregistrer"
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Modal Actions (Lancer, Reporter, Suspendre, Prolonger, Terminer) - Design amélioré */}
         {showActionModal && selectedActivite && actionType && (
