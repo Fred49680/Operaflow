@@ -21,6 +21,7 @@ export function useGanttDrag({
   const [dragOffset, setDragOffset] = useState(0);
   const [initialLeft, setInitialLeft] = useState(0);
   const [initialWidth, setInitialWidth] = useState(0);
+  const [hasMoved, setHasMoved] = useState(false);
 
   // Calculer la durée totale de la timeline
   const dureeTotale = dateFinTimeline.getTime() - dateDebutTimeline.getTime();
@@ -47,8 +48,16 @@ export function useGanttDrag({
 
       e.preventDefault();
       e.stopPropagation();
+      
+      // Détecter si c'est un double-clic (pour modifier) ou un simple clic (pour drag)
+      // Si c'est un double-clic, on ne démarre pas le drag
+      if (e.detail === 2) {
+        return;
+      }
+
       setIsDragging(true);
       setDragStartX(e.clientX);
+      setHasMoved(false);
     },
     []
   );
@@ -58,8 +67,13 @@ export function useGanttDrag({
       if (!isDragging) return;
 
       const deltaX = e.clientX - dragStartX;
-      const deltaTime = (deltaX / largeurTotale) * dureeTotale;
       
+      // Si le mouvement est > 5px, considérer qu'on drag
+      if (Math.abs(deltaX) > 5) {
+        setHasMoved(true);
+      }
+      
+      const deltaTime = (deltaX / largeurTotale) * dureeTotale;
       setDragOffset(deltaTime);
     },
     [isDragging, dragStartX, largeurTotale, dureeTotale]
@@ -68,26 +82,29 @@ export function useGanttDrag({
   const handleMouseUp = useCallback(() => {
     if (!isDragging) return;
 
+    const wasDragging = hasMoved && Math.abs(dragOffset) > 0;
     setIsDragging(false);
 
-    // Calculer les nouvelles dates
-    const dateDebutActivite = new Date(activite.date_debut_prevue);
-    const dateFinActivite = new Date(activite.date_fin_prevue);
-    const dureeActivite = dateFinActivite.getTime() - dateDebutActivite.getTime();
+    // Si on a réellement bougé, sauvegarder les nouvelles dates
+    if (wasDragging) {
+      // Calculer les nouvelles dates
+      const dateDebutActivite = new Date(activite.date_debut_prevue);
+      const dateFinActivite = new Date(activite.date_fin_prevue);
+      const dureeActivite = dateFinActivite.getTime() - dateDebutActivite.getTime();
 
-    const nouvelleDateDebut = new Date(dateDebutActivite.getTime() + dragOffset);
-    const nouvelleDateFin = new Date(nouvelleDateDebut.getTime() + dureeActivite);
+      const nouvelleDateDebut = new Date(dateDebutActivite.getTime() + dragOffset);
+      const nouvelleDateFin = new Date(nouvelleDateDebut.getTime() + dureeActivite);
 
-    // Vérifier que les dates restent dans la timeline
-    if (nouvelleDateDebut < dateDebutTimeline || nouvelleDateFin > dateFinTimeline) {
-      setDragOffset(0);
-      return;
+      // Vérifier que les dates restent dans la timeline
+      if (nouvelleDateDebut >= dateDebutTimeline && nouvelleDateFin <= dateFinTimeline) {
+        // Appeler le callback
+        onDragEnd(activite.id, nouvelleDateDebut, nouvelleDateFin);
+      }
     }
 
-    // Appeler le callback
-    onDragEnd(activite.id, nouvelleDateDebut, nouvelleDateFin);
     setDragOffset(0);
-  }, [isDragging, dragOffset, activite, dateDebutTimeline, dateFinTimeline, onDragEnd]);
+    setHasMoved(false);
+  }, [isDragging, hasMoved, dragOffset, activite, dateDebutTimeline, dateFinTimeline, onDragEnd]);
 
   // Gérer les événements globaux
   useEffect(() => {

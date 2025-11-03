@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useGanttDrag } from "./useGanttDrag";
 import { useGanttResize } from "./useGanttResize";
 import type { ActivitePlanification } from "@/types/planification";
@@ -80,12 +80,26 @@ export default function GanttBar({
   // Calculer le pourcentage d'avancement pour la barre de progression
   const pourcentageAvancement = activite.pourcentage_avancement || 0;
 
+  // Gérer le clic pour modifier (si pas de drag en cours)
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    // Ne pas déclencher le clic si on clique sur un handle de redimensionnement
+    if ((e.target as HTMLElement).closest(".gantt-bar-handle")) {
+      return;
+    }
+    // Ne pas déclencher le clic si on vient de faire un drag ou un resize
+    // On vérifie aussi si le mouvement était significatif (> 5px)
+    if (drag.isDragging || resize.isResizing) {
+      return;
+    }
+    onClick?.();
+  }, [drag.isDragging, resize.isResizing, onClick]);
+
   return (
     <div
       className={`relative h-8 group ${drag.isDragging || resize.isResizing ? "cursor-grabbing z-30" : onDragEnd || onResizeEnd ? "cursor-grab" : "cursor-pointer"}`}
       style={{ left: `${left}px`, width: `${width}px` }}
       onMouseDown={onDragEnd ? drag.onMouseDown : undefined}
-      onClick={onDragEnd && !drag.isDragging ? onClick : undefined}
+      onClick={handleClick}
     >
       {/* Barre principale */}
       <div
@@ -121,15 +135,23 @@ export default function GanttBar({
           <>
             {/* Handle gauche (début) */}
             <div
-              className="absolute left-0 top-0 bottom-0 w-2 bg-white bg-opacity-0 hover:bg-opacity-30 cursor-ew-resize gantt-bar-handle z-10"
-              onMouseDown={resize.onStartHandleMouseDown}
+              className="absolute left-0 top-0 bottom-0 w-3 bg-white bg-opacity-0 hover:bg-opacity-40 cursor-ew-resize gantt-bar-handle z-10 border-l-2 border-white border-opacity-0 hover:border-opacity-50"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                resize.onStartHandleMouseDown(e);
+              }}
               style={{ cursor: "ew-resize" }}
+              title="Redimensionner le début"
             />
             {/* Handle droit (fin) */}
             <div
-              className="absolute right-0 top-0 bottom-0 w-2 bg-white bg-opacity-0 hover:bg-opacity-30 cursor-ew-resize gantt-bar-handle z-10"
-              onMouseDown={resize.onEndHandleMouseDown}
+              className="absolute right-0 top-0 bottom-0 w-3 bg-white bg-opacity-0 hover:bg-opacity-40 cursor-ew-resize gantt-bar-handle z-10 border-r-2 border-white border-opacity-0 hover:border-opacity-50"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                resize.onEndHandleMouseDown(e);
+              }}
               style={{ cursor: "ew-resize" }}
+              title="Redimensionner la fin"
             />
           </>
         )}
