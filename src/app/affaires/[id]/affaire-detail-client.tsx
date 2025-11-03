@@ -201,68 +201,7 @@ export default function AffaireDetailClient({
               </div>
             )}
           </div>
-
-          {/* Modal de confirmation */}
-          {showConfirmModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowConfirmModal(false)}>
-              <div className="absolute inset-0 bg-slate-600/40 backdrop-blur-sm" />
-              <div
-                className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 z-50 border border-gray-100"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <AlertCircle className="h-6 w-6 text-primary" />
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">
-                      Envoyer cette affaire à la planification ?
-                    </h3>
-                    <p className="text-gray-600 mb-6">
-                      Elle sera visible par les planificateurs et pourra être planifiée dans le Gantt.
-                    </p>
-                    <div className="flex gap-3 justify-end">
-                      <button
-                        onClick={() => setShowConfirmModal(false)}
-                        className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
-                      >
-                        Annuler
-                      </button>
-                      <button
-                        onClick={async () => {
-                          setShowConfirmModal(false);
-                          setLoading(true);
-                          try {
-                            const response = await fetch(`/api/affaires/${affaire.id}`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ statut: "en_attente_planification" }),
-                            });
-
-                            if (response.ok) {
-                              const updated = await response.json();
-                              setAffaire(updated.affaire || updated);
-                              router.refresh();
-                            } else {
-                              throw new Error("Erreur lors de l'envoi");
-                            }
-                          } catch (error) {
-                            console.error("Erreur:", error);
-                            setLoading(false);
-                          }
-                        }}
-                        className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors font-medium"
-                      >
-                        Confirmer
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+        </div>
 
         {/* Onglets */}
         <div className="border-b border-gray-200 mb-6">
@@ -1824,6 +1763,68 @@ export default function AffaireDetailClient({
           </div>
         )}
       </div>
+
+      {/* Modal de confirmation */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowConfirmModal(false)}>
+          <div className="absolute inset-0 bg-slate-600/40 backdrop-blur-sm" />
+          <div
+            className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 z-50 border border-gray-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <AlertCircle className="h-6 w-6 text-primary" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  Envoyer cette affaire à la planification ?
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Elle sera visible par les planificateurs et pourra être planifiée dans le Gantt.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowConfirmModal(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setShowConfirmModal(false);
+                      setLoading(true);
+                      try {
+                        const response = await fetch(`/api/affaires/${affaire.id}`, {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ statut: "en_attente_planification" }),
+                        });
+
+                        if (response.ok) {
+                          const updated = await response.json();
+                          setAffaire(updated.affaire || updated);
+                          router.refresh();
+                        } else {
+                          throw new Error("Erreur lors de l'envoi");
+                        }
+                      } catch (error) {
+                        console.error("Erreur:", error);
+                        setLoading(false);
+                      }
+                    }}
+                    className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors font-medium"
+                  >
+                    Confirmer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
