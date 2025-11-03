@@ -44,6 +44,8 @@ export default function SuiviQuotidienClient({
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSite, setFilterSite] = useState("");
   const [filterStatut, setFilterStatut] = useState("");
+  const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedActivite, setSelectedActivite] = useState<ActivitePlanification | null>(null);
   const [activiteHistorique, setActiviteHistorique] = useState<ActivitePlanification | null>(null);
   const [showAvancementModal, setShowAvancementModal] = useState(false);
@@ -77,6 +79,31 @@ export default function SuiviQuotidienClient({
     r === "Chargé d'Affaires"
   );
   const isAdmin = userRoles.some((r) => r === "Administrateur");
+
+  // Générer les suggestions pour l'autocomplete
+  const suggestions = useMemo(() => {
+    if (!searchTerm || searchTerm.length < 2) return [];
+    
+    const searchLower = searchTerm.toLowerCase();
+    const suggestionsSet = new Set<string>();
+    
+    activites.forEach((activite) => {
+      // Suggérer les libellés d'activités
+      if (activite.libelle.toLowerCase().includes(searchLower)) {
+        suggestionsSet.add(activite.libelle);
+      }
+      // Suggérer les numéros d'affaires
+      if (activite.affaire?.numero.toLowerCase().includes(searchLower)) {
+        suggestionsSet.add(activite.affaire.numero);
+      }
+      // Suggérer les numéros hiérarchiques
+      if (activite.numero_hierarchique?.toLowerCase().includes(searchLower)) {
+        suggestionsSet.add(activite.numero_hierarchique);
+      }
+    });
+    
+    return Array.from(suggestionsSet).slice(0, 5); // Limiter à 5 suggestions
+  }, [activites, searchTerm]);
 
   // Filtrer les activités
   const filteredActivites = useMemo(() => {
@@ -356,28 +383,54 @@ export default function SuiviQuotidienClient({
           </p>
         </div>
 
-        {/* Filtres */}
+        {/* Filtres - Tout sur une ligne */}
         <div className="card mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-2 mb-2">
-                <Search className="h-5 w-5 text-gray-400" />
-                <label className="block text-xs font-medium text-gray-700">Recherche</label>
+          <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
+            {/* Recherche avec autocomplete */}
+            <div className="flex-1 w-full sm:w-auto relative">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Recherche</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher par activité, numéro, affaire..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
+                />
+                {/* Suggestions autocomplete */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {suggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => {
+                          setSearchTerm(suggestion);
+                          setShowSuggestions(false);
+                        }}
+                        className="w-full text-left px-4 py-2 hover:bg-primary/10 text-sm text-gray-700 border-b border-gray-100 last:border-b-0"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-              <input
-                type="text"
-                placeholder="Rechercher par activité, numéro, affaire..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-              />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">Site</label>
+
+            {/* Filtre Site */}
+            <div className="w-full sm:w-48">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Site</label>
               <select
                 value={filterSite}
                 onChange={(e) => setFilterSite(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
               >
                 <option value="">Tous les sites</option>
                 {sites.map((site) => (
@@ -387,12 +440,14 @@ export default function SuiviQuotidienClient({
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-2">Statut</label>
+
+            {/* Filtre Statut */}
+            <div className="w-full sm:w-48">
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Statut</label>
               <select
                 value={filterStatut}
                 onChange={(e) => setFilterStatut(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
               >
                 <option value="">Tous les statuts</option>
                 <option value="planifiee">Planifiée</option>
@@ -400,6 +455,8 @@ export default function SuiviQuotidienClient({
                 <option value="suspendue">Suspendue</option>
                 <option value="reportee">Reportée</option>
                 <option value="prolongee">Prolongée</option>
+                <option value="terminee">Terminée</option>
+                <option value="annulee">Annulée</option>
               </select>
             </div>
           </div>
