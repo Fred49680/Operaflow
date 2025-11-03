@@ -325,10 +325,20 @@ export default function CalendriersClient({
       
       const method = selectedJour ? "PATCH" : "POST";
 
+      // Préparer les données pour l'envoi (convertir heures en décimal)
+      const dataToSend = {
+        calendrier_id: selectedCalendrier.id,
+        date_jour: jourFormData.date_jour,
+        type_jour: jourFormData.type_jour,
+        heures_travail: jourFormData.heures_travail_decimal || timeToDecimal(jourFormData.heures_travail),
+        libelle: jourFormData.libelle || null,
+        est_recurrent: jourFormData.est_recurrent,
+      };
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(jourFormData),
+        body: JSON.stringify(dataToSend),
       });
 
       if (!response.ok) {
@@ -904,23 +914,22 @@ export default function CalendriersClient({
                   Heures travaillées <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  max="24"
-                  step="0.5"
+                  type="time"
                   value={jourFormData.heures_travail}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const timeValue = e.target.value || "00:00";
                     setJourFormData({
                       ...jourFormData,
-                      heures_travail: parseFloat(e.target.value) || 0,
-                    })
-                  }
+                      heures_travail: timeValue,
+                      heures_travail_decimal: timeToDecimal(timeValue),
+                    });
+                  }}
                   disabled={jourFormData.type_jour === "ferie" || jourFormData.type_jour === "chome"}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100"
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Nombre d'heures travaillées pour ce jour (0-24h)
+                  Format HH:mm (ex: 08:00 pour 8h, 08:30 pour 8h30)
                 </p>
               </div>
 
