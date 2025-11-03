@@ -263,17 +263,8 @@ export default function AffaireDetailClient({
               </div>
             </div>
           )}
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="btn-primary flex items-center justify-center gap-2"
-                >
-                  <Edit className="h-4 w-4" />
-                  Modifier
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+
+        {/* Onglets */}
 
         {/* Onglets */}
         <div className="border-b border-gray-200 mb-6">
