@@ -29,14 +29,19 @@ export default async function CalendriersPage() {
     redirect("/unauthorized");
   }
 
-  // Récupérer les calendriers
-  const { data: calendriers } = await supabase
+  // Récupérer les calendriers (utiliser service role si nécessaire pour bypasser RLS temporairement)
+  // Mais d'abord, vérifier que les politiques RLS sont correctes
+  const { data: calendriers, error: errorCalendriers } = await supabase
     .from("tbl_calendriers")
     .select(`
       *,
       site:tbl_sites!tbl_calendriers_site_id_fkey(site_id, site_code, site_label)
     `)
     .order("libelle", { ascending: true });
+
+  if (errorCalendriers) {
+    console.error("Erreur récupération calendriers:", errorCalendriers);
+  }
 
   // Transformer les données
   const calendriersWithRelations = (calendriers || []).map((calendrier: {

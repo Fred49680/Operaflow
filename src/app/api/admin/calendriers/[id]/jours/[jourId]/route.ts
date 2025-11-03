@@ -4,7 +4,7 @@ import { createServerClient } from "@/lib/supabase/server";
 // PATCH - Modifier un jour
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ jourId: string }> }
+  { params }: { params: Promise<{ id: string; jourId: string }> }
 ) {
   try {
     const supabase = await createServerClient();
@@ -31,7 +31,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
-    const { jourId } = await params;
+    const paramsResolved = await params;
+    const { jourId } = paramsResolved;
     const body = await request.json();
     const { type_jour, heures_travail, libelle, est_recurrent } = body;
 
@@ -80,7 +81,7 @@ export async function PATCH(
 // DELETE - Supprimer un jour
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ jourId: string }> }
+  { params }: { params: Promise<{ id: string; jourId: string }> }
 ) {
   try {
     const supabase = await createServerClient();
@@ -107,7 +108,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
-    const { jourId } = await params;
+    const paramsResolved = await params;
+    const { jourId } = paramsResolved;
 
     const { error } = await supabase
       .from("tbl_calendrier_jours")

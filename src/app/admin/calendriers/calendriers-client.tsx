@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X, Calendar, Trash2, Eye, MapPin, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Plus, X, Calendar, Trash2, Eye, MapPin, Clock, CheckCircle, AlertCircle, Edit2 } from "lucide-react";
 
 interface Site {
   site_id: string;
@@ -50,6 +50,15 @@ export default function CalendriersClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [editJourModalOpen, setEditJourModalOpen] = useState(false);
+  const [selectedJour, setSelectedJour] = useState<CalendrierJour | null>(null);
+  const [jourFormData, setJourFormData] = useState({
+    date_jour: "",
+    type_jour: "ouvre" as "ouvre" | "ferie" | "chome" | "reduit" | "exceptionnel",
+    heures_travail: 8,
+    libelle: "",
+    est_recurrent: false,
+  });
 
   const [formData, setFormData] = useState<{
     libelle: string;
@@ -102,6 +111,7 @@ export default function CalendriersClient({
         throw new Error(errorData.error || "Erreur lors de la création");
       }
 
+      const newCalendrier = await response.json();
       setSuccess("Calendrier créé avec succès");
       setModalOpen(false);
       setFormData({
@@ -111,6 +121,12 @@ export default function CalendriersClient({
         actif: true,
         annee_reference: new Date().getFullYear(),
       });
+      // Rafraîchir la liste des calendriers
+      const refreshResponse = await fetch("/api/admin/calendriers");
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json();
+        setCalendriers(refreshData.calendriers || []);
+      }
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur lors de la création");
@@ -484,19 +500,37 @@ export default function CalendriersClient({
 
             <div className="p-6">
               <div className="mb-6">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">
-                  Jours définis ({joursCalendrier.length})
-                </h4>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-gray-800">
+                    Jours définis ({joursCalendrier.length})
+                  </h4>
+                  <button
+                    onClick={handleAddJour}
+                    className="btn-primary flex items-center gap-2 text-sm"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Ajouter un jour
+                  </button>
+                </div>
                 {joursCalendrier.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">
-                    Aucun jour défini pour ce calendrier
-                  </p>
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">
+                      Aucun jour défini pour ce calendrier
+                    </p>
+                    <button
+                      onClick={handleAddJour}
+                      className="btn-primary flex items-center gap-2 mx-auto"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Ajouter un jour
+                    </button>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     {joursCalendrier.map((jour) => (
                       <div
                         key={jour.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex items-center gap-4">
                           <div className="text-sm font-medium text-gray-700">
@@ -528,12 +562,163 @@ export default function CalendriersClient({
                               Récurrent
                             </span>
                           )}
+                          <button
+                            onClick={() => handleEditJour(jour)}
+                            className="text-primary hover:text-primary-dark transition-colors"
+                            title="Modifier"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteJour(jour)}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'édition/ajout de jour */}
+      {editJourModalOpen && selectedCalendrier && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-secondary">
+                {selectedJour ? "Modifier le jour" : "Ajouter un jour"}
+              </h3>
+              <button
+                onClick={() => {
+                  setEditJourModalOpen(false);
+                  setSelectedJour(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={jourFormData.date_jour}
+                  onChange={(e) =>
+                    setJourFormData({ ...jourFormData, date_jour: e.target.value })
+                  }
+                  disabled={!!selectedJour}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Type de jour <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={jourFormData.type_jour}
+                  onChange={(e) =>
+                    setJourFormData({
+                      ...jourFormData,
+                      type_jour: e.target.value as typeof jourFormData.type_jour,
+                      heures_travail: e.target.value === "ferie" || e.target.value === "chome" ? 0 : jourFormData.heures_travail,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                >
+                  <option value="ouvre">Jour ouvré</option>
+                  <option value="ferie">Jour férié</option>
+                  <option value="chome">Jour chômé</option>
+                  <option value="reduit">Heures réduites</option>
+                  <option value="exceptionnel">Exceptionnel</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Heures travaillées <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="24"
+                  step="0.5"
+                  value={jourFormData.heures_travail}
+                  onChange={(e) =>
+                    setJourFormData({
+                      ...jourFormData,
+                      heures_travail: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  disabled={jourFormData.type_jour === "ferie" || jourFormData.type_jour === "chome"}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Nombre d'heures travaillées pour ce jour (0-24h)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Libellé / Description
+                </label>
+                <input
+                  type="text"
+                  value={jourFormData.libelle}
+                  onChange={(e) =>
+                    setJourFormData({ ...jourFormData, libelle: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  placeholder="Ex: Jour de l'an, Pont de l'Ascension..."
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="est_recurrent"
+                  checked={jourFormData.est_recurrent}
+                  onChange={(e) =>
+                    setJourFormData({ ...jourFormData, est_recurrent: e.target.checked })
+                  }
+                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                />
+                <label htmlFor="est_recurrent" className="text-sm font-medium text-gray-700">
+                  Jour récurrent (se répète chaque année)
+                </label>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setEditJourModalOpen(false);
+                  setSelectedJour(null);
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSaveJour}
+                disabled={loading || !jourFormData.date_jour}
+                className="btn-primary flex items-center gap-2"
+              >
+                {loading ? "Enregistrement..." : selectedJour ? "Modifier" : "Ajouter"}
+              </button>
             </div>
           </div>
         </div>
