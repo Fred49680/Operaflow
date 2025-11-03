@@ -686,221 +686,54 @@ export default function PlanificationClient({
                   }
                 }}
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Affaire <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="affaire_id"
-                      id="affaire_id"
-                      required
-                      defaultValue={editingActivite?.affaire_id || filters.affaire}
-                      onChange={(e) => {
-                        setSelectedAffaireId(e.target.value);
-                        // Réinitialiser le jalon si l'affaire change
-                        const lotSelect = document.getElementById("lot_id") as HTMLSelectElement;
-                        if (lotSelect) {
-                          lotSelect.value = "";
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    >
-                      <option value="">Sélectionner une affaire</option>
-                      {affaires.map((affaire) => (
-                        <option key={affaire.id} value={affaire.id}>
-                          {affaire.numero} - {affaire.libelle}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Jalon (optionnel)
-                    </label>
-                    <select
-                      name="lot_id"
-                      id="lot_id"
-                      defaultValue={editingActivite?.lot_id || ""}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    >
-                      <option value="">Aucun jalon</option>
-                      {(() => {
-                        const affaireId = selectedAffaireId || editingActivite?.affaire_id || filters.affaire;
-                        const jalonsAffaire = affaireId ? jalons.filter(j => j.affaire_id === affaireId) : [];
-                        return jalonsAffaire.map((jalon) => (
-                          <option key={jalon.id} value={jalon.id}>
-                            {jalon.numero_lot} - {jalon.libelle_lot}
-                          </option>
-                        ));
-                      })()}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Sélectionnez un jalon pour lier cette activité à un milestone
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Libellé <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="libelle"
-                      required
-                      defaultValue={editingActivite?.libelle || ""}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date début <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="datetime-local"
-                      name="date_debut_prevue"
-                      required
-                      value={dateDebut || (editingActivite?.date_debut_prevue ? new Date(editingActivite.date_debut_prevue).toISOString().slice(0, 16) : "")}
-                      onChange={(e) => {
-                        setDateDebut(e.target.value);
-                        if (calculAutoDateFin && dureeJoursOuvres && e.target.value) {
-                          calculerDateFin(e.target.value, parseInt(dureeJoursOuvres), uniteDuree, typeHoraireSelectionne);
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date fin <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="datetime-local"
-                      name="date_fin_prevue"
-                      required={!calculAutoDateFin}
-                      disabled={calculAutoDateFin}
-                      value={calculAutoDateFin ? dateFinCalculee : (editingActivite?.date_fin_prevue ? new Date(editingActivite.date_fin_prevue).toISOString().slice(0, 16) : "")}
-                      onChange={(e) => {
-                        if (!calculAutoDateFin) {
-                          setDateFinCalculee(e.target.value);
-                        }
-                      }}
-                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${
-                        calculAutoDateFin ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Heures prévues</label>
-                    <input
-                      type="number"
-                      name="heures_prevues"
-                      step="0.5"
-                      min="0"
-                      defaultValue={editingActivite?.heures_prevues || 0}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Type horaire</label>
-                    <select
-                      name="type_horaire"
-                      defaultValue={editingActivite?.type_horaire || "jour"}
-                      onChange={(e) => {
-                        setTypeHoraireSelectionne(e.target.value);
-                        if (calculAutoDateFin && dateDebut && dureeJoursOuvres) {
-                          calculerDateFin(dateDebut, parseInt(dureeJoursOuvres), uniteDuree, e.target.value);
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    >
-                      <option value="jour">Jour (HN 5/7)</option>
-                      <option value="nuit">Nuit</option>
-                      <option value="weekend">Week-end</option>
-                      <option value="ferie">Férié</option>
-                      <option value="3x8">3x8</option>
-                      <option value="accelerer">Accéléré</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Responsable de la tâche
-                    </label>
-                    <select
-                      name="responsable_id"
-                      defaultValue={editingActivite?.responsable_id || ""}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    >
-                      <option value="">Aucun responsable</option>
-                      {_collaborateurs.map((collab) => (
-                        <option key={collab.id} value={collab.id}>
-                          {collab.prenom} {collab.nom}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Le responsable verra cette tâche dans son suivi
-                    </p>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <textarea
-                      name="description"
-                      rows={3}
-                      defaultValue={editingActivite?.description || ""}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                    />
-                  </div>
-
-                  {/* Section Hiérarchie */}
-                  <div className="md:col-span-2 border-t pt-4">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Hiérarchie</h3>
-                    <div>
+                <div className="space-y-6">
+                  {/* Section 1 : Identification */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Tâche parente (pour créer une sous-tâche)
+                        Affaire <span className="text-red-500">*</span>
                       </label>
                       <select
-                        name="parent_id"
-                        defaultValue={editingActivite?.parent_id || ""}
+                        name="affaire_id"
+                        id="affaire_id"
+                        required
+                        defaultValue={editingActivite?.affaire_id || filters.affaire}
+                        onChange={(e) => {
+                          setSelectedAffaireId(e.target.value);
+                          // Réinitialiser le jalon si l'affaire change
+                          const lotSelect = document.getElementById("lot_id") as HTMLSelectElement;
+                          if (lotSelect) {
+                            lotSelect.value = "";
+                          }
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                       >
-                        <option value="">Aucune (tâche principale)</option>
-                        {activites
-                          .filter((a) => a.affaire_id === (editingActivite?.affaire_id || filters.affaire))
-                          .filter((a) => !editingActivite || a.id !== editingActivite.id)
-                          .map((activite) => (
-                            <option key={activite.id} value={activite.id}>
-                              {activite.numero_hierarchique || "•"} {activite.libelle}
-                            </option>
-                          ))}
+                        <option value="">Sélectionner une affaire</option>
+                        {affaires.map((affaire) => (
+                          <option key={affaire.id} value={affaire.id}>
+                            {affaire.numero} - {affaire.libelle}
+                          </option>
+                        ))}
                       </select>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Libellé <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="libelle"
+                        required
+                        defaultValue={editingActivite?.libelle || ""}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        placeholder="Ex: Réalisation du dossier"
+                      />
                     </div>
                   </div>
 
-                  {/* Section Dépendances multiples */}
-                  <div className="md:col-span-2 border-t pt-4">
-                    <DependancesManager
-                      activiteId={editingActivite?.id}
-                      activitesDisponibles={activites
-                        .filter((a) => a.affaire_id === (editingActivite?.affaire_id || filters.affaire))
-                        .filter((a) => !editingActivite || a.id !== editingActivite.id)
-                        .map((a) => ({
-                          id: a.id,
-                          libelle: a.libelle,
-                          numero_hierarchique: a.numero_hierarchique || undefined,
-                        }))}
-                    />
-                  </div>
-
-                  {/* Section Durée avec calcul automatique */}
-                  <div className="md:col-span-2 border-t pt-4">
+                  {/* Section 2 : Durée et calcul automatique (remontée en haut) */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h3 className="text-sm font-semibold text-gray-800 mb-3">Durée et calcul automatique</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
@@ -915,7 +748,7 @@ export default function PlanificationClient({
                               calculerDateFin(dateDebut, parseInt(dureeJoursOuvres), e.target.value as "jours" | "semaines", typeHoraireSelectionne);
                             }
                           }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white"
                         >
                           <option value="jours">Jours</option>
                           <option value="semaines">Semaines</option>
@@ -937,7 +770,7 @@ export default function PlanificationClient({
                               calculerDateFin(dateDebut, parseFloat(e.target.value), uniteDuree, typeHoraireSelectionne);
                             }
                           }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white"
                           placeholder={uniteDuree === "semaines" ? "Ex: 2" : "Ex: 5"}
                         />
                         <p className="text-xs text-gray-500 mt-1">
@@ -973,6 +806,188 @@ export default function PlanificationClient({
                         </label>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Section 3 : Dates et planning */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date début <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="datetime-local"
+                        name="date_debut_prevue"
+                        required
+                        value={dateDebut || (editingActivite?.date_debut_prevue ? new Date(editingActivite.date_debut_prevue).toISOString().slice(0, 16) : "")}
+                        onChange={(e) => {
+                          setDateDebut(e.target.value);
+                          if (calculAutoDateFin && dureeJoursOuvres && e.target.value) {
+                            calculerDateFin(e.target.value, parseInt(dureeJoursOuvres), uniteDuree, typeHoraireSelectionne);
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date fin <span className="text-red-500">*</span>
+                        {calculAutoDateFin && (
+                          <span className="ml-2 text-xs text-blue-600 font-normal">(calculée automatiquement)</span>
+                        )}
+                      </label>
+                      <input
+                        type="datetime-local"
+                        name="date_fin_prevue"
+                        required={!calculAutoDateFin}
+                        disabled={calculAutoDateFin}
+                        value={calculAutoDateFin ? dateFinCalculee : (editingActivite?.date_fin_prevue ? new Date(editingActivite.date_fin_prevue).toISOString().slice(0, 16) : "")}
+                        onChange={(e) => {
+                          if (!calculAutoDateFin) {
+                            setDateFinCalculee(e.target.value);
+                          }
+                        }}
+                        className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${
+                          calculAutoDateFin ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+                        }`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Type horaire</label>
+                      <select
+                        name="type_horaire"
+                        defaultValue={editingActivite?.type_horaire || "jour"}
+                        onChange={(e) => {
+                          setTypeHoraireSelectionne(e.target.value);
+                          if (calculAutoDateFin && dateDebut && dureeJoursOuvres) {
+                            calculerDateFin(dateDebut, parseInt(dureeJoursOuvres), uniteDuree, e.target.value);
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      >
+                        <option value="jour">Jour (HN 5/7)</option>
+                        <option value="nuit">Nuit</option>
+                        <option value="weekend">Week-end</option>
+                        <option value="ferie">Férié</option>
+                        <option value="3x8">3x8</option>
+                        <option value="accelerer">Accéléré</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Heures prévues</label>
+                      <input
+                        type="number"
+                        name="heures_prevues"
+                        step="0.5"
+                        min="0"
+                        defaultValue={editingActivite?.heures_prevues || 0}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Section 4 : Organisation */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Responsable de la tâche
+                      </label>
+                      <select
+                        name="responsable_id"
+                        defaultValue={editingActivite?.responsable_id || ""}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      >
+                        <option value="">Aucun responsable</option>
+                        {_collaborateurs.map((collab) => (
+                          <option key={collab.id} value={collab.id}>
+                            {collab.prenom} {collab.nom}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Le responsable verra cette tâche dans son suivi
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Jalon (optionnel)
+                      </label>
+                      <select
+                        name="lot_id"
+                        id="lot_id"
+                        defaultValue={editingActivite?.lot_id || ""}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      >
+                        <option value="">Aucun jalon</option>
+                        {(() => {
+                          const affaireId = selectedAffaireId || editingActivite?.affaire_id || filters.affaire;
+                          const jalonsAffaire = affaireId ? jalons.filter(j => j.affaire_id === affaireId) : [];
+                          return jalonsAffaire.map((jalon) => (
+                            <option key={jalon.id} value={jalon.id}>
+                              {jalon.numero_lot} - {jalon.libelle_lot}
+                            </option>
+                          ));
+                        })()}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Lier cette activité à un milestone
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Section 5 : Description */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea
+                      name="description"
+                      rows={3}
+                      defaultValue={editingActivite?.description || ""}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      placeholder="Description détaillée de l'activité..."
+                    />
+                  </div>
+
+                  {/* Section 6 : Hiérarchie */}
+                  <div className="border-t pt-4">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Hiérarchie</h3>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tâche parente (pour créer une sous-tâche)
+                      </label>
+                      <select
+                        name="parent_id"
+                        defaultValue={editingActivite?.parent_id || ""}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      >
+                        <option value="">Aucune (tâche principale)</option>
+                        {activites
+                          .filter((a) => a.affaire_id === (editingActivite?.affaire_id || filters.affaire))
+                          .filter((a) => !editingActivite || a.id !== editingActivite.id)
+                          .map((activite) => (
+                            <option key={activite.id} value={activite.id}>
+                              {activite.numero_hierarchique || "•"} {activite.libelle}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Section 7 : Dépendances multiples */}
+                  <div className="border-t pt-4">
+                    <DependancesManager
+                      activiteId={editingActivite?.id}
+                      activitesDisponibles={activites
+                        .filter((a) => a.affaire_id === (editingActivite?.affaire_id || filters.affaire))
+                        .filter((a) => !editingActivite || a.id !== editingActivite.id)
+                        .map((a) => ({
+                          id: a.id,
+                          libelle: a.libelle,
+                          numero_hierarchique: a.numero_hierarchique || undefined,
+                        }))}
+                    />
                   </div>
                 </div>
 
