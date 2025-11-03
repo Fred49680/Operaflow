@@ -125,15 +125,21 @@ export default function GanttGrid({
         <div className="absolute inset-0 z-10">
           {activites.map((activite, index) => {
             const niveau = activite.niveau_hierarchie || 0;
-            const decalageVertical = niveau * 4; // 4px de décalage par niveau
+            const decalageVertical = niveau * 4;
+            const decalageHorizontal = niveau * 10;
+            const largeurBarre = largeurTotale - decalageHorizontal;
+            const topPosition = index * 48 + 8 + decalageVertical;
+            const leftPosition = decalageHorizontal;
+            const widthCalc = `calc(100% - ${decalageHorizontal}px)`;
+            
             return (
               <div
                 key={activite.id}
                 className="absolute"
                 style={{
-                  top: `${index * 48 + 8 + decalageVertical}px`,
-                  left: `${niveau * 10}px`, // Décalage horizontal selon hiérarchie
-                  width: `calc(100% - ${niveau * 10}px)`,
+                  top: `${topPosition}px`,
+                  left: `${leftPosition}px`,
+                  width: widthCalc,
                   height: "32px",
                 }}
               >
@@ -141,7 +147,7 @@ export default function GanttGrid({
                   activite={activite}
                   dateDebutTimeline={dateDebut}
                   dateFinTimeline={dateFin}
-                  largeurTotale={largeurTotale - (niveau * 10)}
+                  largeurTotale={largeurBarre}
                   onClick={() => onActiviteClick?.(activite)}
                   onDragEnd={onDragEnd}
                   onResizeEnd={onResizeEnd}
