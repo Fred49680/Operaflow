@@ -136,7 +136,7 @@ export default function CalendriersClient({
       const response = await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/semaine-type`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ semaine_type }),
+        body: JSON.stringify({ semaine_type: semaineType }),
       });
 
       if (!response.ok) {
