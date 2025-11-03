@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { getUserRoles } from "@/lib/auth/middleware";
 import PlanificationClient from "./planification-client";
-import type { ActivitePlanification, AffectationPlanification } from "@/types/planification";
+import type { ActivitePlanification, AffectationPlanification, DependancePlanification } from "@/types/planification";
 
 export default async function PlanificationPage() {
   const supabase = await createServerClient();
@@ -37,6 +37,15 @@ export default async function PlanificationPage() {
     .order("numero_hierarchique", { ascending: true })
     .order("ordre_affichage", { ascending: true })
     .order("date_debut_prevue", { ascending: true });
+
+  // Charger les dépendances multiples pour toutes les activités
+  const { data: dependances } = await supabase
+    .from("tbl_planification_dependances")
+    .select(`
+      *,
+      activite_precedente:tbl_planification_activites!tbl_planification_dependances_activite_precedente_id_fkey(id, libelle, numero_hierarchique, date_debut_prevue, date_fin_prevue)
+    `)
+    .order("created_at", { ascending: true });
 
   // Charger les affectations
   const { data: affectations } = await supabase
@@ -92,9 +101,21 @@ export default async function PlanificationPage() {
     collaborateur: Array.isArray(aff.collaborateur) ? aff.collaborateur[0] || null : aff.collaborateur || null,
   }));
 
+  // Transformation des dépendances
+  const dependancesTransformed: DependancePlanification[] = (dependances || []).map((dep) => ({
+    ...dep,
+    activite_precedente: Array.isArray(dep.activite_precedente) ? dep.activite_precedente[0] || null : dep.activite_precedente || null,
+  }));
+
+  // Associer les dépendances aux activités
+  const activitesAvecDependances = activitesTransformed.map((act) => ({
+    ...act,
+    dependances: dependancesTransformed.filter((dep) => dep.activite_id === act.id),
+  }));
+
   return (
     <PlanificationClient
-      activites={activitesTransformed}
+      activites={activitesAvecDependances}
       affectations={affectationsTransformed}
       sites={sites || []}
       affaires={affaires || []}

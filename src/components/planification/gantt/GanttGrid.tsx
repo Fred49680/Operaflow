@@ -3,7 +3,8 @@
 import { useMemo } from "react";
 import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfWeek, endOfWeek } from "date-fns";
 import GanttBar from "./GanttBar";
-import type { ActivitePlanification } from "@/types/planification";
+import GanttDependencies from "./GanttDependencies";
+import type { ActivitePlanification, DependancePlanification } from "@/types/planification";
 
 interface GanttGridProps {
   activites: ActivitePlanification[];
@@ -78,8 +79,25 @@ export default function GanttGrid({
           })}
         </div>
 
+        {/* Lignes de dépendances (en arrière-plan) */}
+        {(() => {
+          const toutesDependances: DependancePlanification[] = activites.flatMap(
+            (act) => act.dependances || []
+          );
+          return toutesDependances.length > 0 ? (
+            <GanttDependencies
+              activites={activites}
+              dependances={toutesDependances}
+              dateDebutTimeline={dateDebut}
+              dateFinTimeline={dateFin}
+              largeurTotale={largeurTotale}
+              hauteurLigne={48}
+            />
+          ) : null;
+        })()}
+
         {/* Barres d'activités */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 z-10">
           {activites.map((activite, index) => {
             const niveau = activite.niveau_hierarchie || 0;
             const decalageVertical = niveau * 4; // 4px de décalage par niveau

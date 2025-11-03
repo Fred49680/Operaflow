@@ -72,6 +72,24 @@ export interface ActivitePlanification {
   parent?: ActivitePlanification | null;
   activite_precedente?: ActivitePlanification | null;
   enfants?: ActivitePlanification[]; // Sous-tâches
+  dependances?: DependancePlanification[]; // Dépendances multiples
+}
+
+export interface DependancePlanification {
+  id: string;
+  activite_id: string;
+  activite_precedente_id: string;
+  type_dependance: TypeDependance;
+  delai_jours: number;
+  created_at: string;
+  updated_at: string;
+  activite_precedente?: {
+    id: string;
+    libelle: string;
+    numero_hierarchique?: string | null;
+    date_debut_prevue: string;
+    date_fin_prevue: string;
+  } | null;
 }
 
 export interface AffectationPlanification {
