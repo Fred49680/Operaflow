@@ -263,11 +263,6 @@ export default function AffaireDetailClient({
               </div>
             </div>
           )}
-                  >
-                    <Calendar className="h-4 w-4" />
-                    Envoyer à la planification
-                  </button>
-                )}
                 <button
                   onClick={() => setIsEditing(true)}
                   className="btn-primary flex items-center justify-center gap-2"
