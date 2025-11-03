@@ -67,83 +67,7 @@ BEGIN
 END;
 $$;
 
--- 3️⃣ Fonction trigger pour mettre à jour les dates d'un lot après modification d'activité
-CREATE OR REPLACE FUNCTION public.trigger_update_dates_lot()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_lot_id UUID;
-  v_dates RECORD;
-BEGIN
-  -- Récupérer le lot_id de l'activité
-  v_lot_id := COALESCE(NEW.lot_id, OLD.lot_id);
-  
-  -- Si l'activité n'est pas liée à un lot, ne rien faire
-  IF v_lot_id IS NULL THEN
-    RETURN NEW;
-  END IF;
-  
-  -- Calculer les nouvelles dates du lot
-  SELECT * INTO v_dates
-  FROM public.calculer_dates_lot_par_activites(v_lot_id);
-  
-  -- Mettre à jour les dates prévues du lot
-  UPDATE public.tbl_affaires_lots
-  SET 
-    date_debut_previsionnelle = v_dates.date_debut_min,
-    date_fin_previsionnelle = v_dates.date_fin_max,
-    updated_at = NOW()
-  WHERE id = v_lot_id
-    AND (
-      date_debut_previsionnelle IS DISTINCT FROM v_dates.date_debut_min
-      OR date_fin_previsionnelle IS DISTINCT FROM v_dates.date_fin_max
-    );
-  
-  RETURN NEW;
-END;
-$$;
-
--- 4️⃣ Fonction trigger pour mettre à jour les dates d'une affaire après modification d'activité
-CREATE OR REPLACE FUNCTION public.trigger_update_dates_affaire()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-  v_affaire_id UUID;
-  v_dates RECORD;
-BEGIN
-  -- Récupérer l'affaire_id de l'activité
-  v_affaire_id := COALESCE(NEW.affaire_id, OLD.affaire_id);
-  
-  -- Si l'activité n'est pas liée à une affaire, ne rien faire
-  IF v_affaire_id IS NULL THEN
-    RETURN NEW;
-  END IF;
-  
-  -- Calculer les nouvelles dates de l'affaire
-  SELECT * INTO v_dates
-  FROM public.calculer_dates_affaire_par_activites(v_affaire_id);
-  
-  -- Mettre à jour les dates de début et fin de l'affaire
-  UPDATE public.tbl_affaires
-  SET 
-    date_debut = v_dates.date_debut_min,
-    date_fin = v_dates.date_fin_max,
-    updated_at = NOW()
-  WHERE id = v_affaire_id
-    AND (
-      date_debut IS DISTINCT FROM v_dates.date_debut_min
-      OR date_fin IS DISTINCT FROM v_dates.date_fin_max
-    );
-  
-  RETURN NEW;
-END;
-$$;
-
--- 5️⃣ Fonction trigger pour mettre à jour les dates d'un lot après modification d'activité (avec gestion INSERT)
+-- 3️⃣ Fonction trigger pour mettre à jour les dates d'un lot après modification d'activité (avec gestion INSERT/UPDATE)
 CREATE OR REPLACE FUNCTION public.trigger_update_dates_lot()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -200,7 +124,7 @@ BEGIN
 END;
 $$;
 
--- 6️⃣ Fonction trigger pour mettre à jour les dates d'une affaire après modification d'activité (avec gestion INSERT)
+-- 4️⃣ Fonction trigger pour mettre à jour les dates d'une affaire après modification d'activité (avec gestion INSERT/UPDATE)
 CREATE OR REPLACE FUNCTION public.trigger_update_dates_affaire()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -257,7 +181,7 @@ BEGIN
 END;
 $$;
 
--- 7️⃣ Créer les triggers sur tbl_planification_activites
+-- 5️⃣ Créer les triggers sur tbl_planification_activites
 DROP TRIGGER IF EXISTS trigger_update_dates_lot_on_activite ON public.tbl_planification_activites;
 CREATE TRIGGER trigger_update_dates_lot_on_activite
   AFTER INSERT OR UPDATE OF date_debut_prevue, date_fin_prevue, date_debut_reelle, date_fin_reelle, lot_id, statut
@@ -272,7 +196,7 @@ CREATE TRIGGER trigger_update_dates_affaire_on_activite
   FOR EACH ROW
   EXECUTE FUNCTION public.trigger_update_dates_affaire();
 
--- 8️⃣ Fonction pour initialiser les dates des lots et affaires existants
+-- 6️⃣ Fonction pour initialiser les dates des lots et affaires existants
 CREATE OR REPLACE FUNCTION public.initialiser_dates_lots_affaires()
 RETURNS void
 LANGUAGE plpgsql
@@ -311,7 +235,7 @@ BEGIN
 END;
 $$;
 
--- 9️⃣ Exécuter l'initialisation
+-- 7️⃣ Exécuter l'initialisation
 SELECT public.initialiser_dates_lots_affaires();
 
 -- Commentaires
