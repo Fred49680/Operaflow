@@ -45,14 +45,15 @@ export default function GanttGrid({
   }, [colonnes.length]);
 
   return (
-    <div 
-      className="relative" 
-      style={{ 
-        width: `${largeurTotale}px`, 
-        minHeight: `${activites.length * 48 + 16}px`,
-        overflow: "visible"
-      }}
-    >
+    <div className="relative overflow-x-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#CBD5E0 #F3F4F6" }}>
+      <div 
+        className="relative" 
+        style={{ 
+          width: String(largeurTotale) + "px", 
+          minHeight: String(activites.length * 48 + 16) + "px",
+          overflow: "visible"
+        }}
+      >
       {/* Lignes verticales pour les colonnes (semaines/mois/jours) */}
       <div className="absolute inset-0 flex">
         {colonnes.map((col, index) => {
@@ -161,6 +162,7 @@ export default function GanttGrid({
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
