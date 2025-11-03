@@ -1,99 +1,25 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --foreground-rgb: 30, 41, 59;
-  --background-rgb: 249, 250, 251; /* Fond gris très clair (gray-50) pour meilleure lisibilité */
+/* Styles globaux pour les scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 30, 41, 59;
-    --background-rgb: 249, 250, 251; /* Fond gris très clair (gray-50) pour meilleure lisibilité */
-  }
+::-webkit-scrollbar-track {
+  background: #F3F4F6;
+  border-radius: 4px;
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+::-webkit-scrollbar-thumb {
+  background: #CBD5E0;
+  border-radius: 4px;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
 }
 
-/* Styles personnalisés OperaFlow */
-.card {
-  @apply bg-white rounded-card shadow-card p-6;
+/* Pour Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E0 #F3F4F6;
 }
-
-.card:hover {
-  @apply shadow-cardHover transition-shadow duration-200;
-}
-
-.btn-primary {
-  @apply bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors duration-200;
-}
-
-.btn-secondary {
-  @apply bg-secondary text-white px-4 py-2 rounded-lg hover:bg-secondary-light transition-colors duration-200;
-}
-
-.btn-accent {
-  @apply bg-accent text-white px-4 py-2 rounded-lg hover:bg-accent-dark transition-colors duration-200;
-}
-
-/* Amélioration de la lisibilité des selects */
-select {
-  color: #111827 !important;
-  background-color: #ffffff !important;
-}
-
-select option {
-  color: #111827 !important;
-  background-color: #ffffff !important;
-}
-
-select option:hover,
-select option:focus,
-select option:checked {
-  background-color: #f3f4f6 !important;
-  color: #111827 !important;
-}
-
-/* Styles pour les inputs dans les modals */
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="date"],
-input[type="number"],
-textarea {
-  color: #111827 !important;
-  background-color: #ffffff !important;
-  pointer-events: auto !important;
-}
-
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="tel"]:focus,
-input[type="date"]:focus,
-input[type="number"]:focus,
-textarea:focus {
-  outline: none !important;
-  border-color: #0066cc !important;
-  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1) !important;
-}
-
-input[type="text"]:disabled,
-input[type="email"]:disabled,
-input[type="tel"]:disabled,
-input[type="date"]:disabled,
-input[type="number"]:disabled,
-textarea:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-

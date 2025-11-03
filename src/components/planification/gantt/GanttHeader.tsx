@@ -38,6 +38,23 @@ export default function GanttHeader({ dateDebut, dateFin, vue }: GanttHeaderProp
     }
   };
 
+  // Calculer les jours pour afficher dans la vue semaine
+  const joursSemaine = useMemo(() => {
+    if (vue === "semaine") {
+      return colonnes.map((semaine) => {
+        const startWeek = startOfWeek(semaine, { weekStartsOn: 1 });
+        const jours = [];
+        for (let i = 0; i < 7; i++) {
+          const jour = new Date(startWeek);
+          jour.setDate(startWeek.getDate() + i);
+          jours.push(jour);
+        }
+        return jours;
+      });
+    }
+    return [];
+  }, [vue, colonnes]);
+
   return (
     <div className="border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
       <div className="flex">
@@ -48,9 +65,23 @@ export default function GanttHeader({ dateDebut, dateFin, vue }: GanttHeaderProp
           {colonnes.map((date, index) => (
             <div
               key={index}
-              className="flex-1 p-3 text-center text-sm font-medium text-gray-700 border-r border-gray-200 last:border-r-0 min-w-[120px]"
+              className="flex-1 p-3 text-center text-sm font-medium text-gray-700 border-r border-gray-200 last:border-r-0 min-w-[120px] relative"
             >
               {getLabel(date)}
+              {/* Afficher les jours dans la vue semaine */}
+              {vue === "semaine" && joursSemaine[index] && (
+                <div className="absolute bottom-0 left-0 right-0 flex border-t border-gray-200">
+                  {joursSemaine[index].map((jour, jourIndex) => (
+                    <div
+                      key={jourIndex}
+                      className="flex-1 text-xs text-gray-500 py-1 border-r border-gray-200 last:border-r-0"
+                      style={{ minWidth: `${100 / 7}%` }}
+                    >
+                      {format(jour, "E")}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>

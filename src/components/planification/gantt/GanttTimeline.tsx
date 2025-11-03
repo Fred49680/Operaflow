@@ -111,7 +111,12 @@ export default function GanttTimeline({
       <GanttHeader dateDebut={dateDebut} dateFin={dateFin} vue={vue} />
 
       {/* Grille avec barres d'activités */}
-      <div className="overflow-x-auto">
+      <div 
+        className="overflow-x-auto overflow-y-auto" 
+        style={{ 
+          maxHeight: "calc(100vh - 400px)"
+        }}
+      >
         <div className="flex">
           {/* Colonne fixe avec libellés des activités et jalons */}
           <div className="w-64 border-r border-gray-200 bg-gray-50 sticky left-0 z-10">

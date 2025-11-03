@@ -744,8 +744,10 @@ export default function PlanificationClient({
                         statut: "",
                       });
                       setSearchTerm("");
-                      // Forcer un rafraîchissement complet
-                      window.location.reload();
+                      // Forcer un rafraîchissement complet pour afficher la nouvelle activité
+                      setTimeout(() => {
+                        window.location.reload();
+                      }, 300);
                     } else {
                       const error = await response.json();
                       alert(`Erreur: ${error.error || "Erreur inconnue"}`);
