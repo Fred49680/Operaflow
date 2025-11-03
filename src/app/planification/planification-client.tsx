@@ -72,6 +72,7 @@ export default function PlanificationClient({
   const [dureeJoursOuvres, setDureeJoursOuvres] = useState("");
   const [dateFinCalculee, setDateFinCalculee] = useState("");
   const [selectedAffaireId, setSelectedAffaireId] = useState<string>("");
+  const [selectedAffaireGantt, setSelectedAffaireGantt] = useState<string | null>(null);
   const [uniteDuree, setUniteDuree] = useState<"jours" | "semaines">("jours");
   const [typeHoraireSelectionne, setTypeHoraireSelectionne] = useState<string>("jour");
   
@@ -115,6 +116,9 @@ export default function PlanificationClient({
   // Filtrage des activités
   const filteredActivites = useMemo(() => {
     return activites.filter((activite) => {
+      // Si une affaire est sélectionnée pour le Gantt, filtrer uniquement cette affaire
+      if (selectedAffaireGantt && activite.affaire_id !== selectedAffaireGantt) return false;
+      
       // Filtrer par site via l'affaire (le site est lié à l'affaire)
       if (filters.site && activite.affaire?.site_id && activite.affaire.site_id !== filters.site) return false;
       if (filters.affaire && activite.affaire_id !== filters.affaire) return false;
@@ -132,7 +136,15 @@ export default function PlanificationClient({
       }
       return true;
     });
-  }, [activites, filters, searchTerm]);
+  }, [activites, filters, searchTerm, selectedAffaireGantt]);
+
+  // Filtrer les jalons selon l'affaire sélectionnée
+  const filteredJalons = useMemo(() => {
+    if (selectedAffaireGantt) {
+      return jalons.filter(j => j.affaire_id === selectedAffaireGantt);
+    }
+    return [];
+  }, [jalons, selectedAffaireGantt]);
 
   // Fonction pour ouvrir le modal de création
   const handleCreateActivite = () => {
@@ -439,7 +451,7 @@ export default function PlanificationClient({
                     setShowActiviteModal(true);
                   }}
                 />
-                {/* Section Affaires planifiées sans activités */}
+                {/* Section Affaires planifiées */}
                 <AffairesPlanifiees
                   onCreateActivite={(affaireId) => {
                     // Pré-remplir le modal avec l'affaire sélectionnée
@@ -449,14 +461,19 @@ export default function PlanificationClient({
                     } as any);
                     setShowActiviteModal(true);
                   }}
+                  onSelectAffaire={(affaireId) => {
+                    setSelectedAffaireGantt(affaireId);
+                  }}
+                  selectedAffaireId={selectedAffaireGantt}
                 />
               </>
             )}
 
-            {(filteredActivites.length > 0 || jalons.length > 0) ? (
+            {/* Gantt - affiché uniquement si une affaire est sélectionnée */}
+            {selectedAffaireGantt && (filteredActivites.length > 0 || filteredJalons.length > 0) ? (
               <GanttTimeline
                 activites={filteredActivites}
-                jalons={jalons}
+                jalons={filteredJalons}
                 vue={vueGantt}
                 onActiviteClick={(activite) => {
                   // Ouvrir modal de détails ou édition
@@ -471,10 +488,16 @@ export default function PlanificationClient({
                 onDragEnd={isPlanificateur ? handleDragEnd : undefined}
                 onResizeEnd={isPlanificateur ? handleResizeEnd : undefined}
               />
+            ) : selectedAffaireGantt ? (
+              <div className="card text-center py-12">
+                <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">Aucune activité trouvée pour cette affaire</p>
+              </div>
             ) : (
               <div className="card text-center py-12">
                 <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Aucune activité trouvée avec les filtres sélectionnés</p>
+                <p className="text-gray-600 mb-2">Sélectionnez une affaire pour afficher le Gantt</p>
+                <p className="text-sm text-gray-500">Cliquez sur une carte d'affaire ci-dessus pour voir son planning</p>
               </div>
             )}
           </div>
