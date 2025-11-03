@@ -301,7 +301,8 @@ export default function CalendriersClient({
     setJourFormData({
       date_jour: jour.date_jour,
       type_jour: jour.type_jour,
-      heures_travail: jour.heures_travail,
+      heures_travail: decimalToTime(jour.heures_travail),
+      heures_travail_decimal: jour.heures_travail,
       libelle: jour.libelle || "",
       est_recurrent: jour.est_recurrent,
     });
@@ -806,7 +807,7 @@ export default function CalendriersClient({
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-1 text-sm text-gray-700">
                             <Clock className="h-4 w-4 text-gray-400" />
-                            {jour.heures_travail}h
+                            {decimalToTime(jour.heures_travail)}
                           </div>
                           {jour.est_recurrent && (
                             <span className="text-xs text-blue-600 font-medium">
