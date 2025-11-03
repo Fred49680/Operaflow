@@ -1872,15 +1872,29 @@ export default function AffaireDetailClient({
                 Non, retourner à l'affaire
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   setShowAddAnotherLotModal(false);
                   // Réinitialiser le formulaire mais garder le modal ouvert
                   setEditingLot(null);
                   setLotFormPourcentage("");
                   setLotFormMontant("");
                   setLotFormError("");
+                  
+                  // Rafraîchir les données pour mettre à jour les pourcentages restants
+                  await router.refresh();
+                  
+                  // Recharger les données de l'affaire
+                  try {
+                    const response = await fetch(`/api/affaires/${affaire.id}`);
+                    if (response.ok) {
+                      const updatedAffaire = await response.json();
+                      setAffaire(updatedAffaire);
+                    }
+                  } catch (error) {
+                    console.error("Erreur lors du rafraîchissement:", error);
+                  }
+                  
                   // Le modal reste ouvert (showLotModal reste true)
-                  router.refresh();
                 }}
                 className="px-4 py-2 text-white bg-primary rounded-lg hover:bg-primary-dark font-medium transition-colors flex items-center gap-2"
               >
