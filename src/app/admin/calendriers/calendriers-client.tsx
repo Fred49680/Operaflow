@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X, Calendar, Trash2, Eye, MapPin, Clock, CheckCircle, AlertCircle, Edit2 } from "lucide-react";
+import { Plus, X, Calendar, Trash2, MapPin, Clock, CheckCircle, AlertCircle, Edit2 } from "lucide-react";
 
 interface Site {
   site_id: string;
