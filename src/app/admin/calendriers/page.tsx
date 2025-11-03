@@ -40,10 +40,25 @@ export default async function CalendriersPage() {
 
   // Transformer les données
   const calendriersWithRelations = (calendriers || []).map((calendrier: {
+    id: string;
+    libelle: string;
+    description: string | null;
+    site_id: string | null;
+    actif: boolean;
+    annee_reference: number | null;
+    created_at: string;
+    updated_at: string;
     site?: Array<{ site_id: string; site_code: string; site_label: string }> | { site_id: string; site_code: string; site_label: string } | null;
     [key: string]: unknown;
   }) => ({
-    ...calendrier,
+    id: calendrier.id,
+    libelle: calendrier.libelle,
+    description: calendrier.description,
+    site_id: calendrier.site_id,
+    actif: calendrier.actif,
+    annee_reference: calendrier.annee_reference,
+    created_at: calendrier.created_at,
+    updated_at: calendrier.updated_at,
     site: Array.isArray(calendrier.site) && calendrier.site.length > 0
       ? calendrier.site[0]
       : (!Array.isArray(calendrier.site) ? calendrier.site : null),
