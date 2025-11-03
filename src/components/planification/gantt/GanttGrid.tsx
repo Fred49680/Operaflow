@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfWeek, endOfWeek, format } from "date-fns";
+import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfWeek, endOfWeek } from "date-fns";
 import GanttBar from "./GanttBar";
 import GanttDependencies from "./GanttDependencies";
 import type { ActivitePlanification, DependancePlanification } from "@/types/planification";
@@ -39,24 +39,6 @@ export default function GanttGrid({
     }
   }, [dateDebut, dateFin, vue]);
 
-  // Calculer les jours pour afficher les lignes verticales dans la vue semaine
-  const joursSemaine = useMemo(() => {
-    if (vue === "semaine") {
-      const jours: Date[] = [];
-      colonnes.forEach((semaine) => {
-        const startWeek = startOfWeek(semaine, { weekStartsOn: 1 });
-        for (let i = 0; i < 7; i++) {
-          const jour = new Date(startWeek);
-          jour.setDate(startWeek.getDate() + i);
-          if (jour >= dateDebut && jour <= dateFin) {
-            jours.push(jour);
-          }
-        }
-      });
-      return jours;
-    }
-    return [];
-  }, [vue, colonnes, dateDebut, dateFin]);
 
   // Calculer la largeur totale de la grille
   const largeurTotale = useMemo(() => {
