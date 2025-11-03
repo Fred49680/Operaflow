@@ -642,7 +642,7 @@ export default function SuiviQuotidienClient({
                 <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
                   <div className="flex items-center gap-2 mb-2">
                     {selectedActivite.numero_hierarchique && (
-                      <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">
+                      <span className="text-sm font-bold text-primary bg-primary/10 px-2 py-1 rounded">
                         {selectedActivite.numero_hierarchique}
                       </span>
                     )}
