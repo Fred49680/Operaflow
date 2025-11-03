@@ -119,8 +119,33 @@ export async function PATCH(
     if (description !== undefined) updates.description = description || null;
     if (date_debut_prevue !== undefined) updates.date_debut_prevue = date_debut_prevue || null;
     if (date_fin_prevue !== undefined) updates.date_fin_prevue = date_fin_prevue || null;
-    if (date_debut_reelle !== undefined) updates.date_debut_reelle = date_debut_reelle || null;
-    if (date_fin_reelle !== undefined) updates.date_fin_reelle = date_fin_reelle || null;
+    // Gestion des dates réelles : la contrainte exige que les deux soient définies ensemble ou NULL
+    if (date_debut_reelle !== undefined || date_fin_reelle !== undefined) {
+      if (date_debut_reelle !== undefined && date_debut_reelle !== null) {
+        // Si on définit date_debut_reelle, on doit aussi avoir date_fin_reelle
+        // Si elle n'est pas fournie, on la met à NULL pour respecter la contrainte
+        updates.date_debut_reelle = date_debut_reelle;
+        if (date_fin_reelle === undefined) {
+          // Si date_fin_reelle n'est pas explicitement fournie, la mettre à NULL
+          updates.date_fin_reelle = null;
+        } else {
+          updates.date_fin_reelle = date_fin_reelle || null;
+        }
+      } else if (date_fin_reelle !== undefined && date_fin_reelle !== null) {
+        // Si on définit date_fin_reelle, on doit aussi avoir date_debut_reelle
+        updates.date_fin_reelle = date_fin_reelle;
+        if (date_debut_reelle === undefined) {
+          // Si date_debut_reelle n'est pas explicitement fournie, la mettre à NULL
+          updates.date_debut_reelle = null;
+        } else {
+          updates.date_debut_reelle = date_debut_reelle || null;
+        }
+      } else {
+        // Les deux sont NULL ou undefined, on peut les mettre à NULL
+        updates.date_debut_reelle = null;
+        updates.date_fin_reelle = null;
+      }
+    }
     if (responsable_id !== undefined) updates.responsable_id = responsable_id || null;
     if (heures_prevues !== undefined) updates.heures_prevues = heures_prevues ?? 0;
     if (heures_reelles !== undefined) updates.heures_reelles = heures_reelles ?? 0;

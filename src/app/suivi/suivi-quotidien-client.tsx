@@ -190,13 +190,17 @@ export default function SuiviQuotidienClient({
         router.refresh();
         setShowActionModal(false);
         setActionType(null);
+        setSelectedActivite(null);
       } else {
         let errorMessage = "Erreur inconnue";
+        let errorDetails = "";
         try {
           const contentType = response.headers.get("content-type");
           if (contentType && contentType.includes("application/json")) {
             const error = await response.json();
             errorMessage = error.error || error.message || errorMessage;
+            errorDetails = error.details || error.hint || error.code || "";
+            console.error("Erreur API complète:", error);
           } else {
             errorMessage = `Erreur ${response.status}: ${response.statusText}`;
           }
