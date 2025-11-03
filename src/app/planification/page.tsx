@@ -28,7 +28,7 @@ export default async function PlanificationPage() {
     .select(`
       *,
       affaire:tbl_affaires!tbl_planification_activites_affaire_id_fkey(id, numero, libelle, site_id, statut),
-      lot:tbl_affaires_lots(id, numero_lot, libelle_lot),
+      lot:tbl_affaires_lots(id, numero_lot, libelle_lot, statut),
       site:tbl_sites!tbl_planification_activites_site_id_fkey(site_id, site_code, site_label),
       responsable:collaborateurs!tbl_planification_activites_responsable_id_fkey(id, nom, prenom),
       parent:tbl_planification_activites!tbl_planification_activites_parent_id_fkey(id, libelle, numero_hierarchique),
