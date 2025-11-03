@@ -411,11 +411,11 @@ export default function CalendriersClient({
                   </label>
                   <input
                     type="number"
-                    value={formData.annee_reference}
+                    value={formData.annee_reference ?? ""}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        annee_reference: parseInt(e.target.value) || null,
+                        annee_reference: e.target.value ? parseInt(e.target.value) || null : null,
                       })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
