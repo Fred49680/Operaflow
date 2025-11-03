@@ -15,8 +15,17 @@ interface CalendrierJour {
   calendrier_id: string;
   date_jour: string;
   type_jour: "ouvre" | "ferie" | "chome" | "reduit" | "exceptionnel";
-  heures_travail: number;
+  heures_travail: number; // Décimal en base de données
   libelle: string | null;
+  est_recurrent: boolean;
+}
+
+interface JourFormData {
+  date_jour: string;
+  type_jour: "ouvre" | "ferie" | "chome" | "reduit" | "exceptionnel";
+  heures_travail: string; // Format HH:mm pour l'affichage
+  heures_travail_decimal: number; // Décimal pour l'envoi à l'API
+  libelle: string;
   est_recurrent: boolean;
 }
 
