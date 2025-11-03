@@ -91,10 +91,11 @@ export default function CalendriersClient({
     { jour_semaine: 5, nom_jour: "Vendredi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre" },
     { jour_semaine: 6, nom_jour: "Samedi", heures_travail: 0, heures_travail_display: "00:00", type_jour: "chome" },
   ]);
-  const [jourFormData, setJourFormData] = useState({
+  const [jourFormData, setJourFormData] = useState<JourFormData>({
     date_jour: "",
-    type_jour: "ouvre" as "ouvre" | "ferie" | "chome" | "reduit" | "exceptionnel",
-    heures_travail: 8,
+    type_jour: "ouvre",
+    heures_travail: "08:00",
+    heures_travail_decimal: 8,
     libelle: "",
     est_recurrent: false,
   });
