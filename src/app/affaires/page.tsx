@@ -71,11 +71,23 @@ export default async function AffairesPage() {
     .eq("statut", "actif")
     .order("nom", { ascending: true });
 
+  // Vérifier si l'utilisateur est Administrateur
+  const { data: userRoles } = await clientToUse
+    .from("user_roles")
+    .select("roles(name)")
+    .eq("user_id", user.id);
+
+  const isAdmin = userRoles?.some((ur) => {
+    const role = Array.isArray(ur.roles) ? ur.roles[0] : ur.roles;
+    return role?.name === "Administrateur";
+  }) || false;
+
   return (
     <AffairesClient
       initialAffaires={affairesWithRelations}
       sites={sites || []}
       collaborateurs={collaborateurs || []}
+      isAdmin={isAdmin}
     />
   );
 }
