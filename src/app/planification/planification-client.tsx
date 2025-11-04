@@ -1179,7 +1179,7 @@ export default function PlanificationClient({
                             numero_hierarchique: a.numero_hierarchique || undefined,
                           }));
                       })()}
-                      dependancesInitiales={editingActivite?.id ? undefined : dependancesEnAttente.map((dep, idx) => ({
+                      dependancesInitiales={editingActivite?.id ? undefined : dependancesEnAttente.map((dep) => ({
                         activite_precedente_id: dep.activite_precedente_id,
                         type_dependance: dep.type_dependance,
                         delai_jours: dep.delai_jours,
