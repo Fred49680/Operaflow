@@ -278,12 +278,14 @@ export default function GanttTimeline({
             <div className="absolute inset-0 z-20" style={{ paddingTop: "48px" }}>
               {itemsGantt.map((item) => {
                 if (item.type === "jalon") {
+                  // Décalage vertical pour centrer la barre (hauteur ligne 40px - hauteur barre 32px = 8px / 2 = 4px)
+                  const decalageVertical = (item.height - 32) / 2;
                   return (
                     <div
                       key={`jalon-timeline-${item.jalon!.id}`}
                       className="absolute flex items-center"
                       style={{
-                        top: `${item.top}px`,
+                        top: `${item.top + decalageVertical}px`,
                         left: 0,
                         width: "100%",
                         height: `${item.height}px`,
@@ -305,13 +307,15 @@ export default function GanttTimeline({
                   const niveau = activite.niveau_hierarchie || 0;
                   const decalageHorizontal = niveau * 12;
                   const largeurBarre = largeurTotale - decalageHorizontal;
+                  // Décalage vertical pour centrer la barre (hauteur ligne 80px - hauteur barre 56px = 24px / 2 = 12px)
+                  const decalageVertical = (item.height - 56) / 2;
                   
                   return (
                     <div
                       key={`activite-timeline-${activite.id}`}
                       className="absolute"
                       style={{
-                        top: `${item.top}px`,
+                        top: `${item.top + decalageVertical}px`,
                         left: `${decalageHorizontal}px`,
                         width: `calc(100% - ${decalageHorizontal}px)`,
                         height: `${item.height}px`,
