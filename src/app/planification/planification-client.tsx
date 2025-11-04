@@ -539,25 +539,33 @@ export default function PlanificationClient({
               </>
             )}
 
-            {/* Gantt - toujours affiché pour voir les jalons même sans activités */}
-            <GanttTimeline
-              activites={filteredActivites}
-              jalons={filteredJalons}
-              vue={vueGantt}
-              onActiviteClick={(activite) => {
-                // Ouvrir modal de détails ou édition
-                setEditingActivite(activite);
-                setShowActiviteModal(true);
-              }}
-              onJalonClick={(jalon) => {
-                // Rediriger vers la page de l'affaire
-                if (jalon.affaire_id) {
-                  router.push(`/affaires/${jalon.affaire_id}`);
-                }
-              }}
-              onDragEnd={isPlanificateur ? handleDragEnd : undefined}
-              onResizeEnd={isPlanificateur ? handleResizeEnd : undefined}
-            />
+            {/* Gantt - affiché uniquement si une affaire est sélectionnée */}
+            {selectedAffaireGantt ? (
+              <GanttTimeline
+                activites={filteredActivites}
+                jalons={filteredJalons}
+                vue={vueGantt}
+                onActiviteClick={(activite) => {
+                  // Ouvrir modal de détails ou édition
+                  setEditingActivite(activite);
+                  setShowActiviteModal(true);
+                }}
+                onJalonClick={(jalon) => {
+                  // Rediriger vers la page de l'affaire
+                  if (jalon.affaire_id) {
+                    router.push(`/affaires/${jalon.affaire_id}`);
+                  }
+                }}
+                onDragEnd={isPlanificateur ? handleDragEnd : undefined}
+                onResizeEnd={isPlanificateur ? handleResizeEnd : undefined}
+              />
+            ) : (
+              <div className="card text-center py-12">
+                <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-2">Sélectionnez une affaire pour afficher le Gantt</p>
+                <p className="text-sm text-gray-500">Cliquez sur une carte d'affaire ci-dessus pour voir son planning</p>
+              </div>
+            )}
           </div>
         )}
 

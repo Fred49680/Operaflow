@@ -202,29 +202,28 @@ export default function GanttTimeline({
             {/* Section Jalons */}
             {jalons.length > 0 && (
               <>
-                <div className="px-4 py-3 bg-purple-50 border-b border-purple-200">
+                <div className="px-4 py-3 bg-purple-50 border-b border-purple-200" style={{ height: "48px" }}>
                   <div className="text-sm font-bold text-purple-700 uppercase">Jalons</div>
                 </div>
-                {positionsJalons
-                  .sort((a, b) => {
-                    // Trier par position verticale (top) pour aligner avec la timeline
-                    return a.top - b.top;
-                  })
-                  .map(({ jalon, top, level }) => (
-                    <div
-                      key={jalon.id}
-                      className="h-10 py-3 px-4 border-b border-purple-100 flex items-center text-sm text-purple-700 font-semibold"
-                      style={{ 
-                        minHeight: "40px",
-                        height: "40px"
-                      }}
-                    >
-                      <div className="flex items-center gap-3 truncate w-full">
-                        <span className="text-purple-500 text-lg flex-shrink-0">◇</span>
-                        <span className="truncate flex-1">{jalon.libelle_lot}</span>
+                <div className="relative" style={{ minHeight: `${positionsJalons.length > 0 ? Math.max(...positionsJalons.map(p => p.top)) + 40 : 0}px` }}>
+                  {positionsJalons
+                    .sort((a, b) => a.top - b.top) // Trier par position verticale pour correspondre à la timeline
+                    .map(({ jalon, top, level }) => (
+                      <div
+                        key={jalon.id}
+                        className="absolute left-0 right-0 px-4 py-3 border-b border-purple-100 flex items-center text-sm text-purple-700 font-semibold"
+                        style={{ 
+                          top: `${top}px`,
+                          height: "40px"
+                        }}
+                      >
+                        <div className="flex items-center gap-3 truncate w-full">
+                          <span className="text-purple-500 text-lg flex-shrink-0">◇</span>
+                          <span className="truncate flex-1">{jalon.libelle_lot}</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
                 <div className="h-3 border-b-2 border-gray-300"></div>
               </>
             )}
