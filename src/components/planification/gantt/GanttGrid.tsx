@@ -41,8 +41,13 @@ export default function GanttGrid({
 
   // Calculer la largeur totale de la grille
   const largeurTotale = useMemo(() => {
-    return colonnes.length * 120;
+    return colonnes.length * 140; // Augmenté de 120 à 140 pour plus d'espace
   }, [colonnes.length]);
+
+  // Hauteur dynamique selon le nombre d'activités
+  const hauteurTotale = useMemo(() => {
+    return Math.max(400, activites.length * 80 + 24); // 80px par activité au lieu de 48px
+  }, [activites.length]);
 
   return (
     <div className="relative overflow-x-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "#CBD5E0 #F3F4F6" }}>
@@ -50,7 +55,7 @@ export default function GanttGrid({
         className="relative" 
         style={{ 
           width: String(largeurTotale) + "px", 
-          minHeight: String(activites.length * 48 + 16) + "px",
+          minHeight: String(hauteurTotale) + "px",
           overflow: "visible"
         }}
       >
@@ -62,7 +67,7 @@ export default function GanttGrid({
             <div
               key={index}
               className="border-l border-gray-200 flex-1 relative"
-              style={{ minWidth: "120px" }}
+              style={{ minWidth: "140px" }}
             >
               {/* Lignes verticales pour les jours dans la vue semaine */}
               {isSemaine && (() => {
@@ -92,8 +97,8 @@ export default function GanttGrid({
       <div className="absolute inset-0">
         {activites.map((activite, index) => {
           const niveau = activite.niveau_hierarchie || 0;
-          const decalageVertical = niveau * 4;
-          const topValue = String(index * 48 + 8 + decalageVertical) + "px";
+          const decalageVertical = niveau * 6;
+          const topValue = String(index * 80 + 12 + decalageVertical) + "px";
           return (
             <div
               key={activite.id}
@@ -102,7 +107,7 @@ export default function GanttGrid({
                 top: topValue,
                 left: 0,
                 width: "100%",
-                height: "40px",
+                height: "64px",
               }}
             />
           );
@@ -121,7 +126,7 @@ export default function GanttGrid({
             dateDebutTimeline={dateDebut}
             dateFinTimeline={dateFin}
             largeurTotale={largeurTotale}
-            hauteurLigne={48}
+            hauteurLigne={80}
           />
         ) : null;
       })()}
@@ -130,10 +135,10 @@ export default function GanttGrid({
       <div className="absolute inset-0 z-10">
         {activites.map((activite, index) => {
           const niveau = activite.niveau_hierarchie || 0;
-          const decalageVertical = niveau * 4;
-          const decalageHorizontal = niveau * 10;
+          const decalageVertical = niveau * 6;
+          const decalageHorizontal = niveau * 12;
           const largeurBarre = largeurTotale - decalageHorizontal;
-          const topPosition = index * 48 + 8 + decalageVertical;
+          const topPosition = index * 80 + 12 + decalageVertical;
           const leftPosition = decalageHorizontal;
           const topValue = String(topPosition) + "px";
           const leftValue = String(leftPosition) + "px";
@@ -147,7 +152,7 @@ export default function GanttGrid({
                 top: topValue,
                 left: leftValue,
                 width: widthCalc,
-                height: "32px",
+                height: "56px",
               }}
             >
               <GanttBar

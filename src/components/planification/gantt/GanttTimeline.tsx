@@ -114,25 +114,26 @@ export default function GanttTimeline({
       <div 
         className="overflow-x-auto overflow-y-auto" 
         style={{ 
-          maxHeight: "calc(100vh - 400px)"
+          maxHeight: "calc(100vh - 300px)",
+          minHeight: `${Math.max(400, (activites.length * 80 + jalons.length * 40 + 120))}px`
         }}
       >
         <div className="flex">
           {/* Colonne fixe avec libellés des activités et jalons */}
-          <div className="w-64 border-r border-gray-200 bg-gray-50 sticky left-0 z-10">
+          <div className="w-72 border-r border-gray-200 bg-gray-50 sticky left-0 z-10">
             {/* Section Jalons */}
             {jalons.length > 0 && (
               <>
-                <div className="px-3 py-2 bg-purple-50 border-b border-purple-200">
-                  <div className="text-xs font-bold text-purple-700 uppercase">Jalons</div>
+                <div className="px-4 py-3 bg-purple-50 border-b border-purple-200">
+                  <div className="text-sm font-bold text-purple-700 uppercase">Jalons</div>
                 </div>
                 {jalons.map((jalon) => (
                   <div
                     key={jalon.id}
-                    className="h-6 p-2 border-b border-purple-100 flex items-center text-xs text-purple-700 font-semibold"
+                    className="h-10 py-3 px-4 border-b border-purple-100 flex items-center text-sm text-purple-700 font-semibold"
                   >
-                    <div className="flex items-center gap-2 truncate w-full">
-                      <span className="text-purple-500">◇</span>
+                    <div className="flex items-center gap-3 truncate w-full">
+                      <span className="text-purple-500 text-lg">◇</span>
                       <span className="truncate flex-1">{jalon.libelle_lot}</span>
                     </div>
                     {jalon.affaire && (
@@ -142,33 +143,33 @@ export default function GanttTimeline({
                     )}
                   </div>
                 ))}
-                <div className="h-2 border-b-2 border-gray-300"></div>
+                <div className="h-3 border-b-2 border-gray-300"></div>
               </>
             )}
             
             {/* Section Activités */}
-            <div className="px-3 py-2 bg-gray-100 border-b border-gray-200">
-              <div className="text-xs font-bold text-gray-700 uppercase">Activités</div>
+            <div className="px-4 py-3 bg-gray-100 border-b border-gray-200">
+              <div className="text-sm font-bold text-gray-700 uppercase">Activités</div>
             </div>
             {activites.map((activite, index) => {
               const niveau = activite.niveau_hierarchie || 0;
-              const indent = niveau * 20; // 20px par niveau
+              const indent = niveau * 24; // 24px par niveau
               return (
                 <div
                   key={activite.id}
-                  className="h-12 p-3 border-b border-gray-100 flex items-center text-sm text-gray-700 font-medium"
+                  className="h-20 py-4 px-4 border-b border-gray-100 flex items-center text-sm text-gray-700 font-medium"
                 >
                   <div 
-                    className="flex items-center gap-2 truncate w-full" 
+                    className="flex items-center gap-3 truncate w-full" 
                     title={activite.libelle}
                     style={{ paddingLeft: `${indent}px` }}
                   >
                     {activite.numero_hierarchique && (
-                      <span className="text-xs font-bold text-primary flex-shrink-0">
+                      <span className="text-sm font-bold text-primary flex-shrink-0">
                         {activite.numero_hierarchique}
                       </span>
                     )}
-                    <span className="truncate flex-1">{activite.libelle}</span>
+                    <span className="truncate flex-1 text-sm">{activite.libelle}</span>
                   </div>
                   {activite.affaire && (
                     <div className="text-xs text-gray-500 mt-0.5 ml-auto">
@@ -184,16 +185,16 @@ export default function GanttTimeline({
           <div className="flex-1 relative" style={{ minWidth: `${largeurTotale}px` }}>
             {/* Couche des jalons */}
             {jalons.length > 0 && (
-              <div className="absolute inset-0 z-20" style={{ paddingTop: "40px" }}>
+              <div className="absolute inset-0 z-20" style={{ paddingTop: "48px" }}>
                 {jalons.map((jalon, index) => (
                   <div
                     key={jalon.id}
                     className="absolute"
                     style={{
-                      top: `${index * 24}px`,
+                      top: `${index * 40}px`,
                       left: 0,
                       width: "100%",
-                      height: "24px",
+                      height: "40px",
                     }}
                   >
                     <GanttJalonBar
@@ -209,7 +210,7 @@ export default function GanttTimeline({
             )}
 
             {/* Couche des activités */}
-            <div style={{ paddingTop: jalons.length > 0 ? `${jalons.length * 24 + 8}px` : "40px" }}>
+            <div style={{ paddingTop: jalons.length > 0 ? `${jalons.length * 40 + 12}px` : "48px" }}>
               <GanttGrid
                 activites={activites}
                 dateDebut={dateDebut}

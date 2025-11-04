@@ -96,7 +96,7 @@ export default function GanttBar({
 
   return (
     <div
-      className={`relative h-8 group ${drag.isDragging || resize.isResizing ? "cursor-grabbing z-30" : onDragEnd || onResizeEnd ? "cursor-grab" : "cursor-pointer"}`}
+      className={`relative h-14 group ${drag.isDragging || resize.isResizing ? "cursor-grabbing z-30" : onDragEnd || onResizeEnd ? "cursor-grab" : "cursor-pointer"}`}
       style={{ left: `${left}px`, width: `${width}px` }}
       onMouseDown={onDragEnd ? drag.onMouseDown : undefined}
       onClick={(e) => {
@@ -126,13 +126,13 @@ export default function GanttBar({
         
         {/* Indicateur de progression en pourcentage */}
         {pourcentageAvancement > 0 && (
-          <div className="absolute right-1 top-0.5 text-[10px] font-bold text-white drop-shadow-md z-20">
+          <div className="absolute right-2 top-1 text-xs font-bold text-white drop-shadow-md z-20">
             {Math.round(pourcentageAvancement)}%
           </div>
         )}
 
         {/* Libellé de l'activité */}
-        <div className="absolute inset-0 flex items-center px-2 text-xs font-medium text-white truncate">
+        <div className="absolute inset-0 flex items-center px-3 text-sm font-medium text-white truncate">
           {activite.libelle}
         </div>
 
