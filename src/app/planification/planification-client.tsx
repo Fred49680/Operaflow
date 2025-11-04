@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Calendar, Search, Plus, AlertTriangle, X, FileText } from "lucide-react";
 import GanttTimeline from "@/components/planification/gantt/GanttTimeline";
