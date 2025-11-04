@@ -85,6 +85,8 @@ export default function PlanificationClient({
   const [dateDebut, setDateDebut] = useState("");
   const [dureeJoursOuvres, setDureeJoursOuvres] = useState("");
   const [dateFinCalculee, setDateFinCalculee] = useState("");
+  const [statutActivite, setStatutActivite] = useState<string>("planifiee");
+  const [motifReport, setMotifReport] = useState<string>("");
   const [selectedAffaireId, setSelectedAffaireId] = useState<string>("");
   const [selectedAffaireGantt, setSelectedAffaireGantt] = useState<string | null>(null);
   const [dependancesEnAttente, setDependancesEnAttente] = useState<Array<{
