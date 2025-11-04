@@ -1048,15 +1048,41 @@ export default function PlanificationClient({
                 <h2 className="text-xl font-bold text-primary">
                   {editingActivite?.id ? "Modifier l'activité" : "Nouvelle activité"}
                 </h2>
-                <button
-                  onClick={() => {
-                    setShowActiviteModal(false);
-                    setEditingActivite(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-6 w-6" />
-                </button>
+                  <button
+                    onClick={() => {
+                      // Mettre à jour les jalons avant de fermer le modal
+                      const updatesJalons = mettreAJourJalons();
+                      
+                      if (updatesJalons.size > 0) {
+                        // Mettre à jour les jalons dans l'état local
+                        setJalonsLocaux(prev => prev.map(jalon => {
+                          const update = updatesJalons.get(jalon.id);
+                          if (update) {
+                            return { ...jalon, date_debut_previsionnelle: update.date_debut_previsionnelle, date_fin_previsionnelle: update.date_fin_previsionnelle };
+                          }
+                          return jalon;
+                        }));
+                        
+                        // Ajouter les jalons modifiés à la file d'attente
+                        setPendingJalonsSaves(prev => {
+                          const newMap = new Map(prev);
+                          updatesJalons.forEach((update, jalonId) => {
+                            newMap.set(jalonId, update);
+                          });
+                          return newMap;
+                        });
+                        
+                        // Sauvegarder immédiatement les jalons
+                        savePendingChanges();
+                      }
+                      
+                      setShowActiviteModal(false);
+                      setEditingActivite(null);
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
               </div>
               
               {/* Section Templates (uniquement en création) */}
@@ -1250,6 +1276,31 @@ export default function PlanificationClient({
                       }
                       
                       setDependancesEnAttente([]);
+                      
+                      // Mettre à jour les jalons après création/modification d'activité
+                      const updatesJalons = mettreAJourJalons();
+                      
+                      // Mettre à jour les jalons dans l'état local
+                      setJalonsLocaux(prev => prev.map(jalon => {
+                        const update = updatesJalons.get(jalon.id);
+                        if (update) {
+                          return { ...jalon, date_debut_previsionnelle: update.date_debut_previsionnelle, date_fin_previsionnelle: update.date_fin_previsionnelle };
+                        }
+                        return jalon;
+                      }));
+                      
+                      // Ajouter les jalons modifiés à la file d'attente
+                      setPendingJalonsSaves(prev => {
+                        const newMap = new Map(prev);
+                        updatesJalons.forEach((update, jalonId) => {
+                          newMap.set(jalonId, update);
+                        });
+                        return newMap;
+                      });
+                      
+                      // Sauvegarder immédiatement les jalons
+                      savePendingChanges();
+                      
                       setShowActiviteModal(false);
                       setEditingActivite(null);
                       // Réinitialiser les filtres pour voir la nouvelle activité
@@ -1673,6 +1724,32 @@ export default function PlanificationClient({
                   <button
                     type="button"
                     onClick={() => {
+                      // Mettre à jour les jalons avant de fermer le modal
+                      const updatesJalons = mettreAJourJalons();
+                      
+                      if (updatesJalons.size > 0) {
+                        // Mettre à jour les jalons dans l'état local
+                        setJalonsLocaux(prev => prev.map(jalon => {
+                          const update = updatesJalons.get(jalon.id);
+                          if (update) {
+                            return { ...jalon, date_debut_previsionnelle: update.date_debut_previsionnelle, date_fin_previsionnelle: update.date_fin_previsionnelle };
+                          }
+                          return jalon;
+                        }));
+                        
+                        // Ajouter les jalons modifiés à la file d'attente
+                        setPendingJalonsSaves(prev => {
+                          const newMap = new Map(prev);
+                          updatesJalons.forEach((update, jalonId) => {
+                            newMap.set(jalonId, update);
+                          });
+                          return newMap;
+                        });
+                        
+                        // Sauvegarder immédiatement les jalons
+                        savePendingChanges();
+                      }
+                      
                       setShowActiviteModal(false);
                       setEditingActivite(null);
                     }}
