@@ -60,7 +60,7 @@ export default function PlanificationClient({
   const [activites, setActivites] = useState<ActivitePlanification[]>(activitesInitiales);
   
   // État pour le debounce de sauvegarde automatique
-  const [pendingSaves, setPendingSaves] = useState<Map<string, { date_debut_prevue: string; date_fin_prevue: string }>>(new Map());
+  const [pendingSaves, setPendingSaves] = useState<Map<string, { date_debut_prevue: string; date_fin_prevue: string; duree_jours_ouvres?: number }>>(new Map());
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [activeView, setActiveView] = useState<"gantt" | "alertes">("gantt");
   const [vueGantt, setVueGantt] = useState<"jour" | "semaine" | "mois">("semaine");
@@ -343,21 +343,63 @@ export default function PlanificationClient({
     }, 2000);
   };
 
+  // Fonction pour calculer le nombre de jours ouvrés entre deux dates
+  const calculerJoursOuvres = (dateDebut: Date, dateFin: Date, typeHoraire: string): number => {
+    if (!dateDebut || !dateFin || dateFin < dateDebut) return 0;
+    
+    // Pour les types horaires qui incluent tous les jours (3x8, accéléré)
+    if (typeHoraire === "3x8" || typeHoraire === "accelerer") {
+      const diffTime = dateFin.getTime() - dateDebut.getTime();
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 pour inclure le jour de début
+    }
+    
+    // Pour les autres types (jour, nuit, weekend, férié), compter les jours ouvrés (exclure weekends)
+    let joursOuvres = 0;
+    const dateCourante = new Date(dateDebut);
+    dateCourante.setHours(0, 0, 0, 0);
+    const dateFinNorm = new Date(dateFin);
+    dateFinNorm.setHours(0, 0, 0, 0);
+    
+    while (dateCourante <= dateFinNorm) {
+      const jourSemaine = dateCourante.getDay(); // 0 = dimanche, 6 = samedi
+      // Exclure samedi (6) et dimanche (0)
+      if (jourSemaine !== 0 && jourSemaine !== 6) {
+        joursOuvres++;
+      }
+      dateCourante.setDate(dateCourante.getDate() + 1);
+    }
+    
+    return joursOuvres;
+  };
+
   // Handler pour le redimensionnement
   const handleResizeEnd = async (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => {
+    // Trouver l'activité pour récupérer son type_horaire
+    const activite = activites.find(a => a.id === activiteId);
+    const typeHoraire = activite?.type_horaire || "jour";
+    
+    // Calculer le nouveau nombre de jours ouvrés
+    const nouvelleDureeJoursOuvres = calculerJoursOuvres(nouvelleDateDebut, nouvelleDateFin, typeHoraire);
+    
     // Mise à jour optimiste immédiate de l'état local
     setActivites(prev => prev.map(act => 
       act.id === activiteId 
-        ? { ...act, date_debut_prevue: nouvelleDateDebut.toISOString(), date_fin_prevue: nouvelleDateFin.toISOString() }
+        ? { 
+            ...act, 
+            date_debut_prevue: nouvelleDateDebut.toISOString(), 
+            date_fin_prevue: nouvelleDateFin.toISOString(),
+            duree_jours_ouvres: nouvelleDureeJoursOuvres
+          }
         : act
     ));
     
-    // Ajouter à la file d'attente de sauvegarde
+    // Ajouter à la file d'attente de sauvegarde avec la nouvelle durée
     setPendingSaves(prev => {
       const newMap = new Map(prev);
       newMap.set(activiteId, {
         date_debut_prevue: nouvelleDateDebut.toISOString(),
         date_fin_prevue: nouvelleDateFin.toISOString(),
+        duree_jours_ouvres: nouvelleDureeJoursOuvres,
       });
       return newMap;
     });
