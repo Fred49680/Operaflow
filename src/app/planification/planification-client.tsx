@@ -733,11 +733,11 @@ export default function PlanificationClient({
         : act
     ));
     
-    // Calculer les nouvelles dates des tâches dépendantes
+    // Calculer les nouvelles dates des tâches dépendantes (utiliser les dates finales)
     const updatesTachesDependantes = calculerDatesTachesDependantes(
       activiteModifiee,
-      nouvelleDateDebut,
-      nouvelleDateFin
+      dateDebutFinale,
+      dateFinFinale
     );
     
     // Mettre à jour les tâches dépendantes dans l'état local
@@ -761,14 +761,25 @@ export default function PlanificationClient({
       return jalon;
     }));
     
+    // Si le statut a changé, sauvegarder immédiatement le changement de statut
+    if (nouveauStatut !== activiteModifiee.statut) {
+      fetch(`/api/planification/activites/${activiteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          statut: nouveauStatut,
+        }),
+      }).catch(err => console.error("Erreur lors de la mise à jour du statut:", err));
+    }
+    
     // Ajouter toutes les modifications à la file d'attente de sauvegarde
     setPendingSaves(prev => {
       const newMap = new Map(prev);
       
-      // Ajouter la tâche principale avec la nouvelle durée
+      // Ajouter la tâche principale avec la nouvelle durée (utiliser les dates finales)
       newMap.set(activiteId, {
-        date_debut_prevue: nouvelleDateDebut.toISOString(),
-        date_fin_prevue: nouvelleDateFin.toISOString(),
+        date_debut_prevue: dateDebutFinale.toISOString(),
+        date_fin_prevue: dateFinFinale.toISOString(),
         duree_jours_ouvres: nouvelleDureeJoursOuvres,
       });
       
