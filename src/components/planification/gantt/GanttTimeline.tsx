@@ -213,52 +213,60 @@ export default function GanttTimeline({
         <div className="flex">
           {/* Colonne fixe avec libellés */}
           <div className="w-72 border-r border-gray-200 bg-gray-50 sticky left-0 z-10">
-            {/* En-tête */}
-            <div className="px-4 py-3 bg-gray-100 border-b border-gray-200" style={{ height: "48px" }}>
+            {/* En-tête - aligné avec l'en-tête de la timeline */}
+            <div className="px-4 py-3 bg-gray-100 border-b border-gray-200 sticky top-0 z-10" style={{ height: "48px" }}>
               <div className="text-sm font-bold text-gray-700 uppercase">Activité</div>
             </div>
             
-            {/* Liste des items (jalons + activités) */}
-            {itemsGantt.map((item, index) => {
-              if (item.type === "jalon") {
-                return (
-                  <div
-                    key={`jalon-${item.jalon!.id}`}
-                    className="px-4 py-3 border-b border-purple-100 flex items-center text-sm text-purple-700 font-semibold bg-purple-50"
-                    style={{ height: `${item.height}px` }}
-                  >
-                    <div className="flex items-center gap-3 truncate w-full">
-                      <span className="text-purple-500 text-lg flex-shrink-0">◇</span>
-                      <span className="truncate flex-1">{item.jalon!.libelle_lot}</span>
-                    </div>
-                  </div>
-                );
-              } else {
-                const activite = item.activite!;
-                const niveau = activite.niveau_hierarchie || 0;
-                const indent = niveau * 24;
-                return (
-                  <div
-                    key={`activite-${activite.id}`}
-                    className="px-4 py-4 border-b border-gray-100 flex items-center text-sm text-gray-700 font-medium"
-                    style={{ height: `${item.height}px` }}
-                  >
-                    <div 
-                      className="flex items-center gap-3 truncate w-full" 
-                      title={activite.libelle}
-                      style={{ paddingLeft: `${indent}px` }}
+            {/* Liste des items (jalons + activités) - position absolue pour alignement parfait avec la timeline */}
+            <div className="relative" style={{ minHeight: `${itemsGantt.length > 0 ? itemsGantt[itemsGantt.length - 1].top + itemsGantt[itemsGantt.length - 1].height : 0}px` }}>
+              {itemsGantt.map((item, index) => {
+                if (item.type === "jalon") {
+                  return (
+                    <div
+                      key={`jalon-${item.jalon!.id}`}
+                      className="absolute left-0 right-0 px-4 py-3 border-b border-purple-100 flex items-center text-sm text-purple-700 font-semibold bg-purple-50"
+                      style={{ 
+                        top: `${item.top}px`,
+                        height: `${item.height}px` 
+                      }}
                     >
-                      {activite.numero_hierarchique && (
-                        <span className="text-sm font-bold text-primary flex-shrink-0">
-                          {activite.numero_hierarchique}
-                        </span>
-                      )}
-                      <span className="truncate flex-1 text-sm">{activite.libelle}</span>
+                      <div className="flex items-center gap-3 truncate w-full">
+                        <span className="text-purple-500 text-lg flex-shrink-0">◇</span>
+                        <span className="truncate flex-1">{item.jalon!.libelle_lot}</span>
+                      </div>
                     </div>
-                  </div>
-                );
-              }
-            })}
+                  );
+                } else {
+                  const activite = item.activite!;
+                  const niveau = activite.niveau_hierarchie || 0;
+                  const indent = niveau * 24;
+                  return (
+                    <div
+                      key={`activite-${activite.id}`}
+                      className="absolute left-0 right-0 px-4 py-4 border-b border-gray-100 flex items-center text-sm text-gray-700 font-medium"
+                      style={{ 
+                        top: `${item.top}px`,
+                        height: `${item.height}px` 
+                      }}
+                    >
+                      <div 
+                        className="flex items-center gap-3 truncate w-full" 
+                        title={activite.libelle}
+                        style={{ paddingLeft: `${indent}px` }}
+                      >
+                        {activite.numero_hierarchique && (
+                          <span className="text-sm font-bold text-primary flex-shrink-0">
+                            {activite.numero_hierarchique}
+                          </span>
+                        )}
+                        <span className="truncate flex-1 text-sm">{activite.libelle}</span>
+                      </div>
+                    </div>
+                  );
+                }
+              })}
+            </div>
           </div>
 
           {/* Zone scrollable avec timeline */}
