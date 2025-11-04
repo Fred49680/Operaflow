@@ -46,7 +46,7 @@ export default function GanttGrid({
 
   // Hauteur dynamique selon le nombre d'activités
   const hauteurTotale = useMemo(() => {
-    return Math.max(400, activites.length * 80 + 24); // 80px par activité au lieu de 48px
+    return Math.max(400, activites.length * 40 + 24); // 40px par activité (même hauteur que les jalons)
   }, [activites.length]);
 
   return (
@@ -98,7 +98,7 @@ export default function GanttGrid({
         {activites.map((activite, index) => {
           const niveau = activite.niveau_hierarchie || 0;
           const decalageVertical = niveau * 6;
-          const topValue = String(index * 80 + 12 + decalageVertical) + "px";
+          const topValue = String(index * 40 + 4 + decalageVertical) + "px";
           return (
             <div
               key={activite.id}
@@ -107,7 +107,7 @@ export default function GanttGrid({
                 top: topValue,
                 left: 0,
                 width: "100%",
-                height: "64px",
+                height: "40px",
               }}
             />
           );
@@ -126,7 +126,7 @@ export default function GanttGrid({
             dateDebutTimeline={dateDebut}
             dateFinTimeline={dateFin}
             largeurTotale={largeurTotale}
-            hauteurLigne={80}
+            hauteurLigne={40}
           />
         ) : null;
       })()}
@@ -140,8 +140,8 @@ export default function GanttGrid({
             const decalageVertical = niveau * 6;
             const decalageHorizontal = niveau * 12;
             const largeurBarre = largeurTotale - decalageHorizontal;
-            // Top position: index * 80 (80px par activité) + petit décalage
-            const topPosition = index * 80 + 12 + decalageVertical;
+            // Top position: index * 40 (40px par activité) + petit décalage
+            const topPosition = index * 40 + 4 + decalageVertical;
             const leftPosition = decalageHorizontal;
             const topValue = String(topPosition) + "px";
             const leftValue = String(leftPosition) + "px";
@@ -155,7 +155,7 @@ export default function GanttGrid({
                   top: topValue,
                   left: leftValue,
                   width: widthCalc,
-                  height: "56px",
+                  height: "40px",
                 }}
               >
                 <GanttBar

@@ -159,7 +159,7 @@ export default function GanttTimeline({
     const items: GanttItem[] = [];
     let currentTop = 0;
     const hauteurJalon = 40; // 40px par jalon
-    const hauteurActivite = 80; // 80px par activité
+    const hauteurActivite = 40; // 40px par activité (même hauteur que les jalons)
     
     // Trier les jalons par date
     const jalonsTries = [...jalons].sort((a, b) => {
@@ -343,8 +343,8 @@ export default function GanttTimeline({
                   const niveau = activite.niveau_hierarchie || 0;
                   const decalageHorizontal = niveau * 12;
                   const largeurBarre = largeurTotale - decalageHorizontal;
-                  // Décalage vertical pour centrer la barre (hauteur ligne 80px - hauteur barre 56px = 24px / 2 = 12px)
-                  const decalageVertical = (item.height - 56) / 2;
+                  // Décalage vertical pour centrer la barre (hauteur ligne 40px - hauteur barre 32px = 8px / 2 = 4px)
+                  const decalageVertical = (item.height - 32) / 2;
                   
                   return (
                     <div

@@ -125,7 +125,7 @@ export default function GanttBar({
 
   return (
     <div
-      className={`relative h-14 group ${drag.isDragging || resize.isResizing ? "cursor-grabbing z-30" : onDragEnd || onResizeEnd ? "cursor-grab" : "cursor-pointer"}`}
+      className={`relative h-8 group ${drag.isDragging || resize.isResizing ? "cursor-grabbing z-30" : onDragEnd || onResizeEnd ? "cursor-grab" : "cursor-pointer"}`}
       style={{ left: `${left}px`, width: `${width}px` }}
       onMouseDown={onDragEnd ? drag.onMouseDown : undefined}
       onClick={(e) => {

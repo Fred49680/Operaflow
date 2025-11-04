@@ -272,13 +272,34 @@ export default function PlanificationClient({
   const handleDragEnd = async (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => {
     try {
       setSaving(true);
-      await handleUpdateActivite(activiteId, {
-        date_debut_prevue: nouvelleDateDebut.toISOString(),
-        date_fin_prevue: nouvelleDateFin.toISOString(),
+      const response = await fetch(`/api/planification/activites/${activiteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date_debut_prevue: nouvelleDateDebut.toISOString(),
+          date_fin_prevue: nouvelleDateFin.toISOString(),
+        }),
       });
+
+      if (response.ok) {
+        // Sauvegarder l'affaire sélectionnée dans sessionStorage avant le reload
+        if (selectedAffaireGantt) {
+          sessionStorage.setItem('selectedAffaireGantt', selectedAffaireGantt);
+        }
+        
+        // Rafraîchir les données après mise à jour
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      } else {
+        const error = await response.json();
+        console.error("Erreur lors du déplacement:", error);
+        alert(`Erreur: ${error.error || "Erreur inconnue"}`);
+        setSaving(false);
+      }
     } catch (error) {
       console.error("Erreur lors du déplacement:", error);
-    } finally {
+      alert("Une erreur est survenue lors du déplacement");
       setSaving(false);
     }
   };
