@@ -23,6 +23,7 @@ export function useGanttResize({
   const [resizeStartX, setResizeStartX] = useState(0);
   const [initialDateDebut, setInitialDateDebut] = useState<Date>(new Date(activite.date_debut_prevue));
   const [initialDateFin, setInitialDateFin] = useState<Date>(new Date(activite.date_fin_prevue));
+  const [hasJustResized, setHasJustResized] = useState(false);
 
   // Calculer la durée totale de la timeline
   const dureeTotale = dateFinTimeline.getTime() - dateDebutTimeline.getTime();
@@ -44,6 +45,13 @@ export function useGanttResize({
     []
   );
 
+  // Fonction pour arrondir une date au jour le plus proche (snap quotidien)
+  const snapToDay = useCallback((date: Date): Date => {
+    const snapped = new Date(date);
+    snapped.setHours(0, 0, 0, 0);
+    return snapped;
+  }, []);
+
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!isResizing || !resizeHandle) return;
@@ -52,20 +60,26 @@ export function useGanttResize({
       const deltaTime = (deltaX / largeurTotale) * dureeTotale;
 
       if (resizeHandle === "start") {
-        const nouvelleDateDebut = new Date(initialDateDebut.getTime() + deltaTime);
+        let nouvelleDateDebut = new Date(initialDateDebut.getTime() + deltaTime);
+        // Snap au jour le plus proche
+        nouvelleDateDebut = snapToDay(nouvelleDateDebut);
+        
         // Vérifier que la nouvelle date de début est valide
-        if (nouvelleDateDebut >= dateDebutTimeline && nouvelleDateDebut < initialDateFin) {
+        if (nouvelleDateDebut >= snapToDay(dateDebutTimeline) && nouvelleDateDebut < snapToDay(initialDateFin)) {
           setInitialDateDebut(nouvelleDateDebut);
         }
       } else if (resizeHandle === "end") {
-        const nouvelleDateFin = new Date(initialDateFin.getTime() + deltaTime);
+        let nouvelleDateFin = new Date(initialDateFin.getTime() + deltaTime);
+        // Snap au jour le plus proche
+        nouvelleDateFin = snapToDay(nouvelleDateFin);
+        
         // Vérifier que la nouvelle date de fin est valide
-        if (nouvelleDateFin <= dateFinTimeline && nouvelleDateFin > initialDateDebut) {
+        if (nouvelleDateFin <= snapToDay(dateFinTimeline) && nouvelleDateFin > snapToDay(initialDateDebut)) {
           setInitialDateFin(nouvelleDateFin);
         }
       }
     },
-    [isResizing, resizeHandle, resizeStartX, largeurTotale, dureeTotale, initialDateDebut, initialDateFin, dateDebutTimeline, dateFinTimeline]
+    [isResizing, resizeHandle, resizeStartX, largeurTotale, dureeTotale, initialDateDebut, initialDateFin, dateDebutTimeline, dateFinTimeline, snapToDay]
   );
 
   const handleMouseUp = useCallback(() => {
@@ -74,9 +88,21 @@ export function useGanttResize({
     setIsResizing(false);
     setResizeHandle(null);
 
-    // Appeler le callback avec les nouvelles dates
-    onResizeEnd(activite.id, initialDateDebut, initialDateFin);
-  }, [isResizing, resizeHandle, activite.id, initialDateDebut, initialDateFin, onResizeEnd]);
+    // Marquer qu'un resize vient d'être effectué pour empêcher le clic
+    setHasJustResized(true);
+    
+    // Réinitialiser après un court délai pour permettre le clic normal après
+    setTimeout(() => {
+      setHasJustResized(false);
+    }, 100);
+
+    // S'assurer que les dates sont snapées au jour
+    const dateDebutSnapped = snapToDay(initialDateDebut);
+    const dateFinSnapped = snapToDay(initialDateFin);
+
+    // Appeler le callback avec les nouvelles dates snapées
+    onResizeEnd(activite.id, dateDebutSnapped, dateFinSnapped);
+  }, [isResizing, resizeHandle, activite.id, initialDateDebut, initialDateFin, onResizeEnd, snapToDay]);
 
   // Gérer les événements globaux
   useEffect(() => {
@@ -102,6 +128,7 @@ export function useGanttResize({
   return {
     isResizing,
     resizeHandle,
+    hasJustResized,
     initialDateDebut: isResizing ? initialDateDebut : new Date(activite.date_debut_prevue),
     initialDateFin: isResizing ? initialDateFin : new Date(activite.date_fin_prevue),
     onStartHandleMouseDown: (e: React.MouseEvent) => handleMouseDown(e, "start"),

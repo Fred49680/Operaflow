@@ -63,6 +63,13 @@ export function useGanttDrag({
     []
   );
 
+  // Fonction pour arrondir une date au jour le plus proche (snap quotidien)
+  const snapToDay = useCallback((date: Date): Date => {
+    const snapped = new Date(date);
+    snapped.setHours(0, 0, 0, 0);
+    return snapped;
+  }, []);
+
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!isDragging) return;
@@ -101,19 +108,23 @@ export function useGanttDrag({
       const dateFinActivite = new Date(activite.date_fin_prevue);
       const dureeActivite = dateFinActivite.getTime() - dateDebutActivite.getTime();
 
-      const nouvelleDateDebut = new Date(dateDebutActivite.getTime() + dragOffset);
-      const nouvelleDateFin = new Date(nouvelleDateDebut.getTime() + dureeActivite);
+      let nouvelleDateDebut = new Date(dateDebutActivite.getTime() + dragOffset);
+      let nouvelleDateFin = new Date(nouvelleDateDebut.getTime() + dureeActivite);
+
+      // Snap au jour le plus proche (snap quotidien)
+      nouvelleDateDebut = snapToDay(nouvelleDateDebut);
+      nouvelleDateFin = snapToDay(nouvelleDateFin);
 
       // Vérifier que les dates restent dans la timeline
-      if (nouvelleDateDebut >= dateDebutTimeline && nouvelleDateFin <= dateFinTimeline) {
-        // Appeler le callback
+      if (nouvelleDateDebut >= snapToDay(dateDebutTimeline) && nouvelleDateFin <= snapToDay(dateFinTimeline)) {
+        // Appeler le callback avec les dates snapées
         onDragEnd(activite.id, nouvelleDateDebut, nouvelleDateFin);
       }
     }
 
     setDragOffset(0);
     setHasMoved(false);
-  }, [isDragging, hasMoved, dragOffset, activite, dateDebutTimeline, dateFinTimeline, onDragEnd]);
+  }, [isDragging, hasMoved, dragOffset, activite, dateDebutTimeline, dateFinTimeline, onDragEnd, snapToDay]);
 
   // Gérer les événements globaux
   useEffect(() => {

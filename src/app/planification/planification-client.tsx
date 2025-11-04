@@ -59,8 +59,12 @@ export default function PlanificationClient({
   // État local des activités pour mise à jour optimiste
   const [activites, setActivites] = useState<ActivitePlanification[]>(activitesInitiales);
   
+  // État local des jalons pour mise à jour optimiste
+  const [jalonsLocaux, setJalonsLocaux] = useState(jalons);
+  
   // État pour le debounce de sauvegarde automatique
   const [pendingSaves, setPendingSaves] = useState<Map<string, { date_debut_prevue: string; date_fin_prevue: string; duree_jours_ouvres?: number }>>(new Map());
+  const [pendingJalonsSaves, setPendingJalonsSaves] = useState<Map<string, { date_debut_previsionnelle: string; date_fin_previsionnelle: string }>>(new Map());
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [activeView, setActiveView] = useState<"gantt" | "alertes">("gantt");
   const [vueGantt, setVueGantt] = useState<"jour" | "semaine" | "mois">("semaine");
@@ -201,12 +205,12 @@ export default function PlanificationClient({
   // Filtrer les jalons selon l'affaire sélectionnée
   const filteredJalons = useMemo(() => {
     if (selectedAffaireGantt) {
-      return jalons.filter(j => j.affaire_id === selectedAffaireGantt);
+      return jalonsLocaux.filter(j => j.affaire_id === selectedAffaireGantt);
     }
     // Si aucune affaire sélectionnée, afficher tous les jalons des affaires avec activités
     const affairesAvecActivites = new Set(filteredActivites.map(a => a.affaire_id));
-    return jalons.filter(j => affairesAvecActivites.has(j.affaire_id));
-  }, [jalons, selectedAffaireGantt, filteredActivites]);
+    return jalonsLocaux.filter(j => affairesAvecActivites.has(j.affaire_id));
+  }, [jalonsLocaux, selectedAffaireGantt, filteredActivites]);
 
   // Fonction pour ouvrir le modal de création
   const handleCreateActivite = () => {
@@ -277,14 +281,15 @@ export default function PlanificationClient({
 
   // Fonction pour sauvegarder les modifications en attente
   const savePendingChanges = async () => {
-    if (pendingSaves.size === 0) return;
+    if (pendingSaves.size === 0 && pendingJalonsSaves.size === 0) return;
     
     try {
       setSaving(true);
       const saves = Array.from(pendingSaves.entries());
+      const jalonsSaves = Array.from(pendingJalonsSaves.entries());
       
-      // Sauvegarder toutes les modifications en parallèle
-      const results = await Promise.all(
+      // Sauvegarder toutes les modifications d'activités en parallèle
+      const resultsActivites = saves.length > 0 ? await Promise.all(
         saves.map(([activiteId, updates]) =>
           fetch(`/api/planification/activites/${activiteId}`, {
             method: "PATCH",
@@ -292,18 +297,31 @@ export default function PlanificationClient({
             body: JSON.stringify(updates),
           })
         )
-      );
+      ) : [];
+      
+      // Sauvegarder toutes les modifications de jalons en parallèle
+      const resultsJalons = jalonsSaves.length > 0 ? await Promise.all(
+        jalonsSaves.map(([jalonId, updates]) =>
+          fetch(`/api/affaires/lots/${jalonId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updates),
+          })
+        )
+      ) : [];
       
       // Vérifier si toutes les sauvegardes ont réussi
-      const allSuccess = results.every(r => r.ok);
+      const allSuccess = resultsActivites.every(r => r.ok) && resultsJalons.every(r => r.ok);
       
       if (allSuccess) {
         // Vider les sauvegardes en attente
         setPendingSaves(new Map());
+        setPendingJalonsSaves(new Map());
       } else {
         // Afficher une erreur pour les échecs
-        const failedSaves = saves.filter((_, index) => !results[index].ok);
-        console.error("Erreurs lors de la sauvegarde:", failedSaves);
+        const failedSaves = saves.filter((_, index) => !resultsActivites[index]?.ok);
+        const failedJalons = jalonsSaves.filter((_, index) => !resultsJalons[index]?.ok);
+        console.error("Erreurs lors de la sauvegarde:", { failedSaves, failedJalons });
         // Garder les modifications en échec pour réessayer
       }
     } catch (error) {
@@ -313,21 +331,182 @@ export default function PlanificationClient({
     }
   };
 
+  // Fonction pour calculer les nouvelles dates des tâches dépendantes
+  const calculerDatesTachesDependantes = (
+    activiteModifiee: ActivitePlanification,
+    nouvelleDateDebut: Date,
+    nouvelleDateFin: Date
+  ): Map<string, { date_debut_prevue: string; date_fin_prevue: string }> => {
+    const updates = new Map<string, { date_debut_prevue: string; date_fin_prevue: string }>();
+    
+    // Trouver toutes les tâches qui dépendent de cette activité
+    const tachesDependantes = activites.filter(act => 
+      act.dependances?.some(dep => dep.activite_precedente_id === activiteModifiee.id)
+    );
+    
+    tachesDependantes.forEach(tache => {
+      const dependances = tache.dependances?.filter(dep => dep.activite_precedente_id === activiteModifiee.id) || [];
+      
+      let nouvelleDateDebutTache: Date | null = null;
+      let nouvelleDateFinTache: Date | null = null;
+      
+      dependances.forEach(dep => {
+        const delaiJours = dep.delai_jours || 0;
+        const delaiMs = delaiJours * 24 * 60 * 60 * 1000;
+        
+        switch (dep.type_dependance) {
+          case 'FS': // Finish-to-Start : début après fin de la précédente
+            const dateDebutFS = new Date(nouvelleDateFin.getTime() + delaiMs);
+            if (!nouvelleDateDebutTache || dateDebutFS > nouvelleDateDebutTache) {
+              nouvelleDateDebutTache = dateDebutFS;
+            }
+            break;
+          case 'SS': // Start-to-Start : début en même temps (ou avec délai)
+            const dateDebutSS = new Date(nouvelleDateDebut.getTime() + delaiMs);
+            if (!nouvelleDateDebutTache || dateDebutSS > nouvelleDateDebutTache) {
+              nouvelleDateDebutTache = dateDebutSS;
+            }
+            break;
+          case 'FF': // Finish-to-Finish : fin en même temps (ou avec délai)
+            const dateFinFF = new Date(nouvelleDateFin.getTime() + delaiMs);
+            if (!nouvelleDateFinTache || dateFinFF > nouvelleDateFinTache) {
+              nouvelleDateFinTache = dateFinFF;
+            }
+            break;
+          case 'SF': // Start-to-Finish : fin au début de la précédente (ou avec délai)
+            const dateFinSF = new Date(nouvelleDateDebut.getTime() + delaiMs);
+            if (!nouvelleDateFinTache || dateFinSF > nouvelleDateFinTache) {
+              nouvelleDateFinTache = dateFinSF;
+            }
+            break;
+        }
+      });
+      
+      // Si on a calculé de nouvelles dates, les appliquer
+      if (nouvelleDateDebutTache || nouvelleDateFinTache) {
+        const dateDebutActuelle = new Date(tache.date_debut_prevue);
+        const dateFinActuelle = new Date(tache.date_fin_prevue);
+        const dureeActuelle = dateFinActuelle.getTime() - dateDebutActuelle.getTime();
+        
+        let dateDebut = nouvelleDateDebutTache || dateDebutActuelle;
+        let dateFin = nouvelleDateFinTache || dateFinActuelle;
+        
+        // Si seule la date de début a changé, ajuster la date de fin pour garder la durée
+        if (nouvelleDateDebutTache && !nouvelleDateFinTache) {
+          dateFin = new Date(dateDebut.getTime() + dureeActuelle);
+        }
+        // Si seule la date de fin a changé, ajuster la date de début pour garder la durée
+        else if (!nouvelleDateDebutTache && nouvelleDateFinTache) {
+          dateDebut = new Date(dateFin.getTime() - dureeActuelle);
+        }
+        
+        // Snap au jour
+        dateDebut.setHours(0, 0, 0, 0);
+        dateFin.setHours(0, 0, 0, 0);
+        
+        updates.set(tache.id, {
+          date_debut_prevue: dateDebut.toISOString(),
+          date_fin_prevue: dateFin.toISOString(),
+        });
+      }
+    });
+    
+    return updates;
+  };
+
+  // Fonction pour mettre à jour les jalons basés sur les tâches liées
+  const mettreAJourJalons = () => {
+    // Pour chaque jalon, trouver les tâches liées et calculer min/max
+    const jalonsModifies = new Map<string, { date_debut_previsionnelle: string; date_fin_previsionnelle: string }>();
+    
+    // Utiliser l'état local des activités pour avoir les valeurs à jour
+    jalonsLocaux.forEach(jalon => {
+      const activitesJalon = activites.filter(act => act.lot_id === jalon.id && act.date_debut_prevue && act.date_fin_prevue);
+      
+      if (activitesJalon.length > 0) {
+        const datesDebut = activitesJalon.map(act => new Date(act.date_debut_prevue).getTime());
+        const datesFin = activitesJalon.map(act => new Date(act.date_fin_prevue).getTime());
+        
+        const minDebut = new Date(Math.min(...datesDebut));
+        const maxFin = new Date(Math.max(...datesFin));
+        
+        minDebut.setHours(0, 0, 0, 0);
+        maxFin.setHours(0, 0, 0, 0);
+        
+        jalonsModifies.set(jalon.id, {
+          date_debut_previsionnelle: minDebut.toISOString(),
+          date_fin_previsionnelle: maxFin.toISOString(),
+        });
+      }
+    });
+    
+    return jalonsModifies;
+  };
+
   // Handler pour le drag & drop
   const handleDragEnd = async (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => {
-    // Mise à jour optimiste immédiate de l'état local
+    // Trouver l'activité modifiée
+    const activiteModifiee = activites.find(a => a.id === activiteId);
+    if (!activiteModifiee) return;
+    
+    // Mise à jour optimiste immédiate de l'état local pour la tâche déplacée
     setActivites(prev => prev.map(act => 
       act.id === activiteId 
         ? { ...act, date_debut_prevue: nouvelleDateDebut.toISOString(), date_fin_prevue: nouvelleDateFin.toISOString() }
         : act
     ));
     
-    // Ajouter à la file d'attente de sauvegarde
+    // Calculer les nouvelles dates des tâches dépendantes
+    const updatesTachesDependantes = calculerDatesTachesDependantes(
+      activiteModifiee,
+      nouvelleDateDebut,
+      nouvelleDateFin
+    );
+    
+    // Mettre à jour les tâches dépendantes dans l'état local
+    setActivites(prev => prev.map(act => {
+      const update = updatesTachesDependantes.get(act.id);
+      if (update) {
+        return { ...act, date_debut_prevue: update.date_debut_prevue, date_fin_prevue: update.date_fin_prevue };
+      }
+      return act;
+    }));
+    
+    // Mettre à jour les jalons
+    const updatesJalons = mettreAJourJalons();
+    
+    // Mettre à jour les jalons dans l'état local
+    setJalonsLocaux(prev => prev.map(jalon => {
+      const update = updatesJalons.get(jalon.id);
+      if (update) {
+        return { ...jalon, date_debut_previsionnelle: update.date_debut_previsionnelle, date_fin_previsionnelle: update.date_fin_previsionnelle };
+      }
+      return jalon;
+    }));
+    
+    // Ajouter toutes les modifications à la file d'attente de sauvegarde
     setPendingSaves(prev => {
       const newMap = new Map(prev);
+      
+      // Ajouter la tâche principale
       newMap.set(activiteId, {
         date_debut_prevue: nouvelleDateDebut.toISOString(),
         date_fin_prevue: nouvelleDateFin.toISOString(),
+      });
+      
+      // Ajouter les tâches dépendantes
+      updatesTachesDependantes.forEach((update, taskId) => {
+        newMap.set(taskId, update);
+      });
+      
+      return newMap;
+    });
+    
+    // Ajouter les jalons modifiés à la file d'attente
+    setPendingJalonsSaves(prev => {
+      const newMap = new Map(prev);
+      updatesJalons.forEach((update, jalonId) => {
+        newMap.set(jalonId, update);
       });
       return newMap;
     });
@@ -374,14 +553,16 @@ export default function PlanificationClient({
 
   // Handler pour le redimensionnement
   const handleResizeEnd = async (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => {
-    // Trouver l'activité pour récupérer son type_horaire
-    const activite = activites.find(a => a.id === activiteId);
-    const typeHoraire = activite?.type_horaire || "jour";
+    // Trouver l'activité modifiée
+    const activiteModifiee = activites.find(a => a.id === activiteId);
+    if (!activiteModifiee) return;
+    
+    const typeHoraire = activiteModifiee.type_horaire || "jour";
     
     // Calculer le nouveau nombre de jours ouvrés
     const nouvelleDureeJoursOuvres = calculerJoursOuvres(nouvelleDateDebut, nouvelleDateFin, typeHoraire);
     
-    // Mise à jour optimiste immédiate de l'état local
+    // Mise à jour optimiste immédiate de l'état local pour la tâche redimensionnée
     setActivites(prev => prev.map(act => 
       act.id === activiteId 
         ? { 
@@ -393,13 +574,58 @@ export default function PlanificationClient({
         : act
     ));
     
-    // Ajouter à la file d'attente de sauvegarde avec la nouvelle durée
+    // Calculer les nouvelles dates des tâches dépendantes
+    const updatesTachesDependantes = calculerDatesTachesDependantes(
+      activiteModifiee,
+      nouvelleDateDebut,
+      nouvelleDateFin
+    );
+    
+    // Mettre à jour les tâches dépendantes dans l'état local
+    setActivites(prev => prev.map(act => {
+      const update = updatesTachesDependantes.get(act.id);
+      if (update) {
+        return { ...act, date_debut_prevue: update.date_debut_prevue, date_fin_prevue: update.date_fin_prevue };
+      }
+      return act;
+    }));
+    
+    // Mettre à jour les jalons
+    const updatesJalons = mettreAJourJalons();
+    
+    // Mettre à jour les jalons dans l'état local
+    setJalonsLocaux(prev => prev.map(jalon => {
+      const update = updatesJalons.get(jalon.id);
+      if (update) {
+        return { ...jalon, date_debut_previsionnelle: update.date_debut_previsionnelle, date_fin_previsionnelle: update.date_fin_previsionnelle };
+      }
+      return jalon;
+    }));
+    
+    // Ajouter toutes les modifications à la file d'attente de sauvegarde
     setPendingSaves(prev => {
       const newMap = new Map(prev);
+      
+      // Ajouter la tâche principale avec la nouvelle durée
       newMap.set(activiteId, {
         date_debut_prevue: nouvelleDateDebut.toISOString(),
         date_fin_prevue: nouvelleDateFin.toISOString(),
         duree_jours_ouvres: nouvelleDureeJoursOuvres,
+      });
+      
+      // Ajouter les tâches dépendantes
+      updatesTachesDependantes.forEach((update, taskId) => {
+        newMap.set(taskId, update);
+      });
+      
+      return newMap;
+    });
+    
+    // Ajouter les jalons modifiés à la file d'attente
+    setPendingJalonsSaves(prev => {
+      const newMap = new Map(prev);
+      updatesJalons.forEach((update, jalonId) => {
+        newMap.set(jalonId, update);
       });
       return newMap;
     });
