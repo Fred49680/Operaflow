@@ -58,23 +58,26 @@ export default function GanttHeader({ dateDebut, dateFin, vue }: GanttHeaderProp
   return (
     <div className="border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
       <div className="flex">
-        <div className="w-72 px-4 py-4 font-semibold text-gray-700 border-r border-gray-200 text-base">
+        <div className="w-72 px-4 py-3 font-semibold text-gray-700 border-r border-gray-200 text-base">
           Activité
         </div>
         <div className="flex-1 flex">
           {colonnes.map((date, index) => (
             <div
               key={index}
-              className="flex-1 px-4 py-4 text-center text-sm font-medium text-gray-700 border-r border-gray-200 last:border-r-0 min-w-[140px] relative"
+              className="flex-1 px-2 py-3 text-center text-sm font-medium text-gray-700 border-r border-gray-200 last:border-r-0 min-w-[140px] relative flex flex-col"
             >
-              {getLabel(date)}
+              {/* Label de la semaine/mois/jour */}
+              <div className="mb-2">
+                {getLabel(date)}
+              </div>
               {/* Afficher les jours dans la vue semaine */}
               {vue === "semaine" && joursSemaine[index] && (
-                <div className="absolute bottom-0 left-0 right-0 flex border-t border-gray-200 h-8">
+                <div className="flex border-t border-gray-200 pt-1 mt-auto">
                   {joursSemaine[index].map((jour, jourIndex) => (
                     <div
                       key={jourIndex}
-                      className="flex-1 text-xs text-gray-500 py-1 border-r border-gray-200 last:border-r-0 text-center"
+                      className="flex-1 text-xs text-gray-500 py-0.5 border-r border-gray-200 last:border-r-0 text-center"
                       style={{ minWidth: `${100 / 7}%` }}
                     >
                       {format(jour, "dd")}
