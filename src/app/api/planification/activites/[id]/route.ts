@@ -232,6 +232,47 @@ export async function PATCH(
             }
           }
         }
+        
+        // Quand le statut passe à "reportee", recalculer automatiquement les dates
+        if (statut === 'reportee') {
+          const { data: currentActivity } = await supabase
+            .from("tbl_planification_activites")
+            .select("date_debut_prevue, date_fin_prevue, statut")
+            .eq("id", id)
+            .single();
+          
+          // Si l'activité n'était pas déjà reportée et qu'une nouvelle date de début est fournie
+          if (currentActivity && currentActivity.statut !== 'reportee' && date_debut_prevue) {
+            const ancienneDateDebut = new Date(currentActivity.date_debut_prevue);
+            const ancienneDateFin = new Date(currentActivity.date_fin_prevue);
+            const dureeInitiale = ancienneDateFin.getTime() - ancienneDateDebut.getTime();
+            
+            // Nouvelle date de début (date de reprise)
+            const nouvelleDateDebut = new Date(date_debut_prevue);
+            nouvelleDateDebut.setHours(0, 0, 0, 0);
+            
+            // Recalculer la date de fin pour préserver la durée initiale
+            const nouvelleDateFin = new Date(nouvelleDateDebut.getTime() + dureeInitiale);
+            nouvelleDateFin.setHours(0, 0, 0, 0);
+            
+            updates.date_debut_prevue = nouvelleDateDebut.toISOString();
+            updates.date_fin_prevue = nouvelleDateFin.toISOString();
+          } else if (currentActivity && currentActivity.statut === 'reportee' && date_debut_prevue) {
+            // Si déjà reportée, recalculer aussi si date de début change
+            const ancienneDateDebut = new Date(currentActivity.date_debut_prevue);
+            const ancienneDateFin = new Date(currentActivity.date_fin_prevue);
+            const dureeInitiale = ancienneDateFin.getTime() - ancienneDateDebut.getTime();
+            
+            const nouvelleDateDebut = new Date(date_debut_prevue);
+            nouvelleDateDebut.setHours(0, 0, 0, 0);
+            
+            const nouvelleDateFin = new Date(nouvelleDateDebut.getTime() + dureeInitiale);
+            nouvelleDateFin.setHours(0, 0, 0, 0);
+            
+            updates.date_debut_prevue = nouvelleDateDebut.toISOString();
+            updates.date_fin_prevue = nouvelleDateFin.toISOString();
+          }
+        }
       } else {
         console.warn(`Statut invalide reçu: ${statut}. Valeurs attendues: ${statutsValides.join(', ')}`);
         // Ne pas mettre à jour le statut si invalide, mais continuer avec les autres updates

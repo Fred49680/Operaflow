@@ -144,6 +144,8 @@ export default function PlanificationClient({
       setDateDebut(initDateDebut);
       setDureeJoursOuvres(initDuree);
       setCalculAutoDateFin(initCalculAuto);
+      setStatutActivite(editingActivite.statut || "planifiee");
+      setMotifReport("");
       
       if (initCalculAuto && initDateDebut && initDuree) {
         calculerDateFin(initDateDebut, parseInt(initDuree), "jours", editingActivite.type_horaire || "jour");
@@ -159,6 +161,8 @@ export default function PlanificationClient({
       setDateFinCalculee("");
       setUniteDuree("jours");
       setTypeHoraireSelectionne("jour");
+      setStatutActivite("planifiee");
+      setMotifReport("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showActiviteModal, editingActivite]);
@@ -1280,6 +1284,14 @@ export default function PlanificationClient({
                   setSaving(true);
 
                   const formData = new FormData(e.currentTarget);
+                  
+                  // Validation du motif de report si statut = "reportee"
+                  if (statutActivite === 'reportee' && !motifReport.trim()) {
+                    alert("Le motif du report est obligatoire.");
+                    setSaving(false);
+                    return;
+                  }
+                  
                   const payload: any = {
                     affaire_id: formData.get("affaire_id") as string,
                     lot_id: formData.get("lot_id") || null,
@@ -1294,7 +1306,14 @@ export default function PlanificationClient({
                     type_horaire: formData.get("type_horaire") as string || "jour",
                     coefficient: parseFloat(formData.get("coefficient") as string) || 1.0,
                     calendrier_id: selectedCalendrierId || null,
+                    statut: statutActivite,
                   };
+                  
+                  // Si le statut est "reportee", ajouter le motif dans le commentaire
+                  if (statutActivite === 'reportee' && motifReport.trim()) {
+                    const commentaireActuel = formData.get("description") as string || "";
+                    payload.commentaire = `[REPORT] ${motifReport.trim()}${commentaireActuel ? `\n\n${commentaireActuel}` : ''}`;
+                  }
                   
                   // Nouveaux champs hiérarchie
                   const parentId = formData.get("parent_id") as string;
@@ -1612,7 +1631,20 @@ export default function PlanificationClient({
                         value={dateDebut || (editingActivite?.date_debut_prevue ? new Date(editingActivite.date_debut_prevue).toISOString().slice(0, 16) : "")}
                         onChange={(e) => {
                           setDateDebut(e.target.value);
-                          if (calculAutoDateFin && dureeJoursOuvres && e.target.value) {
+                          
+                          // Si le statut est "reportee", recalculer automatiquement la date de fin
+                          if (statutActivite === 'reportee' && editingActivite && e.target.value) {
+                            const ancienneDateDebut = new Date(editingActivite.date_debut_prevue);
+                            const ancienneDateFin = new Date(editingActivite.date_fin_prevue);
+                            const dureeInitiale = ancienneDateFin.getTime() - ancienneDateDebut.getTime();
+                            
+                            const nouvelleDateDebut = new Date(e.target.value);
+                            nouvelleDateDebut.setHours(0, 0, 0, 0);
+                            const nouvelleDateFin = new Date(nouvelleDateDebut.getTime() + dureeInitiale);
+                            nouvelleDateFin.setHours(0, 0, 0, 0);
+                            
+                            setDateFinCalculee(nouvelleDateFin.toISOString().slice(0, 16));
+                          } else if (calculAutoDateFin && dureeJoursOuvres && e.target.value) {
                             calculerDateFin(e.target.value, parseInt(dureeJoursOuvres), uniteDuree, typeHoraireSelectionne);
                           }
                         }}
@@ -1748,7 +1780,62 @@ export default function PlanificationClient({
                     </div>
                   </div>
 
-                  {/* Section 5 : Description */}
+                  {/* Section 5 : Statut et Description */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Statut <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="statut"
+                        value={statutActivite}
+                        onChange={(e) => {
+                          setStatutActivite(e.target.value);
+                          // Si le statut passe à "reportee", recalculer automatiquement la date de fin
+                          if (e.target.value === 'reportee' && dateDebut && editingActivite) {
+                            const ancienneDateDebut = new Date(editingActivite.date_debut_prevue);
+                            const ancienneDateFin = new Date(editingActivite.date_fin_prevue);
+                            const dureeInitiale = ancienneDateFin.getTime() - ancienneDateDebut.getTime();
+                            
+                            const nouvelleDateDebut = new Date(dateDebut);
+                            nouvelleDateDebut.setHours(0, 0, 0, 0);
+                            const nouvelleDateFin = new Date(nouvelleDateDebut.getTime() + dureeInitiale);
+                            nouvelleDateFin.setHours(0, 0, 0, 0);
+                            
+                            setDateFinCalculee(nouvelleDateFin.toISOString().slice(0, 16));
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      >
+                        <option value="planifiee">Planifiée</option>
+                        <option value="lancee">Lancée</option>
+                        <option value="prolongee">Prolongée</option>
+                        <option value="suspendue">Suspendue</option>
+                        <option value="reportee">Reportée</option>
+                        <option value="terminee">Terminée</option>
+                        <option value="annulee">Annulée</option>
+                      </select>
+                    </div>
+                    
+                    {/* Motif de report - affiché uniquement si statut = "reportee" */}
+                    {statutActivite === 'reportee' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Motif du report <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="motif_report"
+                          value={motifReport}
+                          onChange={(e) => setMotifReport(e.target.value)}
+                          required
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                          placeholder="Raison du report..."
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                     <textarea

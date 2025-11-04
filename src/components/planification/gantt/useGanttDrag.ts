@@ -48,6 +48,7 @@ export function useGanttDrag({
       }
 
       // Vérifier si le drag est autorisé selon le statut
+      // Note: "reportee" permet le drag car c'est justement pour décaler la date
       const statutsBloques = ['lancee', 'prolongee', 'suspendue', 'terminee'];
       if (statutsBloques.includes(activite.statut)) {
         // Afficher un message explicite selon le statut
