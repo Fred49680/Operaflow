@@ -22,6 +22,7 @@ export function useGanttDrag({
   const [initialLeft, setInitialLeft] = useState(0);
   const [initialWidth, setInitialWidth] = useState(0);
   const [hasMoved, setHasMoved] = useState(false);
+  const [hasJustDragged, setHasJustDragged] = useState(false);
 
   // Calculer la durée totale de la timeline
   const dureeTotale = dateFinTimeline.getTime() - dateDebutTimeline.getTime();
@@ -87,6 +88,14 @@ export function useGanttDrag({
 
     // Si on a réellement bougé, sauvegarder les nouvelles dates
     if (wasDragging) {
+      // Marquer qu'un drag vient d'être effectué pour empêcher le clic
+      setHasJustDragged(true);
+      
+      // Réinitialiser après un court délai pour permettre le clic normal après
+      setTimeout(() => {
+        setHasJustDragged(false);
+      }, 100);
+      
       // Calculer les nouvelles dates
       const dateDebutActivite = new Date(activite.date_debut_prevue);
       const dateFinActivite = new Date(activite.date_fin_prevue);
@@ -126,6 +135,7 @@ export function useGanttDrag({
     isDragging,
     currentLeft,
     width: initialWidth,
+    hasJustDragged,
     onMouseDown: handleMouseDown,
   };
 }

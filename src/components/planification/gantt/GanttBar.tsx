@@ -117,11 +117,11 @@ export default function GanttBar({
     }
     // Ne pas déclencher le clic si on vient de faire un drag ou un resize
     // On vérifie aussi si le mouvement était significatif (> 5px)
-    if (drag.isDragging || resize.isResizing) {
+    if (drag.isDragging || drag.hasJustDragged || resize.isResizing) {
       return;
     }
     onClick?.();
-  }, [drag.isDragging, resize.isResizing, onClick]);
+  }, [drag.isDragging, drag.hasJustDragged, resize.isResizing, onClick]);
 
   return (
     <div
