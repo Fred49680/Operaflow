@@ -263,26 +263,28 @@ export default function GanttTimeline({
             {/* Couche des jalons */}
             {jalons.length > 0 && (
               <div className="absolute inset-0 z-20" style={{ paddingTop: "48px" }}>
-                {positionsJalons.map(({ jalon, top, level }) => (
-                  <div
-                    key={jalon.id}
-                    className="absolute"
-                    style={{
-                      top: `${top}px`,
-                      left: 0,
-                      width: "100%",
-                      height: "40px",
-                    }}
-                  >
-                    <GanttJalonBar
-                      jalon={jalon}
-                      dateDebutTimeline={dateDebut}
-                      dateFinTimeline={dateFin}
-                      largeurTotale={largeurTotale}
-                      onClick={() => onJalonClick?.(jalon)}
-                    />
-                  </div>
-                ))}
+                {positionsJalons
+                  .sort((a, b) => a.top - b.top) // Trier par position verticale
+                  .map(({ jalon, top, level }) => (
+                    <div
+                      key={jalon.id}
+                      className="absolute"
+                      style={{
+                        top: `${top}px`,
+                        left: 0,
+                        width: "100%",
+                        height: "40px",
+                      }}
+                    >
+                      <GanttJalonBar
+                        jalon={jalon}
+                        dateDebutTimeline={dateDebut}
+                        dateFinTimeline={dateFin}
+                        largeurTotale={largeurTotale}
+                        onClick={() => onJalonClick?.(jalon)}
+                      />
+                    </div>
+                  ))}
               </div>
             )}
 
