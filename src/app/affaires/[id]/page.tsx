@@ -49,7 +49,15 @@ export default async function AffaireDetailPage({ params }: PageProps) {
       depenses:tbl_affaires_depenses(*),
       lots:tbl_affaires_lots(*),
       pre_planif:tbl_affaires_pre_planif(*),
-      documents:tbl_affaires_documents(*)
+      documents:tbl_affaires_documents(*),
+      activites:tbl_planification_activites(
+        *,
+        lot:tbl_affaires_lots(id, numero_lot, libelle_lot),
+        affectations:tbl_planification_affectations(
+          *,
+          collaborateur:collaborateurs!tbl_planification_affectations_collaborateur_id_fkey(id, nom, prenom)
+        )
+      )
     `)
     .eq("id", id)
     .maybeSingle();

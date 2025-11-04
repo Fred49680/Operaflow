@@ -22,7 +22,7 @@ export default function AffaireDetailClient({
   canEditPrePlanif = false,
 }: AffaireDetailClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"general" | "lots" | "preplanif" | "documents">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "lots" | "activites" | "preplanif" | "documents">("general");
   const [isEditing, setIsEditing] = useState(false);
   const [affaire, setAffaire] = useState(initialAffaire);
   const [loading, setLoading] = useState(false);
@@ -226,6 +226,16 @@ export default function AffaireDetailClient({
               }`}
             >
               Lots / Jalons ({affaire.lots?.length || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab("activites")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap ${
+                activeTab === "activites"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Activités ({affaire.activites?.length || 0})
             </button>
             <button
               onClick={() => setActiveTab("preplanif")}
@@ -1122,6 +1132,183 @@ export default function AffaireDetailClient({
                 </div>
               </form>
             </div>
+          </div>
+        )}
+
+        {/* Onglet Activités */}
+        {activeTab === "activites" && (
+          <div className="card">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-secondary">Activités de l'affaire</h2>
+              <button
+                onClick={() => router.push(`/planification?affaire=${affaire.id}`)}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Créer une activité
+              </button>
+            </div>
+
+            {affaire.activites && affaire.activites.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Numéro</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Libellé</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Lot</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Dates</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Statut</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Avancement</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Responsable</th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {affaire.activites.map((activite: any) => {
+                      const getStatutBadge = (statut: string) => {
+                        const styles: Record<string, string> = {
+                          planifiee: "bg-blue-100 text-blue-800",
+                          lancee: "bg-green-100 text-green-800",
+                          suspendue: "bg-orange-100 text-orange-800",
+                          terminee: "bg-emerald-100 text-emerald-800",
+                          reportee: "bg-gray-100 text-gray-800",
+                        };
+                        const labels: Record<string, string> = {
+                          planifiee: "Planifiée",
+                          lancee: "Lancée",
+                          suspendue: "Suspendue",
+                          terminee: "Terminée",
+                          reportee: "Reportée",
+                        };
+                        return (
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${styles[statut] || styles.planifiee}`}>
+                            {labels[statut] || statut}
+                          </span>
+                        );
+                      };
+
+                      const responsables = activite.affectations
+                        ?.filter((a: any) => a.role === "responsable")
+                        .map((a: any) => a.collaborateur)
+                        .filter(Boolean) || [];
+
+                      return (
+                        <tr key={activite.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {activite.numero_hierarchique || "-"}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                            {activite.libelle}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            {activite.lot ? (
+                              <span className="text-purple-600">
+                                {activite.lot.numero_lot} - {activite.lot.libelle_lot}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            <div className="flex flex-col">
+                              <span>
+                                {activite.date_debut_prevue
+                                  ? new Date(activite.date_debut_prevue).toLocaleDateString("fr-FR")
+                                  : "-"}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {activite.date_fin_prevue
+                                  ? new Date(activite.date_fin_prevue).toLocaleDateString("fr-FR")
+                                  : "-"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            {getStatutBadge(activite.statut || "planifiee")}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-24 bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-primary h-2 rounded-full transition-all"
+                                  style={{ width: `${activite.pourcentage_avancement || 0}%` }}
+                                />
+                              </div>
+                              <span className="text-sm text-gray-600">
+                                {activite.pourcentage_avancement || 0}%
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-600">
+                            {responsables.length > 0 ? (
+                              <div className="flex flex-col">
+                                {responsables.map((resp: any, idx: number) => (
+                                  <span key={idx}>
+                                    {resp.prenom} {resp.nom}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => router.push(`/planification?activite=${activite.id}`)}
+                                className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                title="Modifier"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (confirm("Êtes-vous sûr de vouloir supprimer cette activité ?")) {
+                                    try {
+                                      const response = await fetch(`/api/planification/activites/${activite.id}`, {
+                                        method: "DELETE",
+                                      });
+                                      if (response.ok) {
+                                        router.refresh();
+                                      } else {
+                                        alert("Erreur lors de la suppression");
+                                      }
+                                    } catch (error) {
+                                      console.error(error);
+                                      alert("Erreur lors de la suppression");
+                                    }
+                                  }
+                                }}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Supprimer"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                <p className="text-lg font-medium mb-2">Aucune activité</p>
+                <p className="text-sm mb-4">
+                  Cette affaire n'a pas encore d'activités planifiées.
+                </p>
+                <button
+                  onClick={() => router.push(`/planification?affaire=${affaire.id}`)}
+                  className="btn-primary flex items-center gap-2 mx-auto"
+                >
+                  <Plus className="h-4 w-4" />
+                  Créer la première activité
+                </button>
+              </div>
+            )}
           </div>
         )}
 
