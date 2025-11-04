@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Calendar, Search, Plus, AlertTriangle, X, FileText } from "lucide-react";
 import GanttTimeline from "@/components/planification/gantt/GanttTimeline";
 import AffairesEnAttente from "@/components/planification/AffairesEnAttente";
@@ -54,6 +54,7 @@ export default function PlanificationClient({
   void _collaborateurs;
   void _affectations;
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeView, setActiveView] = useState<"gantt" | "alertes">("gantt");
   const [vueGantt, setVueGantt] = useState<"jour" | "semaine" | "mois">("semaine");
   const [filters, setFilters] = useState({
@@ -79,6 +80,25 @@ export default function PlanificationClient({
   const [typeHoraireSelectionne, setTypeHoraireSelectionne] = useState<string>("jour");
   const [selectedCalendrierId, setSelectedCalendrierId] = useState<string>("");
   const [heuresPrevuesAuto, setHeuresPrevuesAuto] = useState<number | null>(null);
+  
+  // Initialiser selectedAffaireGantt depuis l'URL si présent
+  useEffect(() => {
+    const affaireId = searchParams.get("affaire");
+    const activiteId = searchParams.get("activite");
+    if (affaireId) {
+      setSelectedAffaireGantt(affaireId);
+    }
+    if (activiteId) {
+      // Trouver l'activité et ouvrir le modal d'édition
+      const activite = activites.find(a => a.id === activiteId);
+      if (activite) {
+        setEditingActivite(activite);
+        setShowActiviteModal(true);
+        setSelectedAffaireGantt(activite.affaire_id);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   
   // Charger les templates au montage
   useEffect(() => {
@@ -147,8 +167,10 @@ export default function PlanificationClient({
     if (selectedAffaireGantt) {
       return jalons.filter(j => j.affaire_id === selectedAffaireGantt);
     }
-    return [];
-  }, [jalons, selectedAffaireGantt]);
+    // Si aucune affaire sélectionnée, afficher tous les jalons des affaires avec activités
+    const affairesAvecActivites = new Set(filteredActivites.map(a => a.affaire_id));
+    return jalons.filter(j => affairesAvecActivites.has(j.affaire_id));
+  }, [jalons, selectedAffaireGantt, filteredActivites]);
 
   // Fonction pour ouvrir le modal de création
   const handleCreateActivite = () => {
@@ -517,8 +539,8 @@ export default function PlanificationClient({
               </>
             )}
 
-            {/* Gantt - affiché uniquement si une affaire est sélectionnée */}
-            {selectedAffaireGantt ? (
+            {/* Gantt - affiché si des activités existent */}
+            {filteredActivites.length > 0 || filteredJalons.length > 0 ? (
               <GanttTimeline
                 activites={filteredActivites}
                 jalons={filteredJalons}
@@ -529,9 +551,10 @@ export default function PlanificationClient({
                   setShowActiviteModal(true);
                 }}
                 onJalonClick={(jalon) => {
-                  // Ouvrir modal de détails du jalon ou rediriger vers l'affaire
-                  console.log("Jalon cliqué:", jalon);
-                  // TODO: Implémenter l'action sur clic jalon
+                  // Rediriger vers la page de l'affaire
+                  if (jalon.affaire_id) {
+                    router.push(`/affaires/${jalon.affaire_id}`);
+                  }
                 }}
                 onDragEnd={isPlanificateur ? handleDragEnd : undefined}
                 onResizeEnd={isPlanificateur ? handleResizeEnd : undefined}
@@ -539,8 +562,16 @@ export default function PlanificationClient({
             ) : (
               <div className="card text-center py-12">
                 <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-2">Sélectionnez une affaire pour afficher le Gantt</p>
-                <p className="text-sm text-gray-500">Cliquez sur une carte d'affaire ci-dessus pour voir son planning</p>
+                <p className="text-gray-600 mb-2">
+                  {selectedAffaireGantt 
+                    ? "Aucune activité pour cette affaire" 
+                    : "Sélectionnez une affaire pour afficher le Gantt"}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {selectedAffaireGantt
+                    ? "Créez une activité pour commencer la planification"
+                    : "Cliquez sur une carte d'affaire ci-dessus pour voir son planning"}
+                </p>
               </div>
             )}
           </div>
