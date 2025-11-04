@@ -278,7 +278,7 @@ export default function GanttTimeline({
             )}
 
             {/* Couche des activités */}
-            <div style={{ paddingTop: jalons.length > 0 ? `${Math.max(...positionsJalons.map(p => p.top), 0) + 40 + 12}px` : "48px" }}>
+            <div style={{ paddingTop: jalons.length > 0 && positionsJalons.length > 0 ? `${Math.max(...positionsJalons.map(p => p.top), 0) + 40 + 12}px` : "48px" }}>
               <GanttGrid
                 activites={activites}
                 dateDebut={dateDebut}
