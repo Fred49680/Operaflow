@@ -24,9 +24,15 @@ export function useGanttResize({
   const [initialDateDebut, setInitialDateDebut] = useState<Date>(new Date(activite.date_debut_prevue));
   const [initialDateFin, setInitialDateFin] = useState<Date>(new Date(activite.date_fin_prevue));
   const [hasJustResized, setHasJustResized] = useState(false);
-
+  const [lastSnappedDate, setLastSnappedDate] = useState<Date | null>(null);
+  
   // Calculer la durée totale de la timeline
   const dureeTotale = dateFinTimeline.getTime() - dateDebutTimeline.getTime();
+  
+  // Calculer la largeur d'un jour en pixels (pour le seuil de snap)
+  const nombreJours = (dateFinTimeline.getTime() - dateDebutTimeline.getTime()) / (1000 * 60 * 60 * 24);
+  const largeurParJour = nombreJours > 0 ? largeurTotale / nombreJours : 0;
+  const seuilSnap = largeurParJour * 0.5; // Snap après 50% d'un jour de mouvement (moins nerveux)
 
   // Mettre à jour les dates initiales quand l'activité change
   useEffect(() => {
@@ -41,6 +47,7 @@ export function useGanttResize({
       setIsResizing(true);
       setResizeHandle(handle);
       setResizeStartX(e.clientX);
+      setLastSnappedDate(null); // Réinitialiser le dernier snap
     },
     []
   );
@@ -61,25 +68,47 @@ export function useGanttResize({
 
       if (resizeHandle === "start") {
         let nouvelleDateDebut = new Date(initialDateDebut.getTime() + deltaTime);
-        // Snap au jour le plus proche
-        nouvelleDateDebut = snapToDay(nouvelleDateDebut);
         
-        // Vérifier que la nouvelle date de début est valide
-        if (nouvelleDateDebut >= snapToDay(dateDebutTimeline) && nouvelleDateDebut < snapToDay(initialDateFin)) {
-          setInitialDateDebut(nouvelleDateDebut);
+        // Calculer la distance depuis le dernier snap (en jours)
+        const distanceDepuisSnap = lastSnappedDate 
+          ? Math.abs(nouvelleDateDebut.getTime() - lastSnappedDate.getTime()) / (1000 * 60 * 60 * 24)
+          : Infinity;
+        
+        // Snap seulement si on a bougé d'au moins 0.5 jour ou si le mouvement est significatif
+        const shouldSnap = Math.abs(deltaX) >= seuilSnap || distanceDepuisSnap >= 0.5;
+        
+        if (shouldSnap) {
+          const dateDebutSnapped = snapToDay(nouvelleDateDebut);
+          // Vérifier que la nouvelle date de début est valide
+          if (dateDebutSnapped >= snapToDay(dateDebutTimeline) && dateDebutSnapped < snapToDay(initialDateFin)) {
+            setInitialDateDebut(dateDebutSnapped);
+            setLastSnappedDate(dateDebutSnapped);
+          }
         }
+        // Sinon, on ne met pas à jour pendant les micro-mouvements (évite le "nerveux")
       } else if (resizeHandle === "end") {
         let nouvelleDateFin = new Date(initialDateFin.getTime() + deltaTime);
-        // Snap au jour le plus proche
-        nouvelleDateFin = snapToDay(nouvelleDateFin);
         
-        // Vérifier que la nouvelle date de fin est valide
-        if (nouvelleDateFin <= snapToDay(dateFinTimeline) && nouvelleDateFin > snapToDay(initialDateDebut)) {
-          setInitialDateFin(nouvelleDateFin);
+        // Calculer la distance depuis le dernier snap (en jours)
+        const distanceDepuisSnap = lastSnappedDate 
+          ? Math.abs(nouvelleDateFin.getTime() - lastSnappedDate.getTime()) / (1000 * 60 * 60 * 24)
+          : Infinity;
+        
+        // Snap seulement si on a bougé d'au moins 0.5 jour ou si le mouvement est significatif
+        const shouldSnap = Math.abs(deltaX) >= seuilSnap || distanceDepuisSnap >= 0.5;
+        
+        if (shouldSnap) {
+          const dateFinSnapped = snapToDay(nouvelleDateFin);
+          // Vérifier que la nouvelle date de fin est valide
+          if (dateFinSnapped <= snapToDay(dateFinTimeline) && dateFinSnapped > snapToDay(initialDateDebut)) {
+            setInitialDateFin(dateFinSnapped);
+            setLastSnappedDate(dateFinSnapped);
+          }
         }
+        // Sinon, on ne met pas à jour pendant les micro-mouvements (évite le "nerveux")
       }
     },
-    [isResizing, resizeHandle, resizeStartX, largeurTotale, dureeTotale, initialDateDebut, initialDateFin, dateDebutTimeline, dateFinTimeline, snapToDay]
+    [isResizing, resizeHandle, resizeStartX, largeurTotale, dureeTotale, initialDateDebut, initialDateFin, dateDebutTimeline, dateFinTimeline, snapToDay, lastSnappedDate, seuilSnap]
   );
 
   const handleMouseUp = useCallback(() => {
