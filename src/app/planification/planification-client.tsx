@@ -476,7 +476,7 @@ export default function PlanificationClient({
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <h3 className="text-lg font-semibold text-secondary">
-                Planning Gantt ({filteredActivites.length} activité{filteredActivites.length > 1 ? "s" : ""})
+                Planning Gantt ({selectedAffaireGantt ? filteredActivites.length : activites.length} activité{(selectedAffaireGantt ? filteredActivites.length : activites.length) > 1 ? "s" : ""})
               </h3>
               <div className="flex items-center gap-2">
                 <select
@@ -1121,14 +1121,33 @@ export default function PlanificationClient({
                   <div className="border-t pt-4">
                     <DependancesManager
                       activiteId={editingActivite?.id}
-                      activitesDisponibles={activites
-                        .filter((a) => a.affaire_id === (editingActivite?.affaire_id || filters.affaire))
-                        .filter((a) => !editingActivite || a.id !== editingActivite.id)
-                        .map((a) => ({
-                          id: a.id,
-                          libelle: a.libelle,
-                          numero_hierarchique: a.numero_hierarchique || undefined,
-                        }))}
+                      activitesDisponibles={(() => {
+                        // Déterminer l'affaire_id : priorité à editingActivite, puis selectedAffaireGantt, puis selectedAffaireId, puis filters.affaire
+                        const affaireIdPourDependances = editingActivite?.affaire_id || selectedAffaireGantt || selectedAffaireId || filters.affaire;
+                        
+                        return activites
+                          .filter((a) => {
+                            // Filtrer par affaire si une affaire est spécifiée
+                            if (affaireIdPourDependances) {
+                              return a.affaire_id === affaireIdPourDependances;
+                            }
+                            // Sinon, afficher toutes les activités
+                            return true;
+                          })
+                          .filter((a) => {
+                            // Exclure l'activité en cours d'édition
+                            if (editingActivite?.id) {
+                              return a.id !== editingActivite.id;
+                            }
+                            return true;
+                          })
+                          // Ne pas filtrer par dates - permettre de créer des dépendances même sans dates
+                          .map((a) => ({
+                            id: a.id,
+                            libelle: a.libelle,
+                            numero_hierarchique: a.numero_hierarchique || undefined,
+                          }));
+                      })()}
                     />
                   </div>
                 </div>
