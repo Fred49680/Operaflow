@@ -100,6 +100,11 @@ export default function DependancesManager({
     };
     setDependances(nouvellesDependances);
     onChange?.(nouvellesDependances);
+    
+    // Si pas d'activiteId (création), ne pas sauvegarder immédiatement
+    if (!activiteId) {
+      return;
+    }
   };
 
   const sauvegarderDependance = async (index: number, dependance: Dependance) => {

@@ -76,6 +76,11 @@ export default function PlanificationClient({
   const [dateFinCalculee, setDateFinCalculee] = useState("");
   const [selectedAffaireId, setSelectedAffaireId] = useState<string>("");
   const [selectedAffaireGantt, setSelectedAffaireGantt] = useState<string | null>(null);
+  const [dependancesEnAttente, setDependancesEnAttente] = useState<Array<{
+    activite_precedente_id: string;
+    type_dependance: "FS" | "SS" | "FF" | "SF";
+    delai_jours?: number;
+  }>>([]);
   const [uniteDuree, setUniteDuree] = useState<"jours" | "semaines">("jours");
   const [typeHoraireSelectionne, setTypeHoraireSelectionne] = useState<string>("jour");
   const [selectedCalendrierId, setSelectedCalendrierId] = useState<string>("");
@@ -752,6 +757,32 @@ export default function PlanificationClient({
                     });
 
                     if (response.ok) {
+                      const data = await response.json();
+                      const nouvelleActiviteId = data.activite?.id || data.id;
+                      
+                      // Sauvegarder les dépendances en attente si l'activité a été créée
+                      if (nouvelleActiviteId && dependancesEnAttente.length > 0) {
+                        try {
+                          await Promise.all(
+                            dependancesEnAttente.map((dep) =>
+                              fetch("/api/planification/dependances", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  activite_id: nouvelleActiviteId,
+                                  activite_precedente_id: dep.activite_precedente_id,
+                                  type_dependance: dep.type_dependance,
+                                  delai_jours: dep.delai_jours || 0,
+                                }),
+                              })
+                            )
+                          );
+                        } catch (error) {
+                          console.error("Erreur lors de la sauvegarde des dépendances:", error);
+                        }
+                      }
+                      
+                      setDependancesEnAttente([]);
                       setShowActiviteModal(false);
                       setEditingActivite(null);
                       // Réinitialiser les filtres pour voir la nouvelle activité
@@ -1148,6 +1179,25 @@ export default function PlanificationClient({
                             numero_hierarchique: a.numero_hierarchique || undefined,
                           }));
                       })()}
+                      dependancesInitiales={editingActivite?.id ? undefined : dependancesEnAttente.map((dep, idx) => ({
+                        activite_precedente_id: dep.activite_precedente_id,
+                        type_dependance: dep.type_dependance,
+                        delai_jours: dep.delai_jours,
+                      }))}
+                      onChange={(deps) => {
+                        // Si l'activité n'a pas encore d'ID (création), stocker les dépendances en attente
+                        if (!editingActivite?.id) {
+                          setDependancesEnAttente(
+                            deps
+                              .filter((d) => d.activite_precedente_id && d.type_dependance)
+                              .map((d) => ({
+                                activite_precedente_id: d.activite_precedente_id,
+                                type_dependance: d.type_dependance,
+                                delai_jours: d.delai_jours || 0,
+                              }))
+                          );
+                        }
+                      }}
                     />
                   </div>
                 </div>
