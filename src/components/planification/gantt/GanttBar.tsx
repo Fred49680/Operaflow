@@ -52,12 +52,22 @@ export default function GanttBar({
       };
     }
 
+    if (!activite.date_debut_prevue || !activite.date_fin_prevue) {
+      // Si pas de dates, ne pas afficher
+      return { left: 0, width: 0 };
+    }
+
     const dureeTotale = dateFinTimeline.getTime() - dateDebutTimeline.getTime();
     const dateDebutActivite = new Date(activite.date_debut_prevue);
     const dateFinActivite = new Date(activite.date_fin_prevue);
 
     const debutBarre = dateDebutActivite.getTime() - dateDebutTimeline.getTime();
     const dureeBarre = dateFinActivite.getTime() - dateDebutActivite.getTime();
+
+    // Vérifier que les dates sont valides
+    if (isNaN(dateDebutActivite.getTime()) || isNaN(dateFinActivite.getTime()) || dureeTotale <= 0) {
+      return { left: 0, width: 0 };
+    }
 
     return {
       left: Math.max(0, (debutBarre / dureeTotale) * largeurTotale),

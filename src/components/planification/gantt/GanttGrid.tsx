@@ -133,40 +133,42 @@ export default function GanttGrid({
 
       {/* Barres d'activités */}
       <div className="absolute inset-0 z-10">
-        {activites.map((activite, index) => {
-          const niveau = activite.niveau_hierarchie || 0;
-          const decalageVertical = niveau * 6;
-          const decalageHorizontal = niveau * 12;
-          const largeurBarre = largeurTotale - decalageHorizontal;
-          const topPosition = index * 80 + 12 + decalageVertical;
-          const leftPosition = decalageHorizontal;
-          const topValue = String(topPosition) + "px";
-          const leftValue = String(leftPosition) + "px";
-          const widthCalc = "calc(100% - " + String(decalageHorizontal) + "px)";
-          
-          return (
-            <div
-              key={activite.id}
-              className="absolute"
-              style={{
-                top: topValue,
-                left: leftValue,
-                width: widthCalc,
-                height: "56px",
-              }}
-            >
-              <GanttBar
-                activite={activite}
-                dateDebutTimeline={dateDebut}
-                dateFinTimeline={dateFin}
-                largeurTotale={largeurBarre}
-                onClick={() => onActiviteClick?.(activite)}
-                onDragEnd={onDragEnd}
-                onResizeEnd={onResizeEnd}
-              />
-            </div>
-          );
-        })}
+        {activites
+          .filter((activite) => activite.date_debut_prevue && activite.date_fin_prevue) // Filtrer les activités sans dates
+          .map((activite, index) => {
+            const niveau = activite.niveau_hierarchie || 0;
+            const decalageVertical = niveau * 6;
+            const decalageHorizontal = niveau * 12;
+            const largeurBarre = largeurTotale - decalageHorizontal;
+            const topPosition = index * 80 + 12 + decalageVertical;
+            const leftPosition = decalageHorizontal;
+            const topValue = String(topPosition) + "px";
+            const leftValue = String(leftPosition) + "px";
+            const widthCalc = "calc(100% - " + String(decalageHorizontal) + "px)";
+            
+            return (
+              <div
+                key={activite.id}
+                className="absolute"
+                style={{
+                  top: topValue,
+                  left: leftValue,
+                  width: widthCalc,
+                  height: "56px",
+                }}
+              >
+                <GanttBar
+                  activite={activite}
+                  dateDebutTimeline={dateDebut}
+                  dateFinTimeline={dateFin}
+                  largeurTotale={largeurBarre}
+                  onClick={() => onActiviteClick?.(activite)}
+                  onDragEnd={onDragEnd}
+                  onResizeEnd={onResizeEnd}
+                />
+              </div>
+            );
+          })}
       </div>
       </div>
     </div>
