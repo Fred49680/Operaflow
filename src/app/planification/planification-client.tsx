@@ -481,7 +481,18 @@ export default function PlanificationClient({
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <h3 className="text-lg font-semibold text-secondary">
-                Planning Gantt ({selectedAffaireGantt ? filteredActivites.length : activites.length} activité{(selectedAffaireGantt ? filteredActivites.length : activites.length) > 1 ? "s" : ""})
+                Planning Gantt ({(() => {
+                  // Compter toutes les activités (même sans dates) pour le compteur
+                  const count = selectedAffaireGantt 
+                    ? activites.filter(a => a.affaire_id === selectedAffaireGantt).length
+                    : activites.length;
+                  return count;
+                })()} activité{(() => {
+                  const count = selectedAffaireGantt 
+                    ? activites.filter(a => a.affaire_id === selectedAffaireGantt).length
+                    : activites.length;
+                  return count > 1 ? "s" : "";
+                })()})
               </h3>
               <div className="flex items-center gap-2">
                 <select
