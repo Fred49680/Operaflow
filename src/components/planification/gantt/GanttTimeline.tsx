@@ -238,12 +238,15 @@ export default function GanttTimeline({
         <div className="flex relative">
           {/* Colonne fixe avec libellés - figée lors du scroll horizontal */}
           <div 
-            className="w-72 border-r border-gray-200 bg-gray-50 flex-shrink-0"
+            className="border-r border-gray-200 bg-gray-50 flex-shrink-0"
             style={{
               position: "sticky",
               left: 0,
               zIndex: 30,
-              backgroundColor: "#f9fafb"
+              backgroundColor: "#f9fafb",
+              width: "288px", // Exactement la même largeur que l'en-tête (w-72 = 18rem = 288px)
+              minWidth: "288px",
+              maxWidth: "288px"
             }}
           >
             {/* Liste des items (jalons + activités) - position absolue pour alignement parfait avec la timeline */}
