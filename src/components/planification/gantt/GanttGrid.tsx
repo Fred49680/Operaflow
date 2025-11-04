@@ -140,6 +140,7 @@ export default function GanttGrid({
             const decalageVertical = niveau * 6;
             const decalageHorizontal = niveau * 12;
             const largeurBarre = largeurTotale - decalageHorizontal;
+            // Top position: index * 80 (80px par activité) + petit décalage
             const topPosition = index * 80 + 12 + decalageVertical;
             const leftPosition = decalageHorizontal;
             const topValue = String(topPosition) + "px";
