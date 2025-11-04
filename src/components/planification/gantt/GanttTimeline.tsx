@@ -146,7 +146,7 @@ export default function GanttTimeline({
     });
     
     return { map, activitesSansJalon };
-  }, [activites]);
+  }, [activites, jalons]);
 
   // ÉTAPE 2: Créer la liste ordonnée des items (jalons + leurs activités)
   const itemsGantt: GanttItem[] = useMemo(() => {
