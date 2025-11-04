@@ -213,13 +213,8 @@ export default function GanttTimeline({
         <div className="flex">
           {/* Colonne fixe avec libellés */}
           <div className="w-72 border-r border-gray-200 bg-gray-50 sticky left-0 z-10">
-            {/* En-tête - aligné avec l'en-tête de la timeline */}
-            <div className="px-4 py-3 bg-gray-100 border-b border-gray-200 sticky top-0 z-10" style={{ height: "48px" }}>
-              <div className="text-sm font-bold text-gray-700 uppercase">Activité</div>
-            </div>
-            
             {/* Liste des items (jalons + activités) - position absolue pour alignement parfait avec la timeline */}
-            <div className="relative" style={{ minHeight: `${itemsGantt.length > 0 ? itemsGantt[itemsGantt.length - 1].top + itemsGantt[itemsGantt.length - 1].height : 0}px` }}>
+            <div className="relative" style={{ minHeight: `${itemsGantt.length > 0 ? itemsGantt[itemsGantt.length - 1].top + itemsGantt[itemsGantt.length - 1].height : 0}px`, paddingTop: "48px" }}>
               {itemsGantt.map((item, index) => {
                 if (item.type === "jalon") {
                   return (
