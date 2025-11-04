@@ -27,7 +27,7 @@ export default function GanttJalonBar({
   largeurTotale,
   onClick,
 }: GanttJalonBarProps) {
-  // Calculer la position et la largeur de la barre de jalon
+  // Calculer la position et la largeur de la barre de jalon (TOUJOURS une barre horizontale)
   const { left, width } = useMemo(() => {
     const dateDebut = jalon.date_debut_previsionnelle ? new Date(jalon.date_debut_previsionnelle) : null;
     const dateFin = jalon.date_fin_previsionnelle ? new Date(jalon.date_fin_previsionnelle) : null;
@@ -38,23 +38,24 @@ export default function GanttJalonBar({
 
     const dureeTotale = dateFinTimeline.getTime() - dateDebutTimeline.getTime();
     
-    // Si seulement une date est disponible, utiliser un point (largeur fixe)
+    // Si seulement une date est disponible, créer une barre de 1 jour
     if (!dateDebut || !dateFin) {
       const dateUnique = dateDebut || dateFin!;
       const position = dateUnique.getTime() - dateDebutTimeline.getTime();
+      const largeurJour = largeurTotale / (dureeTotale / (1000 * 60 * 60 * 24)); // Largeur d'un jour
       return {
         left: Math.max(0, (position / dureeTotale) * largeurTotale),
-        width: 4, // Point de 4px pour jalon sans période
+        width: Math.max(20, largeurJour), // Minimum 20px pour visibilité
       };
     }
 
-    // Jalon avec période (début et fin)
+    // Jalon avec période (début et fin) - BARRE HORIZONTALE
     const debutBarre = dateDebut.getTime() - dateDebutTimeline.getTime();
     const dureeBarre = dateFin.getTime() - dateDebut.getTime();
 
     return {
       left: Math.max(0, (debutBarre / dureeTotale) * largeurTotale),
-      width: Math.max(4, (dureeBarre / dureeTotale) * largeurTotale),
+      width: Math.max(20, (dureeBarre / dureeTotale) * largeurTotale), // Minimum 20px
     };
   }, [jalon, dateDebutTimeline, dateFinTimeline, largeurTotale]);
 
@@ -65,32 +66,22 @@ export default function GanttJalonBar({
     return "bg-purple-500 border-purple-600"; // Jalon planifié
   }, [jalon.statut]);
 
-  const isPoint = !jalon.date_debut_previsionnelle || !jalon.date_fin_previsionnelle;
-
   return (
     <div
-      className={`relative h-6 group cursor-pointer flex items-center ${isPoint ? "z-20" : "z-10"}`}
+      className="relative group cursor-pointer flex items-center"
       style={{ left: `${left}px`, width: `${width}px`, height: "40px" }}
       onClick={onClick}
     >
-      {/* Barre de jalon */}
-      {isPoint ? (
-        // Point de jalon (losange) - centré verticalement
-        <div
-          className={`${couleur} w-4 h-4 transform rotate-45 border-2 shadow-md`}
-          style={{ borderColor: couleur.split(" ")[1], marginTop: "0px" }}
-        />
-      ) : (
-        // Barre de jalon (période)
-        <div
-          className={`${couleur} h-full rounded-sm border-2 shadow-sm hover:shadow-md transition-shadow`}
-        >
-          {/* Libellé du jalon */}
-          <div className="absolute inset-0 flex items-center px-2 text-[10px] font-bold text-white truncate">
-            {jalon.libelle_lot}
-          </div>
+      {/* Barre de jalon - TOUJOURS une barre horizontale */}
+      <div
+        className={`${couleur} h-8 rounded-sm border-2 shadow-sm hover:shadow-md transition-shadow flex items-center`}
+        style={{ width: "100%", minHeight: "32px" }}
+      >
+        {/* Libellé du jalon */}
+        <div className="absolute inset-0 flex items-center px-2 text-xs font-bold text-white truncate">
+          {jalon.libelle_lot}
         </div>
-      )}
+      </div>
 
       {/* Tooltip au survol */}
       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-30">
