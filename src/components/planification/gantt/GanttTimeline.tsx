@@ -122,6 +122,11 @@ export default function GanttTimeline({
     const activitesSansJalon: ActivitePlanification[] = [];
     
     activites.forEach((activite) => {
+      // Filtrer uniquement les activités avec dates
+      if (!activite.date_debut_prevue || !activite.date_fin_prevue) {
+        return; // Ignorer les activités sans dates
+      }
+      
       if (activite.lot_id) {
         if (!map.has(activite.lot_id)) {
           map.set(activite.lot_id, []);
@@ -163,8 +168,11 @@ export default function GanttTimeline({
       });
       currentTop += hauteurJalon;
       
-      // Ajouter les activités de ce jalon
-      const activitesJalon = activitesParJalon.map.get(jalon.id) || [];
+      // Ajouter les activités de ce jalon (triées par date de début)
+      const activitesJalon = (activitesParJalon.map.get(jalon.id) || [])
+        .filter(act => act.date_debut_prevue && act.date_fin_prevue) // S'assurer que les dates existent
+        .sort((a, b) => new Date(a.date_debut_prevue).getTime() - new Date(b.date_debut_prevue).getTime());
+      
       activitesJalon.forEach((activite) => {
         items.push({
           type: "activite",
@@ -176,16 +184,19 @@ export default function GanttTimeline({
       });
     });
     
-    // Ajouter les activités sans jalon à la fin
-    activitesParJalon.activitesSansJalon.forEach((activite) => {
-      items.push({
-        type: "activite",
-        activite,
-        top: currentTop,
-        height: hauteurActivite,
+    // Ajouter les activités sans jalon à la fin (triées par date de début)
+    activitesParJalon.activitesSansJalon
+      .filter(act => act.date_debut_prevue && act.date_fin_prevue) // S'assurer que les dates existent
+      .sort((a, b) => new Date(a.date_debut_prevue).getTime() - new Date(b.date_debut_prevue).getTime())
+      .forEach((activite) => {
+        items.push({
+          type: "activite",
+          activite,
+          top: currentTop,
+          height: hauteurActivite,
+        });
+        currentTop += hauteurActivite;
       });
-      currentTop += hauteurActivite;
-    });
     
     return items;
   }, [jalons, activitesParJalon]);
