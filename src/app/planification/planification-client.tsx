@@ -40,7 +40,7 @@ interface PlanificationClientProps {
 }
 
 export default function PlanificationClient({
-  activites,
+  activites: activitesInitiales,
   affectations: _affectations,
   jalons = [],
   sites = [],
@@ -55,6 +55,13 @@ export default function PlanificationClient({
   void _affectations;
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // État local des activités pour mise à jour optimiste
+  const [activites, setActivites] = useState<ActivitePlanification[]>(activitesInitiales);
+  
+  // État pour le debounce de sauvegarde automatique
+  const [pendingSaves, setPendingSaves] = useState<Map<string, { date_debut_prevue: string; date_fin_prevue: string }>>(new Map());
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [activeView, setActiveView] = useState<"gantt" | "alertes">("gantt");
   const [vueGantt, setVueGantt] = useState<"jour" | "semaine" | "mois">("semaine");
   const [filters, setFilters] = useState({
@@ -268,76 +275,102 @@ export default function PlanificationClient({
     }
   };
 
-  // Handler pour le drag & drop
-  const handleDragEnd = async (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => {
+  // Fonction pour sauvegarder les modifications en attente
+  const savePendingChanges = async () => {
+    if (pendingSaves.size === 0) return;
+    
     try {
       setSaving(true);
-      const response = await fetch(`/api/planification/activites/${activiteId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date_debut_prevue: nouvelleDateDebut.toISOString(),
-          date_fin_prevue: nouvelleDateFin.toISOString(),
-        }),
-      });
-
-      if (response.ok) {
-        // Sauvegarder l'affaire sélectionnée dans sessionStorage avant le reload
-        if (selectedAffaireGantt) {
-          sessionStorage.setItem('selectedAffaireGantt', selectedAffaireGantt);
-        }
-        
-        // Rafraîchir les données après mise à jour
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
+      const saves = Array.from(pendingSaves.entries());
+      
+      // Sauvegarder toutes les modifications en parallèle
+      const results = await Promise.all(
+        saves.map(([activiteId, updates]) =>
+          fetch(`/api/planification/activites/${activiteId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updates),
+          })
+        )
+      );
+      
+      // Vérifier si toutes les sauvegardes ont réussi
+      const allSuccess = results.every(r => r.ok);
+      
+      if (allSuccess) {
+        // Vider les sauvegardes en attente
+        setPendingSaves(new Map());
       } else {
-        const error = await response.json();
-        console.error("Erreur lors du déplacement:", error);
-        alert(`Erreur: ${error.error || "Erreur inconnue"}`);
-        setSaving(false);
+        // Afficher une erreur pour les échecs
+        const failedSaves = saves.filter((_, index) => !results[index].ok);
+        console.error("Erreurs lors de la sauvegarde:", failedSaves);
+        // Garder les modifications en échec pour réessayer
       }
     } catch (error) {
-      console.error("Erreur lors du déplacement:", error);
-      alert("Une erreur est survenue lors du déplacement");
+      console.error("Erreur lors de la sauvegarde automatique:", error);
+    } finally {
       setSaving(false);
     }
   };
 
+  // Handler pour le drag & drop
+  const handleDragEnd = async (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => {
+    // Mise à jour optimiste immédiate de l'état local
+    setActivites(prev => prev.map(act => 
+      act.id === activiteId 
+        ? { ...act, date_debut_prevue: nouvelleDateDebut.toISOString(), date_fin_prevue: nouvelleDateFin.toISOString() }
+        : act
+    ));
+    
+    // Ajouter à la file d'attente de sauvegarde
+    setPendingSaves(prev => {
+      const newMap = new Map(prev);
+      newMap.set(activiteId, {
+        date_debut_prevue: nouvelleDateDebut.toISOString(),
+        date_fin_prevue: nouvelleDateFin.toISOString(),
+      });
+      return newMap;
+    });
+    
+    // Annuler le timer précédent et en créer un nouveau (debounce)
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Sauvegarder automatiquement après 2 secondes d'inactivité
+    saveTimeoutRef.current = setTimeout(() => {
+      savePendingChanges();
+    }, 2000);
+  };
+
   // Handler pour le redimensionnement
   const handleResizeEnd = async (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => {
-    try {
-      setSaving(true);
-      const response = await fetch(`/api/planification/activites/${activiteId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date_debut_prevue: nouvelleDateDebut.toISOString(),
-          date_fin_prevue: nouvelleDateFin.toISOString(),
-        }),
+    // Mise à jour optimiste immédiate de l'état local
+    setActivites(prev => prev.map(act => 
+      act.id === activiteId 
+        ? { ...act, date_debut_prevue: nouvelleDateDebut.toISOString(), date_fin_prevue: nouvelleDateFin.toISOString() }
+        : act
+    ));
+    
+    // Ajouter à la file d'attente de sauvegarde
+    setPendingSaves(prev => {
+      const newMap = new Map(prev);
+      newMap.set(activiteId, {
+        date_debut_prevue: nouvelleDateDebut.toISOString(),
+        date_fin_prevue: nouvelleDateFin.toISOString(),
       });
-
-      if (response.ok) {
-        // Sauvegarder l'affaire sélectionnée dans sessionStorage avant le reload
-        if (selectedAffaireGantt) {
-          sessionStorage.setItem('selectedAffaireGantt', selectedAffaireGantt);
-        }
-        
-        // Rafraîchir les données après mise à jour
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
-      } else {
-        const error = await response.json();
-        console.error("Erreur lors du redimensionnement:", error);
-        alert(`Erreur: ${error.error || "Erreur inconnue"}`);
-        setSaving(false);
-      }
-    } catch (error) {
-      console.error("Erreur lors du redimensionnement:", error);
-      alert("Une erreur est survenue lors du redimensionnement");
-      setSaving(false);
+      return newMap;
+    });
+    
+    // Annuler le timer précédent et en créer un nouveau (debounce)
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
     }
+    
+    // Sauvegarder automatiquement après 2 secondes d'inactivité
+    saveTimeoutRef.current = setTimeout(() => {
+      savePendingChanges();
+    }, 2000);
   };
 
   // Fonction pour calculer la date de fin en fonction de la durée et du type horaire
