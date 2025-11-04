@@ -331,63 +331,99 @@ export default function PlanificationClient({
     }
   };
 
-  // Fonction pour calculer les nouvelles dates des tâches dépendantes
+  // Fonction pour calculer les nouvelles dates des tâches dépendantes (propagation récursive)
   const calculerDatesTachesDependantes = (
     activiteModifiee: ActivitePlanification,
     nouvelleDateDebut: Date,
     nouvelleDateFin: Date
   ): Map<string, { date_debut_prevue: string; date_fin_prevue: string }> => {
     const updates = new Map<string, { date_debut_prevue: string; date_fin_prevue: string }>();
+    const processed = new Set<string>(); // Pour éviter les boucles infinies
     
-    // Trouver toutes les tâches qui dépendent de cette activité
-    const tachesDependantes = activites.filter(act => 
-      act.dependances?.some(dep => dep.activite_precedente_id === activiteModifiee.id)
-    );
-    
-    tachesDependantes.forEach(tache => {
-      const dependances = tache.dependances?.filter(dep => dep.activite_precedente_id === activiteModifiee.id) || [];
+    // Fonction récursive pour calculer les dates d'une tâche en fonction de toutes ses dépendances
+    const calculerDatesTache = (tache: ActivitePlanification): { dateDebut: Date; dateFin: Date } | null => {
+      if (processed.has(tache.id)) {
+        // Si déjà traité, retourner les dates déjà calculées
+        const existingUpdate = updates.get(tache.id);
+        if (existingUpdate) {
+          return {
+            dateDebut: new Date(existingUpdate.date_debut_prevue),
+            dateFin: new Date(existingUpdate.date_fin_prevue),
+          };
+        }
+        return null;
+      }
+      
+      processed.add(tache.id);
+      
+      const dateDebutActuelle = new Date(tache.date_debut_prevue);
+      const dateFinActuelle = new Date(tache.date_fin_prevue);
+      const dureeActuelle = dateFinActuelle.getTime() - dateDebutActuelle.getTime();
       
       let nouvelleDateDebutTache: Date | null = null;
       let nouvelleDateFinTache: Date | null = null;
       
-      dependances.forEach(dep => {
-        const delaiJours = dep.delai_jours || 0;
-        const delaiMs = delaiJours * 24 * 60 * 60 * 1000;
-        
-        switch (dep.type_dependance) {
-          case 'FS': // Finish-to-Start : début après fin de la précédente
-            const dateDebutFS = new Date(nouvelleDateFin.getTime() + delaiMs);
-            if (!nouvelleDateDebutTache || dateDebutFS > nouvelleDateDebutTache) {
-              nouvelleDateDebutTache = dateDebutFS;
+      // Parcourir toutes les dépendances de cette tâche
+      if (tache.dependances && tache.dependances.length > 0) {
+        tache.dependances.forEach(dep => {
+          // Trouver l'activité précédente
+          const activitePrecedente = activites.find(a => a.id === dep.activite_precedente_id);
+          if (!activitePrecedente) return;
+          
+          // Si l'activité précédente a été modifiée, utiliser ses nouvelles dates
+          let dateDebutPrecedente: Date;
+          let dateFinPrecedente: Date;
+          
+          if (activitePrecedente.id === activiteModifiee.id) {
+            // C'est la tâche directement modifiée
+            dateDebutPrecedente = nouvelleDateDebut;
+            dateFinPrecedente = nouvelleDateFin;
+          } else {
+            // Sinon, calculer récursivement les dates de l'activité précédente
+            const datesPrecedente = calculerDatesTache(activitePrecedente);
+            if (datesPrecedente) {
+              dateDebutPrecedente = datesPrecedente.dateDebut;
+              dateFinPrecedente = datesPrecedente.dateFin;
+            } else {
+              dateDebutPrecedente = new Date(activitePrecedente.date_debut_prevue);
+              dateFinPrecedente = new Date(activitePrecedente.date_fin_prevue);
             }
-            break;
-          case 'SS': // Start-to-Start : début en même temps (ou avec délai)
-            const dateDebutSS = new Date(nouvelleDateDebut.getTime() + delaiMs);
-            if (!nouvelleDateDebutTache || dateDebutSS > nouvelleDateDebutTache) {
-              nouvelleDateDebutTache = dateDebutSS;
-            }
-            break;
-          case 'FF': // Finish-to-Finish : fin en même temps (ou avec délai)
-            const dateFinFF = new Date(nouvelleDateFin.getTime() + delaiMs);
-            if (!nouvelleDateFinTache || dateFinFF > nouvelleDateFinTache) {
-              nouvelleDateFinTache = dateFinFF;
-            }
-            break;
-          case 'SF': // Start-to-Finish : fin au début de la précédente (ou avec délai)
-            const dateFinSF = new Date(nouvelleDateDebut.getTime() + delaiMs);
-            if (!nouvelleDateFinTache || dateFinSF > nouvelleDateFinTache) {
-              nouvelleDateFinTache = dateFinSF;
-            }
-            break;
-        }
-      });
+          }
+          
+          const delaiJours = dep.delai_jours || 0;
+          const delaiMs = delaiJours * 24 * 60 * 60 * 1000;
+          
+          switch (dep.type_dependance) {
+            case 'FS': // Finish-to-Start : début après fin de la précédente
+              const dateDebutFS = new Date(dateFinPrecedente.getTime() + delaiMs);
+              if (!nouvelleDateDebutTache || dateDebutFS > nouvelleDateDebutTache) {
+                nouvelleDateDebutTache = dateDebutFS;
+              }
+              break;
+            case 'SS': // Start-to-Start : début en même temps (ou avec délai)
+              const dateDebutSS = new Date(dateDebutPrecedente.getTime() + delaiMs);
+              if (!nouvelleDateDebutTache || dateDebutSS > nouvelleDateDebutTache) {
+                nouvelleDateDebutTache = dateDebutSS;
+              }
+              break;
+            case 'FF': // Finish-to-Finish : fin en même temps (ou avec délai)
+              const dateFinFF = new Date(dateFinPrecedente.getTime() + delaiMs);
+              if (!nouvelleDateFinTache || dateFinFF > nouvelleDateFinTache) {
+                nouvelleDateFinTache = dateFinFF;
+              }
+              break;
+            case 'SF': // Start-to-Finish : fin au début de la précédente (ou avec délai)
+              const dateFinSF = new Date(dateDebutPrecedente.getTime() + delaiMs);
+              if (!nouvelleDateFinTache || dateFinSF > nouvelleDateFinTache) {
+                nouvelleDateFinTache = dateFinSF;
+              }
+              break;
+          }
+        });
+      }
       
       // Si on a calculé de nouvelles dates, les appliquer
       if (nouvelleDateDebutTache || nouvelleDateFinTache) {
-        const dateDebutActuelle = new Date(tache.date_debut_prevue);
-        const dateFinActuelle = new Date(tache.date_fin_prevue);
-        const dureeActuelle = dateFinActuelle.getTime() - dateDebutActuelle.getTime();
-        
         let dateDebut = nouvelleDateDebutTache || dateDebutActuelle;
         let dateFin = nouvelleDateFinTache || dateFinActuelle;
         
@@ -404,11 +440,26 @@ export default function PlanificationClient({
         dateDebut.setHours(0, 0, 0, 0);
         dateFin.setHours(0, 0, 0, 0);
         
-        updates.set(tache.id, {
+        const update = {
           date_debut_prevue: dateDebut.toISOString(),
           date_fin_prevue: dateFin.toISOString(),
-        });
+        };
+        
+        updates.set(tache.id, update);
+        return { dateDebut, dateFin };
       }
+      
+      return null;
+    };
+    
+    // Trouver toutes les tâches qui dépendent directement de l'activité modifiée
+    const tachesDependantesDirectes = activites.filter(act => 
+      act.dependances?.some(dep => dep.activite_precedente_id === activiteModifiee.id)
+    );
+    
+    // Calculer récursivement les dates pour chaque tâche dépendante
+    tachesDependantesDirectes.forEach(tache => {
+      calculerDatesTache(tache);
     });
     
     return updates;
