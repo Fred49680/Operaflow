@@ -128,17 +128,17 @@ export default function GanttTimeline({
       }
       
       // Vérifier si cette activité est liée à un jalon (lot avec est_jalon_gantt = true)
-      const jalonAssocie = jalons.find(j => j.id === activite.lot_id);
-      
-      if (jalonAssocie) {
-        // Activité liée à un jalon
-        if (!map.has(activite.lot_id)) {
-          map.set(activite.lot_id, []);
+      if (activite.lot_id) {
+        const jalonAssocie = jalons.find(j => j.id === activite.lot_id);
+        
+        if (jalonAssocie) {
+          // Activité liée à un jalon
+          if (!map.has(activite.lot_id)) {
+            map.set(activite.lot_id, []);
+          }
+          map.get(activite.lot_id)!.push(activite);
         }
-        map.get(activite.lot_id)!.push(activite);
-      } else if (activite.lot_id) {
-        // Activité liée à un lot mais pas un jalon -> on l'ignore ou on la met dans sans jalon
-        // On peut choisir de les afficher ou non
+        // Si activite.lot_id existe mais pas de jalon associé, on ignore (lot non-jalon)
       } else {
         // Activité sans jalon
         activitesSansJalon.push(activite);
@@ -234,7 +234,7 @@ export default function GanttTimeline({
           <div className="w-72 border-r border-gray-200 bg-gray-50 sticky left-0 z-10">
             {/* Liste des items (jalons + activités) - position absolue pour alignement parfait avec la timeline */}
             <div className="relative" style={{ minHeight: `${itemsGantt.length > 0 ? itemsGantt[itemsGantt.length - 1].top + itemsGantt[itemsGantt.length - 1].height : 0}px`, paddingTop: "48px" }}>
-              {itemsGantt.map((item, index) => {
+              {itemsGantt.map((item) => {
                 if (item.type === "jalon") {
                   return (
                     <div
