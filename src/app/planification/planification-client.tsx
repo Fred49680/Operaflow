@@ -163,6 +163,78 @@ export default function PlanificationClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showActiviteModal, editingActivite]);
 
+  // Synchroniser les jalons avec les props initiales et mettre à jour à l'ouverture
+  useEffect(() => {
+    setJalonsLocaux(jalons);
+    // Mettre à jour les jalons après synchronisation si le Gantt est ouvert
+    if (activeView === "gantt") {
+      setTimeout(() => {
+        const updatesJalons = mettreAJourJalons();
+        
+        // Mettre à jour les jalons dans l'état local
+        setJalonsLocaux(prev => prev.map(jalon => {
+          const update = updatesJalons.get(jalon.id);
+          if (update) {
+            return { ...jalon, date_debut_previsionnelle: update.date_debut_previsionnelle, date_fin_previsionnelle: update.date_fin_previsionnelle };
+          }
+          return jalon;
+        }));
+        
+        // Sauvegarder les jalons mis à jour
+        if (updatesJalons.size > 0) {
+          setPendingJalonsSaves(prev => {
+            const newMap = new Map(prev);
+            updatesJalons.forEach((update, jalonId) => {
+              newMap.set(jalonId, update);
+            });
+            return newMap;
+          });
+          
+          // Déclencher la sauvegarde après un court délai
+          if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+          }
+          saveTimeoutRef.current = setTimeout(() => {
+            savePendingChanges();
+          }, 1000);
+        }
+      }, 100);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jalons, activeView]);
+
+  // Mettre à jour les jalons à la fermeture du Gantt
+  useEffect(() => {
+    if (activeView === "alertes") {
+      // Mettre à jour les jalons avant de fermer
+      const updatesJalons = mettreAJourJalons();
+      
+      if (updatesJalons.size > 0) {
+        // Mettre à jour les jalons dans l'état local
+        setJalonsLocaux(prev => prev.map(jalon => {
+          const update = updatesJalons.get(jalon.id);
+          if (update) {
+            return { ...jalon, date_debut_previsionnelle: update.date_debut_previsionnelle, date_fin_previsionnelle: update.date_fin_previsionnelle };
+          }
+          return jalon;
+        }));
+        
+        // Sauvegarder immédiatement les jalons
+        setPendingJalonsSaves(prev => {
+          const newMap = new Map(prev);
+          updatesJalons.forEach((update, jalonId) => {
+            newMap.set(jalonId, update);
+          });
+          return newMap;
+        });
+        
+        // Sauvegarder immédiatement
+        savePendingChanges();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView]);
+
   // Filtrage des activités
   const filteredActivites = useMemo(() => {
     const result = activites.filter((activite) => {
