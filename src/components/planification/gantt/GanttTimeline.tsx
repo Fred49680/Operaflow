@@ -229,15 +229,23 @@ export default function GanttTimeline({
 
       {/* Grille avec barres d'activités */}
       <div 
-        className="overflow-x-auto overflow-y-auto" 
+        className="relative overflow-x-auto overflow-y-auto" 
         style={{ 
           maxHeight: "calc(100vh - 300px)",
           minHeight: `${hauteurTotale}px`
         }}
       >
-        <div className="flex">
-          {/* Colonne fixe avec libellés */}
-          <div className="w-72 border-r border-gray-200 bg-gray-50 sticky left-0 z-10">
+        <div className="flex relative">
+          {/* Colonne fixe avec libellés - figée lors du scroll horizontal */}
+          <div 
+            className="w-72 border-r border-gray-200 bg-gray-50 flex-shrink-0"
+            style={{
+              position: "sticky",
+              left: 0,
+              zIndex: 20,
+              backgroundColor: "#f9fafb"
+            }}
+          >
             {/* Liste des items (jalons + activités) - position absolue pour alignement parfait avec la timeline */}
             <div className="relative" style={{ minHeight: `${itemsGantt.length > 0 ? itemsGantt[itemsGantt.length - 1].top + itemsGantt[itemsGantt.length - 1].height : 0}px`, paddingTop: "48px" }}>
               {itemsGantt.map((item) => {

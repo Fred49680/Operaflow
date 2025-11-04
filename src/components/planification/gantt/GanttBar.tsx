@@ -44,6 +44,29 @@ export default function GanttBar({
 
   // Calculer la position et la largeur de la barre
   const { left, width } = useMemo(() => {
+    if (resize.isResizing) {
+      // Pendant le resize, utiliser les dates calculées par le hook
+      const dureeTotale = dateFinTimeline.getTime() - dateDebutTimeline.getTime();
+      const dateDebutActivite = new Date(activite.date_debut_prevue);
+      const dateFinActivite = new Date(activite.date_fin_prevue);
+      
+      // Utiliser les dates mises à jour du hook de resize
+      const dateDebut = resize.isResizing && resize.resizeHandle === "start" 
+        ? new Date(resize.initialDateDebut || activite.date_debut_prevue)
+        : dateDebutActivite;
+      const dateFin = resize.isResizing && resize.resizeHandle === "end"
+        ? new Date(resize.initialDateFin || activite.date_fin_prevue)
+        : dateFinActivite;
+
+      const debutBarre = dateDebut.getTime() - dateDebutTimeline.getTime();
+      const dureeBarre = dateFin.getTime() - dateDebut.getTime();
+
+      return {
+        left: Math.max(0, (debutBarre / dureeTotale) * largeurTotale),
+        width: Math.max(20, (dureeBarre / dureeTotale) * largeurTotale),
+      };
+    }
+
     if (drag.isDragging) {
       // Pendant le drag, utiliser la position calculée par le hook
       return {
@@ -73,7 +96,7 @@ export default function GanttBar({
       left: Math.max(0, (debutBarre / dureeTotale) * largeurTotale),
       width: Math.max(20, (dureeBarre / dureeTotale) * largeurTotale), // Min 20px pour visibilité
     };
-  }, [activite, dateDebutTimeline, dateFinTimeline, largeurTotale, drag]);
+  }, [activite, dateDebutTimeline, dateFinTimeline, largeurTotale, drag, resize]);
 
   // Calculer la couleur selon statut/type horaire
   const couleur = useMemo(() => {

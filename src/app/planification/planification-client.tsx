@@ -90,9 +90,19 @@ export default function PlanificationClient({
   useEffect(() => {
     const affaireId = searchParams.get("affaire");
     const activiteId = searchParams.get("activite");
-    if (affaireId) {
+    
+    // Restaurer depuis sessionStorage si pas dans URL
+    if (!affaireId) {
+      const savedAffaire = sessionStorage.getItem('selectedAffaireGantt');
+      if (savedAffaire) {
+        setSelectedAffaireGantt(savedAffaire);
+        // Nettoyer après utilisation
+        sessionStorage.removeItem('selectedAffaireGantt');
+      }
+    } else {
       setSelectedAffaireGantt(affaireId);
     }
+    
     if (activiteId) {
       // Trouver l'activité et ouvrir le modal d'édition
       const activite = activites.find(a => a.id === activiteId);
@@ -277,13 +287,34 @@ export default function PlanificationClient({
   const handleResizeEnd = async (activiteId: string, nouvelleDateDebut: Date, nouvelleDateFin: Date) => {
     try {
       setSaving(true);
-      await handleUpdateActivite(activiteId, {
-        date_debut_prevue: nouvelleDateDebut.toISOString(),
-        date_fin_prevue: nouvelleDateFin.toISOString(),
+      const response = await fetch(`/api/planification/activites/${activiteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date_debut_prevue: nouvelleDateDebut.toISOString(),
+          date_fin_prevue: nouvelleDateFin.toISOString(),
+        }),
       });
+
+      if (response.ok) {
+        // Sauvegarder l'affaire sélectionnée dans sessionStorage avant le reload
+        if (selectedAffaireGantt) {
+          sessionStorage.setItem('selectedAffaireGantt', selectedAffaireGantt);
+        }
+        
+        // Rafraîchir les données après mise à jour
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      } else {
+        const error = await response.json();
+        console.error("Erreur lors du redimensionnement:", error);
+        alert(`Erreur: ${error.error || "Erreur inconnue"}`);
+        setSaving(false);
+      }
     } catch (error) {
       console.error("Erreur lors du redimensionnement:", error);
-    } finally {
+      alert("Une erreur est survenue lors du redimensionnement");
       setSaving(false);
     }
   };
