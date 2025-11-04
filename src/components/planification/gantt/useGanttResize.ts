@@ -67,7 +67,7 @@ export function useGanttResize({
       const deltaTime = (deltaX / largeurTotale) * dureeTotale;
 
       if (resizeHandle === "start") {
-        let nouvelleDateDebut = new Date(initialDateDebut.getTime() + deltaTime);
+        const nouvelleDateDebut = new Date(initialDateDebut.getTime() + deltaTime);
         
         // Calculer la distance depuis le dernier snap (en jours)
         const distanceDepuisSnap = lastSnappedDate 
@@ -87,7 +87,7 @@ export function useGanttResize({
         }
         // Sinon, on ne met pas à jour pendant les micro-mouvements (évite le "nerveux")
       } else if (resizeHandle === "end") {
-        let nouvelleDateFin = new Date(initialDateFin.getTime() + deltaTime);
+        const nouvelleDateFin = new Date(initialDateFin.getTime() + deltaTime);
         
         // Calculer la distance depuis le dernier snap (en jours)
         const distanceDepuisSnap = lastSnappedDate 
