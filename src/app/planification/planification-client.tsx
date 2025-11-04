@@ -144,7 +144,7 @@ export default function PlanificationClient({
 
   // Filtrage des activités
   const filteredActivites = useMemo(() => {
-    return activites.filter((activite) => {
+    const result = activites.filter((activite) => {
       // Si une affaire est sélectionnée pour le Gantt, filtrer uniquement cette affaire
       if (selectedAffaireGantt && activite.affaire_id !== selectedAffaireGantt) return false;
       
@@ -165,6 +165,20 @@ export default function PlanificationClient({
       }
       return true;
     });
+    
+    // Debug: Log pour diagnostiquer le problème
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Planification Client]', {
+        totalActivites: activites.length,
+        filteredActivites: result.length,
+        selectedAffaireGantt,
+        filters,
+        searchTerm,
+        activitesAvecDates: result.filter(a => a.date_debut_prevue && a.date_fin_prevue).length
+      });
+    }
+    
+    return result;
   }, [activites, filters, searchTerm, selectedAffaireGantt]);
 
   // Filtrer les jalons selon l'affaire sélectionnée
@@ -558,7 +572,7 @@ export default function PlanificationClient({
             {/* Gantt - affiché uniquement si une affaire est sélectionnée */}
             {selectedAffaireGantt ? (
               <GanttTimeline
-                activites={filteredActivites}
+                activites={filteredActivites.filter(a => a.date_debut_prevue && a.date_fin_prevue)}
                 jalons={filteredJalons}
                 vue={vueGantt}
                 onActiviteClick={(activite) => {

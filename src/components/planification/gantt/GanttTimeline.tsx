@@ -68,7 +68,13 @@ export default function GanttTimeline({
     const toutesDates: Date[] = [];
     
     activites.forEach((act) => {
-      toutesDates.push(new Date(act.date_debut_prevue), new Date(act.date_fin_prevue));
+      // Vérifier que les dates existent avant de les utiliser
+      if (act.date_debut_prevue) {
+        toutesDates.push(new Date(act.date_debut_prevue));
+      }
+      if (act.date_fin_prevue) {
+        toutesDates.push(new Date(act.date_fin_prevue));
+      }
     });
 
     jalons.forEach((jalon) => {
