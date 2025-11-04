@@ -95,15 +95,93 @@ export default function GanttTimeline({
     const jours = Math.ceil(dureeTotale / (1000 * 60 * 60 * 24));
     switch (vue) {
       case "jour":
-        return jours * 120;
+        return jours * 140;
       case "semaine":
-        return Math.ceil(jours / 7) * 120;
+        return Math.ceil(jours / 7) * 140;
       case "mois":
-        return Math.ceil(jours / 30) * 120;
+        return Math.ceil(jours / 30) * 140;
       default:
-        return jours * 120;
+        return jours * 140;
     }
   }, [dateDebut, dateFin, vue]);
+
+  // Calculer les positions verticales des jalons pour éviter les chevauchements
+  const positionsJalons = useMemo(() => {
+    if (jalons.length === 0) return [];
+    
+    const positions: { jalon: JalonGantt; top: number; level: number }[] = [];
+    const dureeTotale = dateFin.getTime() - dateDebut.getTime();
+    
+    // Grouper les jalons par position horizontale (même date ou dates proches)
+    const jalonsAvecPositions = jalons.map((jalon) => {
+      const dateRef = jalon.date_debut_previsionnelle 
+        ? new Date(jalon.date_debut_previsionnelle)
+        : jalon.date_fin_previsionnelle 
+        ? new Date(jalon.date_fin_previsionnelle)
+        : dateDebut;
+      
+      const position = dateRef.getTime() - dateDebut.getTime();
+      const left = Math.max(0, (position / dureeTotale) * largeurTotale);
+      
+      return {
+        jalon,
+        left,
+        dateRef,
+      };
+    });
+
+    // Trier par position horizontale puis par date
+    jalonsAvecPositions.sort((a, b) => {
+      if (Math.abs(a.left - b.left) < 20) {
+        // Si très proches horizontalement, trier par date
+        return a.dateRef.getTime() - b.dateRef.getTime();
+      }
+      return a.left - b.left;
+    });
+
+    // Assigner des niveaux verticaux pour éviter les chevauchements
+    const niveaux: { left: number; right: number; level: number }[] = [];
+    
+    jalonsAvecPositions.forEach((item) => {
+      const jalonWidth = 4; // Largeur d'un jalon (point)
+      const jalonLeft = item.left;
+      const jalonRight = jalonLeft + jalonWidth;
+      
+      // Trouver un niveau disponible
+      let niveau = 0;
+      let trouve = false;
+      
+      while (!trouve) {
+        // Vérifier si ce niveau chevauche avec un autre jalon
+        const chevauche = niveaux.some(
+          (n) => n.level === niveau && 
+          ((jalonLeft >= n.left && jalonLeft < n.right) || 
+           (jalonRight > n.left && jalonRight <= n.right) ||
+           (jalonLeft <= n.left && jalonRight >= n.right))
+        );
+        
+        if (!chevauche) {
+          trouve = true;
+        } else {
+          niveau++;
+        }
+      }
+      
+      niveaux.push({
+        left: jalonLeft,
+        right: jalonRight,
+        level: niveau,
+      });
+      
+      positions.push({
+        jalon: item.jalon,
+        top: niveau * 40, // 40px par niveau
+        level: niveau,
+      });
+    });
+
+    return positions;
+  }, [jalons, dateDebut, dateFin, largeurTotale]);
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
@@ -136,11 +214,6 @@ export default function GanttTimeline({
                       <span className="text-purple-500 text-lg">◇</span>
                       <span className="truncate flex-1">{jalon.libelle_lot}</span>
                     </div>
-                    {jalon.affaire && (
-                      <div className="text-xs text-purple-400 ml-auto">
-                        {jalon.affaire.numero}
-                      </div>
-                    )}
                   </div>
                 ))}
                 <div className="h-3 border-b-2 border-gray-300"></div>
@@ -171,11 +244,6 @@ export default function GanttTimeline({
                     )}
                     <span className="truncate flex-1 text-sm">{activite.libelle}</span>
                   </div>
-                  {activite.affaire && (
-                    <div className="text-xs text-gray-500 mt-0.5 ml-auto">
-                      {activite.affaire.numero}
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -186,12 +254,12 @@ export default function GanttTimeline({
             {/* Couche des jalons */}
             {jalons.length > 0 && (
               <div className="absolute inset-0 z-20" style={{ paddingTop: "48px" }}>
-                {jalons.map((jalon, index) => (
+                {positionsJalons.map(({ jalon, top, level }) => (
                   <div
                     key={jalon.id}
                     className="absolute"
                     style={{
-                      top: `${index * 40}px`,
+                      top: `${top}px`,
                       left: 0,
                       width: "100%",
                       height: "40px",
@@ -210,7 +278,7 @@ export default function GanttTimeline({
             )}
 
             {/* Couche des activités */}
-            <div style={{ paddingTop: jalons.length > 0 ? `${jalons.length * 40 + 12}px` : "48px" }}>
+            <div style={{ paddingTop: jalons.length > 0 ? `${Math.max(...positionsJalons.map(p => p.top), 0) + 40 + 12}px` : "48px" }}>
               <GanttGrid
                 activites={activites}
                 dateDebut={dateDebut}
