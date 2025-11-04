@@ -23,20 +23,28 @@ export default async function PlanificationPage() {
   );
 
   // Charger les activités planifiées avec hiérarchie et dépendances multiples
-  const { data: activites } = await supabase
+  const { data: activites, error: activitesError } = await supabase
     .from("tbl_planification_activites")
     .select(`
       *,
       affaire:tbl_affaires!tbl_planification_activites_affaire_id_fkey(id, numero, libelle, site_id, statut),
       lot:tbl_affaires_lots(id, numero_lot, libelle_lot, statut),
-      site:tbl_sites!tbl_planification_activites_site_id_fkey(site_id, site_code, site_label),
+      site:tbl_sites(site_id, site_code, site_label),
       responsable:collaborateurs!tbl_planification_activites_responsable_id_fkey(id, nom, prenom),
       parent:tbl_planification_activites!tbl_planification_activites_parent_id_fkey(id, libelle, numero_hierarchique),
       activite_precedente:tbl_planification_activites!tbl_planification_activites_activite_precedente_id_fkey(id, libelle, numero_hierarchique)
     `)
-    .order("numero_hierarchique", { ascending: true })
-    .order("ordre_affichage", { ascending: true })
-    .order("date_debut_prevue", { ascending: true });
+    .order("numero_hierarchique", { ascending: true, nullsFirst: true })
+    .order("ordre_affichage", { ascending: true, nullsFirst: true })
+    .order("date_debut_prevue", { ascending: true, nullsFirst: false });
+
+  // Log des erreurs si présentes
+  if (activitesError) {
+    console.error("[Planification] Erreur récupération activités:", activitesError);
+    console.error("[Planification] Code:", activitesError.code);
+    console.error("[Planification] Message:", activitesError.message);
+    console.error("[Planification] Hint:", activitesError.hint);
+  }
 
   // Charger les dépendances multiples pour toutes les activités
   const { data: dependances } = await supabase
@@ -97,8 +105,19 @@ export default async function PlanificationPage() {
   // Debug: Vérifier si les données sont récupérées
   if (activites && activites.length > 0) {
     console.log(`[Planification] ${activites.length} activité(s) récupérée(s) depuis Supabase`);
+    console.log('[Planification] Détails activités:', activites.map(a => ({
+      id: a.id,
+      libelle: a.libelle,
+      affaire_id: a.affaire_id,
+      date_debut_prevue: a.date_debut_prevue,
+      date_fin_prevue: a.date_fin_prevue,
+      statut: a.statut,
+      affaire: a.affaire
+    })));
   } else {
     console.warn("[Planification] Aucune activité récupérée. Vérifier les RLS et les données.");
+    console.warn("[Planification] User ID:", user.id);
+    console.warn("[Planification] User roles:", userRoles);
   }
 
   // Transformation des données pour gérer les relations Supabase (arrays)
