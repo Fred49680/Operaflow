@@ -30,9 +30,7 @@ export default async function PlanificationPage() {
       affaire:tbl_affaires!tbl_planification_activites_affaire_id_fkey(id, numero, libelle, site_id, statut),
       lot:tbl_affaires_lots(id, numero_lot, libelle_lot, statut),
       site:tbl_sites(site_id, site_code, site_label),
-      responsable:collaborateurs!tbl_planification_activites_responsable_id_fkey(id, nom, prenom),
-      parent:tbl_planification_activites!tbl_planification_activites_parent_id_fkey(id, libelle, numero_hierarchique),
-      activite_precedente:tbl_planification_activites!tbl_planification_activites_activite_precedente_id_fkey(id, libelle, numero_hierarchique)
+      responsable:collaborateurs!tbl_planification_activites_responsable_id_fkey(id, nom, prenom)
     `)
     .order("numero_hierarchique", { ascending: true, nullsFirst: true })
     .order("ordre_affichage", { ascending: true, nullsFirst: true })
@@ -127,8 +125,9 @@ export default async function PlanificationPage() {
     lot: Array.isArray(act.lot) ? act.lot[0] || null : act.lot || null,
     site: Array.isArray(act.site) ? act.site[0] || null : act.site || null,
     responsable: Array.isArray(act.responsable) ? act.responsable[0] || null : act.responsable || null,
-    parent: Array.isArray(act.parent) ? act.parent[0] || null : act.parent || null,
-    activite_precedente: Array.isArray(act.activite_precedente) ? act.activite_precedente[0] || null : act.activite_precedente || null,
+    // parent et activite_precedente seront chargés séparément si nécessaire
+    parent: null,
+    activite_precedente: null,
   }));
 
   const affectationsTransformed: AffectationPlanification[] = (affectations || []).map((aff) => ({
