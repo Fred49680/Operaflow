@@ -28,10 +28,10 @@ export async function GET(request: NextRequest) {
         *,
         affaire:tbl_affaires!tbl_planification_activites_affaire_id_fkey(id, numero, libelle, statut),
         lot:tbl_affaires_lots(id, numero_lot, libelle_lot),
-        site:tbl_sites!tbl_planification_activites_site_id_fkey(site_id, site_code, site_label),
+        site:tbl_sites(site_id, site_code, site_label),
         responsable:collaborateurs!tbl_planification_activites_responsable_id_fkey(id, nom, prenom)
       `)
-      .order("date_debut_prevue", { ascending: true });
+      .order("date_debut_prevue", { ascending: true, nullsFirst: false });
 
     // Application des filtres
     if (affaire_id) {
@@ -49,6 +49,48 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error("Erreur lors de la récupération des activités:", error);
       console.error("Détails de l'erreur:", JSON.stringify(error, null, 2));
+      console.error("Code erreur:", error.code);
+      console.error("Message:", error.message);
+      console.error("Hint:", error.hint);
+      
+      // Si c'est une erreur de relation, essayer sans la relation problématique
+      if (error.code === 'PGRST200' || error.message?.includes('relationship')) {
+        console.log("Tentative de récupération sans relation site...");
+        const { data: dataFallback, error: errorFallback } = await supabase
+          .from("tbl_planification_activites")
+          .select(`
+            *,
+            affaire:tbl_affaires!tbl_planification_activites_affaire_id_fkey(id, numero, libelle, statut),
+            lot:tbl_affaires_lots(id, numero_lot, libelle_lot),
+            responsable:collaborateurs!tbl_planification_activites_responsable_id_fkey(id, nom, prenom)
+          `)
+          .order("date_debut_prevue", { ascending: true, nullsFirst: false });
+        
+        if (errorFallback) {
+          return NextResponse.json(
+            { 
+              error: "Erreur lors de la récupération des activités",
+              details: errorFallback.message,
+              code: errorFallback.code,
+              hint: errorFallback.hint,
+              originalError: error.message
+            },
+            { status: 500 }
+          );
+        }
+        
+        // Utiliser les données fallback
+        const activites = (dataFallback || []).map((act) => ({
+          ...act,
+          affaire: Array.isArray(act.affaire) ? act.affaire[0] || null : act.affaire || null,
+          lot: Array.isArray(act.lot) ? act.lot[0] || null : act.lot || null,
+          site: null, // Site non disponible
+          responsable: Array.isArray(act.responsable) ? act.responsable[0] || null : act.responsable || null,
+        }));
+        
+        return NextResponse.json({ activites }, { status: 200 });
+      }
+      
       return NextResponse.json(
         { 
           error: "Erreur lors de la récupération des activités",
