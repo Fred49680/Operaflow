@@ -45,21 +45,17 @@ export default function GanttBar({
   // Calculer la position et la largeur de la barre
   const { left, width } = useMemo(() => {
     if (resize.isResizing) {
-      // Pendant le resize, utiliser les dates calculées par le hook
+      // Pendant le resize, utiliser les dates mises à jour du hook
       const dureeTotale = dateFinTimeline.getTime() - dateDebutTimeline.getTime();
-      const dateDebutActivite = new Date(activite.date_debut_prevue);
-      const dateFinActivite = new Date(activite.date_fin_prevue);
-      
-      // Utiliser les dates mises à jour du hook de resize
-      const dateDebut = resize.isResizing && resize.resizeHandle === "start" 
-        ? new Date(resize.initialDateDebut || activite.date_debut_prevue)
-        : dateDebutActivite;
-      const dateFin = resize.isResizing && resize.resizeHandle === "end"
-        ? new Date(resize.initialDateFin || activite.date_fin_prevue)
-        : dateFinActivite;
+      const dateDebut = resize.initialDateDebut;
+      const dateFin = resize.initialDateFin;
 
       const debutBarre = dateDebut.getTime() - dateDebutTimeline.getTime();
       const dureeBarre = dateFin.getTime() - dateDebut.getTime();
+
+      if (dureeTotale <= 0 || isNaN(dateDebut.getTime()) || isNaN(dateFin.getTime())) {
+        return { left: 0, width: 0 };
+      }
 
       return {
         left: Math.max(0, (debutBarre / dureeTotale) * largeurTotale),
