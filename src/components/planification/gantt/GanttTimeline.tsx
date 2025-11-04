@@ -242,7 +242,7 @@ export default function GanttTimeline({
             style={{
               position: "sticky",
               left: 0,
-              zIndex: 20,
+              zIndex: 30,
               backgroundColor: "#f9fafb"
             }}
           >
@@ -311,7 +311,7 @@ export default function GanttTimeline({
             />
             
             {/* Couche des jalons et activités */}
-            <div className="absolute inset-0 z-20" style={{ paddingTop: "48px" }}>
+            <div className="absolute inset-0 z-10" style={{ paddingTop: "48px" }}>
               {itemsGantt.map((item) => {
                 if (item.type === "jalon") {
                   // Décalage vertical pour centrer la barre (hauteur ligne 40px - hauteur barre 32px = 8px / 2 = 4px)

@@ -56,9 +56,9 @@ export default function GanttHeader({ dateDebut, dateFin, vue }: GanttHeaderProp
   }, [vue, colonnes]);
 
   return (
-    <div className="border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
+    <div className="border-b border-gray-200 bg-gray-50 sticky top-0 z-30">
       <div className="flex">
-        <div className="w-72 px-4 py-3 font-semibold text-gray-700 border-r border-gray-200 text-base">
+        <div className="w-72 px-4 py-3 font-semibold text-gray-700 border-r border-gray-200 text-base" style={{ zIndex: 31 }}>
           Activité
         </div>
         <div className="flex-1 flex">
