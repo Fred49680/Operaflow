@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Edit, Save, FileText, Upload, X, Plus, Trash2, FileSpreadsheet, DollarSign, Receipt, FileBarChart, Calendar, AlertCircle } from "lucide-react";
-import type { Affaire } from "@/types/affaires";
+import type { Affaire, ActiviteAffaire } from "@/types/affaires";
 
 interface AffaireDetailClientProps {
   affaire: Affaire;
@@ -1165,7 +1165,7 @@ export default function AffaireDetailClient({
                     </tr>
                   </thead>
                   <tbody>
-                    {affaire.activites.map((activite: any) => {
+                    {affaire.activites.map((activite: ActiviteAffaire) => {
                       const getStatutBadge = (statut: string) => {
                         const styles: Record<string, string> = {
                           planifiee: "bg-blue-100 text-blue-800",
@@ -1189,8 +1189,8 @@ export default function AffaireDetailClient({
                       };
 
                       const responsables = activite.affectations
-                        ?.filter((a: any) => a.role === "responsable")
-                        .map((a: any) => a.collaborateur)
+                        ?.filter((a) => a.role === "responsable")
+                        .map((a) => a.collaborateur)
                         .filter(Boolean) || [];
 
                       return (
@@ -1243,9 +1243,9 @@ export default function AffaireDetailClient({
                           <td className="px-4 py-3 text-sm text-gray-600">
                             {responsables.length > 0 ? (
                               <div className="flex flex-col">
-                                {responsables.map((resp: any, idx: number) => (
+                                {responsables.map((resp, idx: number) => (
                                   <span key={idx}>
-                                    {resp.prenom} {resp.nom}
+                                    {resp?.prenom} {resp?.nom}
                                   </span>
                                 ))}
                               </div>
