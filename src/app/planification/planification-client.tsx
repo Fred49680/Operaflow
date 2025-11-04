@@ -1188,6 +1188,44 @@ export default function PlanificationClient({
                     if (response.ok) {
                       const data = await response.json();
                       const nouvelleActiviteId = data.activite?.id || data.id;
+                      const lotId = payload.lot_id;
+                      
+                      // Si la nouvelle activité est liée à un jalon, créer automatiquement une dépendance avec la dernière activité du jalon
+                      if (nouvelleActiviteId && lotId && !isEditMode) {
+                        try {
+                          // Trouver toutes les activités du même jalon (triées par ordre de création ou numéro)
+                          const activitesJalon = activites
+                            .filter(act => act.lot_id === lotId && act.id !== nouvelleActiviteId)
+                            .sort((a, b) => {
+                              // Trier par numero_hierarchique si disponible, sinon par date de création
+                              if (a.numero_hierarchique && b.numero_hierarchique) {
+                                return a.numero_hierarchique.localeCompare(b.numero_hierarchique);
+                              }
+                              if (a.numero_hierarchique) return -1;
+                              if (b.numero_hierarchique) return 1;
+                              return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+                            });
+                          
+                          // Prendre la dernière activité créée (ou la première si aucune autre)
+                          const derniereActiviteJalon = activitesJalon[activitesJalon.length - 1] || activitesJalon[0];
+                          
+                          if (derniereActiviteJalon) {
+                            // Créer automatiquement une dépendance FS (Finish-to-Start) avec la dernière activité du jalon
+                            await fetch("/api/planification/dependances", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                activite_id: nouvelleActiviteId,
+                                activite_precedente_id: derniereActiviteJalon.id,
+                                type_dependance: "FS",
+                                delai_jours: 0,
+                              }),
+                            });
+                          }
+                        } catch (error) {
+                          console.error("Erreur lors de la création automatique de la dépendance:", error);
+                        }
+                      }
                       
                       // Sauvegarder les dépendances en attente si l'activité a été créée
                       if (nouvelleActiviteId && dependancesEnAttente.length > 0) {
