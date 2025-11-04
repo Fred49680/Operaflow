@@ -47,6 +47,24 @@ export function useGanttDrag({
         return;
       }
 
+      // Vérifier si le drag est autorisé selon le statut
+      const statutsBloques = ['lancee', 'prolongee', 'suspendue', 'terminee'];
+      if (statutsBloques.includes(activite.statut)) {
+        // Afficher un message explicite selon le statut
+        let message = "";
+        if (activite.statut === 'lancee') {
+          message = "La tâche est déjà lancée — la date de début est verrouillée.";
+        } else if (activite.statut === 'prolongee') {
+          message = "La tâche est prolongée — le déplacement est bloqué.";
+        } else if (activite.statut === 'suspendue') {
+          message = "La tâche est suspendue — le déplacement est bloqué.";
+        } else if (activite.statut === 'terminee') {
+          message = "La tâche est terminée — le déplacement est bloqué.";
+        }
+        alert(message);
+        return;
+      }
+
       e.preventDefault();
       e.stopPropagation();
       
@@ -60,7 +78,7 @@ export function useGanttDrag({
       setDragStartX(e.clientX);
       setHasMoved(false);
     },
-    []
+    [activite.statut]
   );
 
   // Fonction pour arrondir une date au jour le plus proche (snap quotidien)

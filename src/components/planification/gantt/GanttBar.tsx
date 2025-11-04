@@ -123,11 +123,15 @@ export default function GanttBar({
     onClick?.();
   }, [drag.isDragging, drag.hasJustDragged, resize.isResizing, resize.hasJustResized, onClick]);
 
+  // Vérifier si le drag est autorisé selon le statut
+  const statutsBloquesDrag = ['lancee', 'prolongee', 'suspendue', 'terminee'];
+  const canDrag = onDragEnd && !statutsBloquesDrag.includes(activite.statut);
+  
   return (
     <div
-      className={`relative h-8 group ${drag.isDragging || resize.isResizing ? "cursor-grabbing z-30" : onDragEnd || onResizeEnd ? "cursor-grab" : "cursor-pointer"}`}
+      className={`relative h-8 group ${drag.isDragging || resize.isResizing ? "cursor-grabbing z-30" : canDrag || onResizeEnd ? "cursor-grab" : "cursor-pointer"}`}
       style={{ left: `${left}px`, width: `${width}px` }}
-      onMouseDown={onDragEnd ? drag.onMouseDown : undefined}
+      onMouseDown={canDrag ? drag.onMouseDown : undefined}
       onClick={(e) => {
         // Si onDragEnd est défini, on permet le drag mais on gère aussi le clic
         // Le handleClick vérifiera si c'est vraiment un clic (pas un drag)
@@ -168,26 +172,31 @@ export default function GanttBar({
         {/* Handles de redimensionnement */}
         {onResizeEnd && (
           <>
-            {/* Handle gauche (début) */}
-            <div
-              className="absolute left-0 top-0 bottom-0 w-3 bg-white bg-opacity-0 hover:bg-opacity-40 cursor-ew-resize gantt-bar-handle z-10 border-l-2 border-white border-opacity-0 hover:border-opacity-50"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                resize.onStartHandleMouseDown(e);
-              }}
-              style={{ cursor: "ew-resize" }}
-              title="Redimensionner le début"
-            />
-            {/* Handle droit (fin) */}
-            <div
-              className="absolute right-0 top-0 bottom-0 w-3 bg-white bg-opacity-0 hover:bg-opacity-40 cursor-ew-resize gantt-bar-handle z-10 border-r-2 border-white border-opacity-0 hover:border-opacity-50"
-              onMouseDown={(e) => {
-                e.stopPropagation();
-                resize.onEndHandleMouseDown(e);
-              }}
-              style={{ cursor: "ew-resize" }}
-              title="Redimensionner la fin"
-            />
+            {/* Handle gauche (début) - masqué pour statuts "lancee" et "prolongee" */}
+            {!(activite.statut === 'lancee' || activite.statut === 'prolongee') && 
+             !(activite.statut === 'suspendue' || activite.statut === 'terminee') && (
+              <div
+                className="absolute left-0 top-0 bottom-0 w-3 bg-white bg-opacity-0 hover:bg-opacity-40 cursor-ew-resize gantt-bar-handle z-10 border-l-2 border-white border-opacity-0 hover:border-opacity-50"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  resize.onStartHandleMouseDown(e);
+                }}
+                style={{ cursor: "ew-resize" }}
+                title="Redimensionner le début"
+              />
+            )}
+            {/* Handle droit (fin) - masqué pour statuts "suspendue" et "terminee" */}
+            {!(activite.statut === 'suspendue' || activite.statut === 'terminee') && (
+              <div
+                className="absolute right-0 top-0 bottom-0 w-3 bg-white bg-opacity-0 hover:bg-opacity-40 cursor-ew-resize gantt-bar-handle z-10 border-r-2 border-white border-opacity-0 hover:border-opacity-50"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  resize.onEndHandleMouseDown(e);
+                }}
+                style={{ cursor: "ew-resize" }}
+                title="Redimensionner la fin"
+              />
+            )}
           </>
         )}
       </div>

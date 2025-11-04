@@ -173,14 +173,85 @@ export async function PATCH(
     if (heures_reelles !== undefined) updates.heures_reelles = heures_reelles ?? 0;
     if (type_horaire !== undefined) updates.type_horaire = type_horaire;
     if (coefficient !== undefined) updates.coefficient = coefficient ?? 1.0;
-    // Valider le statut
+    // Valider le statut et gérer les verrouillages automatiques
     const statutsValides = ['planifiee', 'lancee', 'suspendue', 'reportee', 'terminee', 'annulee', 'prolongee', 'archivee'];
     if (statut !== undefined) {
       if (statutsValides.includes(statut)) {
         updates.statut = statut;
+        
+        // Quand le statut passe à "lancee", verrouiller automatiquement la date de début
+        if (statut === 'lancee') {
+          // Récupérer l'activité actuelle pour vérifier si elle est déjà lancée
+          const { data: currentActivity } = await supabase
+            .from("tbl_planification_activites")
+            .select("statut, date_debut_prevue, date_debut_reelle")
+            .eq("id", id)
+            .single();
+          
+          // Si l'activité n'était pas déjà lancée, verrouiller la date de début
+          if (currentActivity && currentActivity.statut !== 'lancee') {
+            // Utiliser la date de début réelle si fournie, sinon la date prévue actuelle, sinon aujourd'hui
+            const dateVerrouillage = date_debut_reelle 
+              ? new Date(date_debut_reelle)
+              : (currentActivity.date_debut_prevue 
+                ? new Date(currentActivity.date_debut_prevue)
+                : new Date());
+            
+            // Mettre à jour date_debut_prevue avec la date de verrouillage (date réelle de lancement)
+            dateVerrouillage.setHours(0, 0, 0, 0);
+            updates.date_debut_prevue = dateVerrouillage.toISOString();
+            
+            // Si date_debut_reelle n'est pas fournie, la définir aussi
+            if (!date_debut_reelle) {
+              updates.date_debut_reelle = dateVerrouillage.toISOString();
+            }
+          }
+        }
+        
+        // Quand le statut passe à "terminee", verrouiller les dates de fin
+        if (statut === 'terminee') {
+          const { data: currentActivity } = await supabase
+            .from("tbl_planification_activites")
+            .select("date_fin_prevue, date_fin_reelle")
+            .eq("id", id)
+            .single();
+          
+          if (currentActivity) {
+            // Utiliser la date de fin réelle si fournie, sinon la date prévue actuelle
+            const dateFinVerrouillage = date_fin_reelle 
+              ? new Date(date_fin_reelle)
+              : (currentActivity.date_fin_prevue 
+                ? new Date(currentActivity.date_fin_prevue)
+                : new Date());
+            
+            dateFinVerrouillage.setHours(0, 0, 0, 0);
+            updates.date_fin_prevue = dateFinVerrouillage.toISOString();
+            
+            if (!date_fin_reelle) {
+              updates.date_fin_reelle = dateFinVerrouillage.toISOString();
+            }
+          }
+        }
       } else {
         console.warn(`Statut invalide reçu: ${statut}. Valeurs attendues: ${statutsValides.join(', ')}`);
         // Ne pas mettre à jour le statut si invalide, mais continuer avec les autres updates
+      }
+    }
+    
+    // Si le statut est "lancee" et qu'on essaie de modifier date_debut_prevue, vérifier le verrouillage
+    if (date_debut_prevue !== undefined && statut === undefined) {
+      // Récupérer l'activité actuelle pour vérifier le statut
+      const { data: currentActivity } = await supabase
+        .from("tbl_planification_activites")
+        .select("statut, date_debut_prevue")
+        .eq("id", id)
+        .single();
+      
+      // Si l'activité est lancée, prolongée, suspendue ou terminée, empêcher la modification de date_debut_prevue
+      if (currentActivity && ['lancee', 'prolongee', 'suspendue', 'terminee'].includes(currentActivity.statut)) {
+        // Ne pas mettre à jour date_debut_prevue, garder la valeur actuelle
+        delete updates.date_debut_prevue;
+        console.warn(`Tentative de modification de date_debut_prevue pour une activité avec statut "${currentActivity.statut}" - modification ignorée`);
       }
     }
     if (pourcentage_avancement !== undefined) updates.pourcentage_avancement = pourcentage_avancement ?? 0;

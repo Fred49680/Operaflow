@@ -42,6 +42,25 @@ export function useGanttResize({
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent, handle: "start" | "end") => {
+      // Vérifier si le resize est autorisé selon le statut
+      const statutsBloquesResize = ['suspendue', 'terminee'];
+      if (statutsBloquesResize.includes(activite.statut)) {
+        let message = "";
+        if (activite.statut === 'suspendue') {
+          message = "La tâche est suspendue — le redimensionnement est bloqué.";
+        } else if (activite.statut === 'terminee') {
+          message = "La tâche est terminée — le redimensionnement est bloqué.";
+        }
+        alert(message);
+        return;
+      }
+
+      // Pour les statuts "lancee" et "prolongee", seul le resize de la fin est autorisé
+      if (handle === "start" && (activite.statut === 'lancee' || activite.statut === 'prolongee')) {
+        alert("La date de début est verrouillée — seul le redimensionnement de la fin est autorisé.");
+        return;
+      }
+
       e.preventDefault();
       e.stopPropagation();
       setIsResizing(true);
@@ -49,7 +68,7 @@ export function useGanttResize({
       setResizeStartX(e.clientX);
       setLastSnappedDate(null); // Réinitialiser le dernier snap
     },
-    []
+    [activite.statut]
   );
 
   // Fonction pour arrondir une date au jour le plus proche (snap quotidien)

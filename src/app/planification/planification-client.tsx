@@ -572,6 +572,13 @@ export default function PlanificationClient({
     const activiteModifiee = activites.find(a => a.id === activiteId);
     if (!activiteModifiee) return;
     
+    // Vérifier si le drag est autorisé selon le statut
+    const statutsBloquesDrag = ['lancee', 'prolongee', 'suspendue', 'terminee'];
+    if (statutsBloquesDrag.includes(activiteModifiee.statut)) {
+      // Ne pas effectuer le drag, retourner silencieusement (le message est déjà affiché dans useGanttDrag)
+      return;
+    }
+    
     // Mise à jour optimiste immédiate de l'état local pour la tâche déplacée
     setActivites(prev => prev.map(act => 
       act.id === activiteId 
@@ -680,19 +687,48 @@ export default function PlanificationClient({
     const activiteModifiee = activites.find(a => a.id === activiteId);
     if (!activiteModifiee) return;
     
+    // Vérifier si le resize est autorisé selon le statut
+    const statutsBloquesResize = ['suspendue', 'terminee'];
+    if (statutsBloquesResize.includes(activiteModifiee.statut)) {
+      // Ne pas effectuer le resize, retourner silencieusement (le message est déjà affiché dans useGanttResize)
+      return;
+    }
+    
+    // Pour les statuts "lancee" et "prolongee", ne modifier que la date de fin
+    const ancienneDateDebut = new Date(activiteModifiee.date_debut_prevue);
+    const ancienneDateFin = new Date(activiteModifiee.date_fin_prevue);
+    const ancienneDuree = ancienneDateFin.getTime() - ancienneDateDebut.getTime();
+    
+    let dateDebutFinale = nouvelleDateDebut;
+    let dateFinFinale = nouvelleDateFin;
+    let nouveauStatut = activiteModifiee.statut;
+    
+    if (activiteModifiee.statut === 'lancee' || activiteModifiee.statut === 'prolongee') {
+      // Ne modifier que la date de fin, conserver la date de début
+      dateDebutFinale = ancienneDateDebut;
+      dateFinFinale = nouvelleDateFin;
+      
+      // Si la durée a été étendue, passer au statut "prolongee" si ce n'est pas déjà le cas
+      const nouvelleDuree = dateFinFinale.getTime() - dateDebutFinale.getTime();
+      if (nouvelleDuree > ancienneDuree && activiteModifiee.statut !== 'prolongee') {
+        nouveauStatut = 'prolongee';
+      }
+    }
+    
     const typeHoraire = activiteModifiee.type_horaire || "jour";
     
     // Calculer le nouveau nombre de jours ouvrés
-    const nouvelleDureeJoursOuvres = calculerJoursOuvres(nouvelleDateDebut, nouvelleDateFin, typeHoraire);
+    const nouvelleDureeJoursOuvres = calculerJoursOuvres(dateDebutFinale, dateFinFinale, typeHoraire);
     
     // Mise à jour optimiste immédiate de l'état local pour la tâche redimensionnée
     setActivites(prev => prev.map(act => 
       act.id === activiteId 
         ? { 
             ...act, 
-            date_debut_prevue: nouvelleDateDebut.toISOString(), 
-            date_fin_prevue: nouvelleDateFin.toISOString(),
-            duree_jours_ouvres: nouvelleDureeJoursOuvres
+            date_debut_prevue: dateDebutFinale.toISOString(), 
+            date_fin_prevue: dateFinFinale.toISOString(),
+            duree_jours_ouvres: nouvelleDureeJoursOuvres,
+            statut: nouveauStatut
           }
         : act
     ));
