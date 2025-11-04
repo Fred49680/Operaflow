@@ -211,15 +211,16 @@ export default function GanttTimeline({
                     .map(({ jalon, top, level }) => (
                       <div
                         key={jalon.id}
-                        className="absolute left-0 right-0 px-4 py-3 border-b border-purple-100 flex items-center text-sm text-purple-700 font-semibold"
+                        className="absolute left-0 right-0 px-4 border-b border-purple-100 flex items-center text-sm text-purple-700 font-semibold"
                         style={{ 
                           top: `${top}px`,
-                          height: "40px"
+                          height: "40px",
+                          alignItems: "center"
                         }}
                       >
-                        <div className="flex items-center gap-3 truncate w-full">
-                          <span className="text-purple-500 text-lg flex-shrink-0">◇</span>
-                          <span className="truncate flex-1">{jalon.libelle_lot}</span>
+                        <div className="flex items-center gap-3 truncate w-full h-full">
+                          <span className="text-purple-500 text-lg flex-shrink-0" style={{ lineHeight: "1" }}>◇</span>
+                          <span className="truncate flex-1" style={{ lineHeight: "1" }}>{jalon.libelle_lot}</span>
                         </div>
                       </div>
                     ))}
@@ -267,12 +268,13 @@ export default function GanttTimeline({
                   .map(({ jalon, top, level }) => (
                     <div
                       key={jalon.id}
-                      className="absolute"
+                      className="absolute flex items-center"
                       style={{
                         top: `${top}px`,
                         left: 0,
                         width: "100%",
                         height: "40px",
+                        alignItems: "center"
                       }}
                     >
                       <GanttJalonBar

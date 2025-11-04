@@ -69,16 +69,16 @@ export default function GanttJalonBar({
 
   return (
     <div
-      className={`relative h-6 group cursor-pointer ${isPoint ? "z-20" : "z-10"}`}
-      style={{ left: `${left}px`, width: `${width}px` }}
+      className={`relative h-6 group cursor-pointer flex items-center ${isPoint ? "z-20" : "z-10"}`}
+      style={{ left: `${left}px`, width: `${width}px`, height: "40px" }}
       onClick={onClick}
     >
       {/* Barre de jalon */}
       {isPoint ? (
-        // Point de jalon (losange)
+        // Point de jalon (losange) - centré verticalement
         <div
-          className={`${couleur} w-4 h-4 transform rotate-45 border-2 shadow-md absolute -top-1 -left-2`}
-          style={{ borderColor: couleur.split(" ")[1] }}
+          className={`${couleur} w-4 h-4 transform rotate-45 border-2 shadow-md`}
+          style={{ borderColor: couleur.split(" ")[1], marginTop: "0px" }}
         />
       ) : (
         // Barre de jalon (période)
