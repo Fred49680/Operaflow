@@ -127,12 +127,20 @@ export default function GanttTimeline({
         return; // Ignorer les activités sans dates
       }
       
-      if (activite.lot_id) {
+      // Vérifier si cette activité est liée à un jalon (lot avec est_jalon_gantt = true)
+      const jalonAssocie = jalons.find(j => j.id === activite.lot_id);
+      
+      if (jalonAssocie) {
+        // Activité liée à un jalon
         if (!map.has(activite.lot_id)) {
           map.set(activite.lot_id, []);
         }
         map.get(activite.lot_id)!.push(activite);
+      } else if (activite.lot_id) {
+        // Activité liée à un lot mais pas un jalon -> on l'ignore ou on la met dans sans jalon
+        // On peut choisir de les afficher ou non
       } else {
+        // Activité sans jalon
         activitesSansJalon.push(activite);
       }
     });
