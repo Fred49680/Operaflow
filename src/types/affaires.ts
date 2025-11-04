@@ -48,6 +48,53 @@ export interface Affaire {
   lots?: LotAffaire[];
   pre_planif?: PrePlanif | null;
   documents?: DocumentAffaire[];
+  activites?: ActiviteAffaire[];
+}
+
+export interface ActiviteAffaire {
+  id: string;
+  affaire_id: string;
+  lot_id?: string | null;
+  libelle: string;
+  description?: string | null;
+  numero_hierarchique?: string | null;
+  niveau_hierarchie?: number | null;
+  parent_id?: string | null;
+  date_debut_prevue?: string | null;
+  date_fin_prevue?: string | null;
+  date_debut_reelle?: string | null;
+  date_fin_reelle?: string | null;
+  duree_jours_ouvres?: number | null;
+  heures_prevues?: number | null;
+  heures_reelles?: number | null;
+  type_horaire?: string | null;
+  statut?: string | null;
+  pourcentage_avancement?: number | null;
+  calendrier_id?: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by?: string | null;
+  updated_by?: string | null;
+  
+  // Relations
+  lot?: {
+    id: string;
+    numero_lot: string;
+    libelle_lot: string;
+  } | null;
+  affectations?: Array<{
+    id: string;
+    activite_id: string;
+    collaborateur_id: string;
+    role: string;
+    date_debut?: string | null;
+    date_fin?: string | null;
+    collaborateur?: {
+      id: string;
+      nom: string;
+      prenom: string;
+    } | null;
+  }> | null;
 }
 
 export interface LigneBPU {
