@@ -18,35 +18,71 @@ export async function GET(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const { data, error } = await supabase
+    // Requête en deux étapes pour mieux gérer les erreurs
+    const { data: competencesRequises, error: errorCompetences } = await supabase
       .from("activites_competences_requises")
       .select(`
         id,
         activite_id,
         competence_id,
         niveau_requis,
-        est_obligatoire,
-        competences (
-          id,
-          code,
-          libelle,
-          description,
-          categorie,
-          niveau_requis as niveau_competence
-        )
+        est_obligatoire
       `)
       .eq("activite_id", id)
       .order("est_obligatoire", { ascending: false });
 
-    if (error) {
-      console.error("Erreur récupération compétences requises:", error);
+    if (errorCompetences) {
+      console.error("Erreur récupération compétences requises:", errorCompetences);
       return NextResponse.json(
-        { error: "Erreur lors de la récupération" },
+        { 
+          error: "Erreur lors de la récupération",
+          details: errorCompetences.message,
+          code: errorCompetences.code
+        },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ competences: data || [] });
+    // Si aucune compétence requise, retourner un tableau vide
+    if (!competencesRequises || competencesRequises.length === 0) {
+      return NextResponse.json({ competences: [] });
+    }
+
+    // Récupérer les détails des compétences séparément
+    const competenceIds = competencesRequises.map(cr => cr.competence_id);
+    const { data: competences, error: errorCompetencesDetails } = await supabase
+      .from("competences")
+      .select("id, code, libelle, description, categorie")
+      .in("id", competenceIds);
+
+    if (errorCompetencesDetails) {
+      console.error("Erreur récupération détails compétences:", errorCompetencesDetails);
+      // Même si on ne peut pas récupérer les détails, on retourne au moins les compétences requises
+      return NextResponse.json({ 
+        competences: competencesRequises.map(cr => ({
+          ...cr,
+          competences: null
+        }))
+      });
+    }
+
+    // Fusionner les données
+    const competencesAvecDetails = competencesRequises.map(cr => {
+      const competence = competences?.find(c => c.id === cr.competence_id);
+      return {
+        ...cr,
+        competences: competence ? {
+          id: competence.id,
+          code: competence.code,
+          libelle: competence.libelle,
+          description: competence.description,
+          categorie: competence.categorie,
+          niveau_competence: cr.niveau_requis
+        } : null
+      };
+    });
+
+    return NextResponse.json({ competences: competencesAvecDetails });
   } catch (error) {
     console.error("Erreur serveur:", error);
     return NextResponse.json(
