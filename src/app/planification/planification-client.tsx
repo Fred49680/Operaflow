@@ -178,7 +178,6 @@ export default function PlanificationClient({
       
       const initDuree = editingActivite.duree_jours_ouvres?.toString() || "";
       
-      setDateDebut(initDateDebut);
       setDureeJoursOuvres(initDuree);
       setCalculAutoDateFin(initCalculAuto);
       setStatutActivite(editingActivite.statut || "planifiee");
@@ -191,7 +190,7 @@ export default function PlanificationClient({
       if (calendrierId && initDateDebut) {
         const dateObj = new Date(initDateDebut);
         const dateOnly = dateObj.toISOString().split('T')[0];
-        getHeuresCalendrier(calendrierId, dateOnly).then((heures) => {
+        getHeuresCalendrier(calendrierId, dateOnly).then(async (heures) => {
           if (heures.heure_debut) {
             const [heuresDebut, minutesDebut] = heures.heure_debut.split(':').map(Number);
             dateObj.setHours(heuresDebut, minutesDebut, 0, 0);
@@ -201,24 +200,55 @@ export default function PlanificationClient({
             setDateDebut(nouvelleDateDebut);
             
             if (initCalculAuto && initDuree) {
-              calculerDateFin(nouvelleDateDebut, parseInt(initDuree), "jours", editingActivite.type_horaire || "jour");
+              await calculerDateFin(nouvelleDateDebut, parseInt(initDuree), "jours", editingActivite.type_horaire || "jour");
+              // Calculer les heures travaillées
+              if (initDuree) {
+                await calculerHeuresTravailleesDuree(nouvelleDateDebut, parseInt(initDuree));
+              }
+            } else {
+              // Ajuster aussi la date de fin si elle existe
+              if (editingActivite.date_fin_prevue) {
+                const dateFinObj = new Date(editingActivite.date_fin_prevue);
+                const dateFinOnly = dateFinObj.toISOString().split('T')[0];
+                const heuresFin = await getHeuresCalendrier(calendrierId, dateFinOnly);
+                if (heuresFin.heure_fin) {
+                  const [heuresFinH, minutesFin] = heuresFin.heure_fin.split(':').map(Number);
+                  dateFinObj.setHours(heuresFinH, minutesFin, 0, 0);
+                  setDateFinCalculee(dateFinObj.toISOString().slice(0, 16));
+                } else {
+                  setDateFinCalculee(dateFinObj.toISOString().slice(0, 16));
+                }
+              } else {
+                setDateFinCalculee("");
+              }
+            }
+          } else {
+            // Si pas d'heure de début, utiliser la valeur initiale
+            setDateDebut(initDateDebut);
+            if (!initCalculAuto && editingActivite.date_fin_prevue) {
+              const dateFin = new Date(editingActivite.date_fin_prevue);
+              setDateFinCalculee(dateFin.toISOString().slice(0, 16));
             }
           }
         });
-      } else if (initCalculAuto && initDateDebut && initDuree) {
-        calculerDateFin(initDateDebut, parseInt(initDuree), "jours", editingActivite.type_horaire || "jour");
       } else {
-        // Normaliser aussi la date de fin si elle existe
-        if (editingActivite.date_fin_prevue) {
-          const dateFin = new Date(editingActivite.date_fin_prevue);
-          dateFin.setHours(8, 0, 0, 0);
-          if (!isJourOuvre(dateFin)) {
-            const dateOuvree = getProchainJourOuvre(dateFin);
-            dateFin.setTime(dateOuvree.getTime());
-          }
-          setDateFinCalculee(dateFin.toISOString().slice(0, 16));
+        // Pas de calendrier, utiliser les valeurs par défaut
+        setDateDebut(initDateDebut);
+        if (initCalculAuto && initDateDebut && initDuree) {
+          calculerDateFin(initDateDebut, parseInt(initDuree), "jours", editingActivite.type_horaire || "jour");
         } else {
-          setDateFinCalculee("");
+          // Normaliser aussi la date de fin si elle existe
+          if (editingActivite.date_fin_prevue) {
+            const dateFin = new Date(editingActivite.date_fin_prevue);
+            dateFin.setHours(8, 0, 0, 0);
+            if (!isJourOuvre(dateFin)) {
+              const dateOuvree = getProchainJourOuvre(dateFin);
+              dateFin.setTime(dateOuvree.getTime());
+            }
+            setDateFinCalculee(dateFin.toISOString().slice(0, 16));
+          } else {
+            setDateFinCalculee("");
+          }
         }
       }
       setTypeHoraireSelectionne(editingActivite.type_horaire || "jour");
