@@ -6,7 +6,7 @@
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS public.activites_competences_requises (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  activite_id UUID NOT NULL REFERENCES public.activites_planification(id) ON DELETE CASCADE,
+  activite_id UUID NOT NULL REFERENCES public.tbl_planification_activites(id) ON DELETE CASCADE,
   competence_id UUID NOT NULL REFERENCES public.competences(id) ON DELETE CASCADE,
   niveau_requis VARCHAR(50) DEFAULT 'base', -- 'base', 'intermediaire', 'expert'
   est_obligatoire BOOLEAN DEFAULT true, -- Si false, compétence recommandée mais non obligatoire
@@ -42,7 +42,7 @@ CREATE POLICY "Users can read activites_competences_requises for their activitie
   FOR SELECT
   USING (
     EXISTS (
-      SELECT 1 FROM public.activites_planification ap
+      SELECT 1 FROM public.tbl_planification_activites ap
       WHERE ap.id = activites_competences_requises.activite_id
       AND (
         ap.created_by = auth.uid()
