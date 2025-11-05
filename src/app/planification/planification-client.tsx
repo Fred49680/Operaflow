@@ -124,7 +124,6 @@ export default function PlanificationClient({
     const minutesFinTache = dateFin.getMinutes();
     
     const minutesFinTacheTotal = heureFinTache * 60 + minutesFinTache;
-    const minutesPauseDebut = hPauseDebut * 60 + mPauseDebut;
     const minutesPauseFin = hPauseFin * 60 + mPauseFin;
     
     // Si la tâche se termine avant ou pendant la pause, commencer après la pause

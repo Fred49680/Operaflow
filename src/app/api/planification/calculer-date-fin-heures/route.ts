@@ -34,19 +34,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Récupérer le site_id du calendrier si disponible
-    const { data: calendrierData } = await supabase
-      .from("tbl_calendriers")
-      .select("site_id")
-      .eq("id", calendrier_id)
-      .single();
-    
-    const siteIdCalendrier = calendrierData?.site_id || null;
-
     // Calculer la date de fin en parcourant les jours selon le calendrier
-    let dateCourante = new Date(dateDebut);
+    const dateCourante = new Date(dateDebut);
     let heuresAccumulees = 0;
-    const heureDebutJournee = new Date(dateCourante);
     
     // Extraire l'heure de début de la date de début
     const heureDebutHeure = dateCourante.getHours();
@@ -135,7 +125,7 @@ export async function POST(request: NextRequest) {
     if (heuresAccumulees >= heuresRestantes) {
       // Calculer l'heure de fin exacte
       const heuresRestantesJour = heuresRestantes;
-      let dateFin = new Date(dateCourante);
+      const dateFin = new Date(dateCourante);
       
       if (minutesPauseDebut && minutesDebutTache < minutesPauseDebut) {
         // Si on finit avant la pause
@@ -217,7 +207,7 @@ export async function POST(request: NextRequest) {
           
           if (heuresRestantesTotal <= heuresJour) {
             // On finit dans ce jour
-            let dateFin = new Date(dateCourante);
+            const dateFin = new Date(dateCourante);
             
             if (heuresRestantesTotal <= (minutesPauseDebutJour ? (minutesPauseDebutJour - minutesDebutJour) / 60 : heuresJour)) {
               // Finit avant la pause
