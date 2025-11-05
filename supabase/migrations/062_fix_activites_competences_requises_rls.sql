@@ -5,7 +5,57 @@
 -- Cette migration corrige les politiques RLS de activites_competences_requises
 -- pour s'aligner avec les politiques de tbl_planification_activites
 -- et permettre l'accès aux utilisateurs qui peuvent lire les activités selon leur rôle
+-- 
+-- Cette migration est idempotente : elle crée la table si elle n'existe pas
 --
+
+-- ============================================================================
+-- 1️⃣ CRÉATION DE LA TABLE (si elle n'existe pas)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.activites_competences_requises (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  activite_id UUID NOT NULL REFERENCES public.tbl_planification_activites(id) ON DELETE CASCADE,
+  competence_id UUID NOT NULL REFERENCES public.competences(id) ON DELETE CASCADE,
+  niveau_requis VARCHAR(50) DEFAULT 'base', -- 'base', 'intermediaire', 'expert'
+  est_obligatoire BOOLEAN DEFAULT true, -- Si false, compétence recommandée mais non obligatoire
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_by UUID REFERENCES auth.users(id),
+  updated_by UUID REFERENCES auth.users(id),
+  UNIQUE(activite_id, competence_id)
+);
+
+COMMENT ON TABLE public.activites_competences_requises IS 'Compétences requises pour réaliser une activité';
+COMMENT ON COLUMN public.activites_competences_requises.niveau_requis IS 'Niveau minimum requis : base, intermediaire, expert';
+COMMENT ON COLUMN public.activites_competences_requises.est_obligatoire IS 'Si true, la compétence est obligatoire. Si false, recommandée';
+
+-- Créer les index si ils n'existent pas
+CREATE INDEX IF NOT EXISTS idx_activites_competences_activite ON public.activites_competences_requises(activite_id);
+CREATE INDEX IF NOT EXISTS idx_activites_competences_competence ON public.activites_competences_requises(competence_id);
+CREATE INDEX IF NOT EXISTS idx_activites_competences_niveau ON public.activites_competences_requises(niveau_requis);
+
+-- Créer le trigger updated_at si nécessaire
+-- Vérifier si la fonction update_tbl_sites_updated_at existe
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'update_tbl_sites_updated_at') THEN
+    -- Supprimer le trigger s'il existe déjà
+    DROP TRIGGER IF EXISTS trigger_activites_competences_updated_at ON public.activites_competences_requises;
+    
+    -- Créer le trigger
+    CREATE TRIGGER trigger_activites_competences_updated_at
+      BEFORE UPDATE ON public.activites_competences_requises
+      FOR EACH ROW
+      EXECUTE FUNCTION update_tbl_sites_updated_at();
+  END IF;
+END $$;
+
+-- Activer RLS
+ALTER TABLE public.activites_competences_requises ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================================
+-- 2️⃣ CORRECTION DES POLITIQUES RLS
+-- ============================================================================
 
 -- Supprimer les anciennes politiques
 DROP POLICY IF EXISTS "Users can read activites_competences_requises for their activities" ON public.activites_competences_requises;
