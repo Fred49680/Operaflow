@@ -3,6 +3,7 @@
 import { useMemo, useCallback } from "react";
 import { useGanttDrag } from "./useGanttDrag";
 import { useGanttResize } from "./useGanttResize";
+import { getNombreJoursOuvres, setHeureDebutCalendrier, isJourOuvre, getProchainJourOuvre } from "@/utils/gantt-calendar";
 import type { ActivitePlanification } from "@/types/planification";
 
 interface GanttBarProps {
@@ -46,20 +47,41 @@ export default function GanttBar({
   const { left, width } = useMemo(() => {
     if (resize.isResizing) {
       // Pendant le resize, utiliser les dates mises à jour du hook
-      const dureeTotale = dateFinTimeline.getTime() - dateDebutTimeline.getTime();
       const dateDebut = resize.initialDateDebut;
       const dateFin = resize.initialDateFin;
+      
+      // Normaliser les dates pour utiliser uniquement les jours ouvrés
+      let dateDebutNorm = new Date(dateDebut);
+      dateDebutNorm.setHours(8, 0, 0, 0);
+      if (!isJourOuvre(dateDebutNorm)) {
+        dateDebutNorm = getProchainJourOuvre(dateDebutNorm);
+      }
+      
+      let dateFinNorm = new Date(dateFin);
+      dateFinNorm.setHours(8, 0, 0, 0);
+      if (!isJourOuvre(dateFinNorm)) {
+        dateFinNorm = getProchainJourOuvre(dateFinNorm);
+      }
+      
+      const dateDebutTimelineNorm = new Date(dateDebutTimeline);
+      dateDebutTimelineNorm.setHours(8, 0, 0, 0);
+      const dateFinTimelineNorm = new Date(dateFinTimeline);
+      dateFinTimelineNorm.setHours(8, 0, 0, 0);
+      
+      // Pour la position, on exclut la date de début de l'activité
+      const joursOuvresAvant = getNombreJoursOuvres(dateDebutTimelineNorm, dateDebutNorm, false);
+      // Pour la durée, on inclut la date de fin
+      const joursOuvresDuree = getNombreJoursOuvres(dateDebutNorm, dateFinNorm, true);
+      // Pour le total, on inclut la date de fin
+      const joursOuvresTotaux = getNombreJoursOuvres(dateDebutTimelineNorm, dateFinTimelineNorm, true);
 
-      const debutBarre = dateDebut.getTime() - dateDebutTimeline.getTime();
-      const dureeBarre = dateFin.getTime() - dateDebut.getTime();
-
-      if (dureeTotale <= 0 || isNaN(dateDebut.getTime()) || isNaN(dateFin.getTime())) {
+      if (joursOuvresTotaux <= 0 || isNaN(dateDebut.getTime()) || isNaN(dateFin.getTime())) {
         return { left: 0, width: 0 };
       }
 
       return {
-        left: Math.max(0, (debutBarre / dureeTotale) * largeurTotale),
-        width: Math.max(20, (dureeBarre / dureeTotale) * largeurTotale),
+        left: Math.max(0, (joursOuvresAvant / joursOuvresTotaux) * largeurTotale),
+        width: Math.max(20, (joursOuvresDuree / joursOuvresTotaux) * largeurTotale),
       };
     }
 
@@ -76,21 +98,45 @@ export default function GanttBar({
       return { left: 0, width: 0 };
     }
 
-    const dureeTotale = dateFinTimeline.getTime() - dateDebutTimeline.getTime();
+    // Normaliser les dates pour utiliser uniquement les jours (sans heures)
     const dateDebutActivite = new Date(activite.date_debut_prevue);
     const dateFinActivite = new Date(activite.date_fin_prevue);
-
-    const debutBarre = dateDebutActivite.getTime() - dateDebutTimeline.getTime();
-    const dureeBarre = dateFinActivite.getTime() - dateDebutActivite.getTime();
+    
+    // Aligner les dates sur le jour ouvré et l'heure de début (8h)
+    let dateDebutNormalisee = new Date(dateDebutActivite);
+    dateDebutNormalisee.setHours(8, 0, 0, 0);
+    if (!isJourOuvre(dateDebutNormalisee)) {
+      dateDebutNormalisee = getProchainJourOuvre(dateDebutNormalisee);
+    }
+    
+    let dateFinNormalisee = new Date(dateFinActivite);
+    dateFinNormalisee.setHours(8, 0, 0, 0);
+    if (!isJourOuvre(dateFinNormalisee)) {
+      dateFinNormalisee = getProchainJourOuvre(dateFinNormalisee);
+    }
+    
+    // Normaliser aussi les dates de la timeline
+    const dateDebutTimelineNorm = new Date(dateDebutTimeline);
+    dateDebutTimelineNorm.setHours(8, 0, 0, 0);
+    const dateFinTimelineNorm = new Date(dateFinTimeline);
+    dateFinTimelineNorm.setHours(8, 0, 0, 0);
+    
+    // Calculer le nombre de jours ouvrés pour la position
+    // Pour la position, on exclut la date de début de l'activité (joursOuvresAvant)
+    const joursOuvresAvant = getNombreJoursOuvres(dateDebutTimelineNorm, dateDebutNormalisee, false);
+    // Pour la durée, on inclut la date de fin
+    const joursOuvresDuree = getNombreJoursOuvres(dateDebutNormalisee, dateFinNormalisee, true);
+    // Pour le total, on inclut la date de fin
+    const joursOuvresTotaux = getNombreJoursOuvres(dateDebutTimelineNorm, dateFinTimelineNorm, true);
 
     // Vérifier que les dates sont valides
-    if (isNaN(dateDebutActivite.getTime()) || isNaN(dateFinActivite.getTime()) || dureeTotale <= 0) {
+    if (isNaN(dateDebutActivite.getTime()) || isNaN(dateFinActivite.getTime()) || joursOuvresTotaux <= 0) {
       return { left: 0, width: 0 };
     }
 
     return {
-      left: Math.max(0, (debutBarre / dureeTotale) * largeurTotale),
-      width: Math.max(20, (dureeBarre / dureeTotale) * largeurTotale), // Min 20px pour visibilité
+      left: Math.max(0, (joursOuvresAvant / joursOuvresTotaux) * largeurTotale),
+      width: Math.max(20, (joursOuvresDuree / joursOuvresTotaux) * largeurTotale), // Min 20px pour visibilité
     };
   }, [activite, dateDebutTimeline, dateFinTimeline, largeurTotale, drag, resize]);
 

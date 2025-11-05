@@ -31,9 +31,19 @@ export function getJoursOuvres(dateDebut: Date, dateFin: Date): Date[] {
 
 /**
  * Calcule le nombre de jours ouvrés entre deux dates
+ * @param dateDebut Date de début (incluse)
+ * @param dateFin Date de fin (excluse pour le calcul de position, incluse pour la durée)
+ * @param inclureDateFin Si true, la date de fin est incluse (pour la durée). Si false, elle est exclue (pour la position).
  */
-export function getNombreJoursOuvres(dateDebut: Date, dateFin: Date): number {
-  return getJoursOuvres(dateDebut, dateFin).length;
+export function getNombreJoursOuvres(dateDebut: Date, dateFin: Date, inclureDateFin: boolean = true): number {
+  if (inclureDateFin) {
+    return getJoursOuvres(dateDebut, dateFin).length;
+  } else {
+    // Pour le calcul de position, on exclut la date de fin
+    const dateFinExclue = new Date(dateFin);
+    dateFinExclue.setDate(dateFinExclue.getDate() - 1);
+    return getJoursOuvres(dateDebut, dateFinExclue).length;
+  }
 }
 
 /**

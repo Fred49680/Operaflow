@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Calendar, Search, Plus, AlertTriangle, X, FileText } from "lucide-react";
+import { getProchainJourOuvre, isJourOuvre } from "@/utils/gantt-calendar";
 import GanttTimeline from "@/components/planification/gantt/GanttTimeline";
 import AffairesEnAttente from "@/components/planification/AffairesEnAttente";
 import AffairesPlanifiees from "@/components/planification/AffairesPlanifiees";
@@ -140,7 +141,21 @@ export default function PlanificationClient({
   useEffect(() => {
     if (showActiviteModal && editingActivite) {
       const initCalculAuto = editingActivite.calcul_auto_date_fin || false;
-      const initDateDebut = editingActivite.date_debut_prevue ? new Date(editingActivite.date_debut_prevue).toISOString().slice(0, 16) : "";
+      
+      // Normaliser les dates pour aligner sur l'heure de début du calendrier (8h) et jour ouvré
+      let initDateDebut = "";
+      if (editingActivite.date_debut_prevue) {
+        const dateDebut = new Date(editingActivite.date_debut_prevue);
+        // Aligner sur 8h du matin
+        dateDebut.setHours(8, 0, 0, 0);
+        // Si ce n'est pas un jour ouvré, prendre le prochain
+        if (!isJourOuvre(dateDebut)) {
+          const dateOuvree = getProchainJourOuvre(dateDebut);
+          dateDebut.setTime(dateOuvree.getTime());
+        }
+        initDateDebut = dateDebut.toISOString().slice(0, 16);
+      }
+      
       const initDuree = editingActivite.duree_jours_ouvres?.toString() || "";
       
       setDateDebut(initDateDebut);
@@ -152,7 +167,18 @@ export default function PlanificationClient({
       if (initCalculAuto && initDateDebut && initDuree) {
         calculerDateFin(initDateDebut, parseInt(initDuree), "jours", editingActivite.type_horaire || "jour");
       } else {
-        setDateFinCalculee("");
+        // Normaliser aussi la date de fin si elle existe
+        if (editingActivite.date_fin_prevue) {
+          const dateFin = new Date(editingActivite.date_fin_prevue);
+          dateFin.setHours(8, 0, 0, 0);
+          if (!isJourOuvre(dateFin)) {
+            const dateOuvree = getProchainJourOuvre(dateFin);
+            dateFin.setTime(dateOuvree.getTime());
+          }
+          setDateFinCalculee(dateFin.toISOString().slice(0, 16));
+        } else {
+          setDateFinCalculee("");
+        }
       }
       setTypeHoraireSelectionne(editingActivite.type_horaire || "jour");
     } else if (showActiviteModal && !editingActivite) {
