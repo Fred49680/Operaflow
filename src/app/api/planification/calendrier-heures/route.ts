@@ -28,15 +28,36 @@ export async function GET(request: NextRequest) {
 
     // Extraire le jour de la semaine (0 = dimanche, 1 = lundi, etc.)
     const date = new Date(dateStr);
+    const dateOnly = date.toISOString().split('T')[0];
     const jourSemaine = date.getDay(); // 0 (dimanche) à 6 (samedi)
 
-    // Récupérer les heures du calendrier pour ce jour
-    const { data, error } = await supabase
-      .from("tbl_calendrier_semaine_type")
+    // Vérifier d'abord s'il y a une exception pour ce jour
+    const { data: exceptionJour } = await supabase
+      .from("tbl_calendrier_jours")
       .select("heure_debut, heure_pause_debut, heure_pause_fin, heure_fin, heures_travail, type_jour")
       .eq("calendrier_id", calendrierId)
-      .eq("jour_semaine", jourSemaine)
+      .eq("date", dateOnly)
       .single();
+
+    let data;
+    let error;
+    
+    if (exceptionJour && exceptionJour.type_jour === "ouvre") {
+      // Utiliser l'exception du jour
+      data = exceptionJour;
+      error = null;
+    } else {
+      // Sinon, utiliser la semaine type
+      const result = await supabase
+        .from("tbl_calendrier_semaine_type")
+        .select("heure_debut, heure_pause_debut, heure_pause_fin, heure_fin, heures_travail, type_jour")
+        .eq("calendrier_id", calendrierId)
+        .eq("jour_semaine", jourSemaine)
+        .single();
+      
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
       if (error.code === "PGRST116") {
