@@ -30,22 +30,24 @@ export default function AffairesPlanifiees({
 
   const fetchData = async () => {
     try {
-      // Récupérer les affaires planifiées
-      const responseAffaires = await fetch("/api/affaires?statut=planifie");
-      if (responseAffaires.ok) {
-        const dataAffaires = await responseAffaires.json();
-        setAffaires(dataAffaires.affaires || []);
-      }
-
-      // Récupérer les activités pour calculer avancement et statut
+      // Récupérer les activités pour identifier les affaires avec activités
       const responseActivites = await fetch("/api/planification/activites");
-      if (responseActivites.ok) {
-        const dataActivites = await responseActivites.json();
-        const counts: Record<string, number> = {};
-        const avancements: Record<string, number[]> = {};
-        const statuts: Record<string, string[]> = {};
-        
-        (dataActivites.activites || []).forEach((act: any) => {
+      if (!responseActivites.ok) {
+        throw new Error("Erreur lors de la récupération des activités");
+      }
+      
+      const dataActivites = await responseActivites.json();
+      const activites = dataActivites.activites || [];
+      
+      // Extraire les IDs uniques des affaires qui ont des activités
+      const affaireIdsAvecActivites = new Set<string>();
+      const counts: Record<string, number> = {};
+      const avancements: Record<string, number[]> = {};
+      const statuts: Record<string, string[]> = {};
+      
+      activites.forEach((act: any) => {
+        if (act.affaire_id) {
+          affaireIdsAvecActivites.add(act.affaire_id);
           counts[act.affaire_id] = (counts[act.affaire_id] || 0) + 1;
           
           // Collecter les pourcentages d'avancement
@@ -63,41 +65,59 @@ export default function AffairesPlanifiees({
           if (act.statut) {
             statuts[act.affaire_id].push(act.statut);
           }
-        });
-        
-        setActivitesAffaires(counts);
-        
-        // Calculer l'avancement moyen par affaire
-        const avancementsMoyens: Record<string, number> = {};
-        Object.keys(avancements).forEach((affaireId) => {
-          const valeurs = avancements[affaireId];
-          if (valeurs.length > 0) {
-            avancementsMoyens[affaireId] = Math.round(
-              valeurs.reduce((sum, val) => sum + val, 0) / valeurs.length
-            );
-          } else {
-            avancementsMoyens[affaireId] = 0;
-          }
-        });
-        setAvancementsAffaires(avancementsMoyens);
-        
-        // Déterminer le statut principal (priorité: terminee > lancee > planifiee)
-        const statutsPriorises: Record<string, string> = {};
-        Object.keys(statuts).forEach((affaireId) => {
-          const statutsList = statuts[affaireId];
-          if (statutsList.includes("terminee")) {
-            statutsPriorises[affaireId] = "terminee";
-          } else if (statutsList.includes("lancee")) {
-            statutsPriorises[affaireId] = "lancee";
-          } else if (statutsList.includes("planifiee")) {
-            statutsPriorises[affaireId] = "planifiee";
-          } else if (statutsList.includes("suspendue")) {
-            statutsPriorises[affaireId] = "suspendue";
-          } else {
-            statutsPriorises[affaireId] = statutsList[0] || "planifiee";
-          }
-        });
-        setStatutsAffaires(statutsPriorises);
+        }
+      });
+      
+      setActivitesAffaires(counts);
+      
+      // Calculer l'avancement moyen par affaire
+      const avancementsMoyens: Record<string, number> = {};
+      Object.keys(avancements).forEach((affaireId) => {
+        const valeurs = avancements[affaireId];
+        if (valeurs.length > 0) {
+          avancementsMoyens[affaireId] = Math.round(
+            valeurs.reduce((sum, val) => sum + val, 0) / valeurs.length
+          );
+        } else {
+          avancementsMoyens[affaireId] = 0;
+        }
+      });
+      setAvancementsAffaires(avancementsMoyens);
+      
+      // Déterminer le statut principal (priorité: terminee > lancee > planifiee)
+      const statutsPriorises: Record<string, string> = {};
+      Object.keys(statuts).forEach((affaireId) => {
+        const statutsList = statuts[affaireId];
+        if (statutsList.includes("terminee")) {
+          statutsPriorises[affaireId] = "terminee";
+        } else if (statutsList.includes("lancee")) {
+          statutsPriorises[affaireId] = "lancee";
+        } else if (statutsList.includes("planifiee")) {
+          statutsPriorises[affaireId] = "planifiee";
+        } else if (statutsList.includes("suspendue")) {
+          statutsPriorises[affaireId] = "suspendue";
+        } else {
+          statutsPriorises[affaireId] = statutsList[0] || "planifiee";
+        }
+      });
+      setStatutsAffaires(statutsPriorises);
+      
+      // Récupérer les affaires qui ont des activités (peu importe leur statut)
+      if (affaireIdsAvecActivites.size > 0) {
+        const affaireIdsArray = Array.from(affaireIdsAvecActivites);
+        // Récupérer toutes les affaires (sans filtre de statut) puis filtrer par ID
+        const responseAffaires = await fetch("/api/affaires");
+        if (responseAffaires.ok) {
+          const dataAffaires = await responseAffaires.json();
+          // Filtrer pour ne garder que les affaires qui ont des activités
+          const affairesAvecActivites = (dataAffaires.affaires || []).filter((affaire: Affaire) => 
+            affaireIdsAvecActivites.has(affaire.id)
+          );
+          setAffaires(affairesAvecActivites);
+        }
+      } else {
+        // Aucune activité, aucune affaire à afficher
+        setAffaires([]);
       }
     } catch (error) {
       console.error("Erreur récupération affaires planifiées:", error);
@@ -114,8 +134,10 @@ export default function AffairesPlanifiees({
     );
   }
 
-  // Afficher toutes les affaires planifiées (pas seulement celles sans activités)
-  const affairesPlanifiees = affaires.filter((affaire) => affaire.statut === "planifie");
+  // Afficher toutes les affaires qui ont des activités (peu importe le statut de l'affaire)
+  // Le statut de l'affaire peut être "planifie", "en_cours", etc., mais si elle a des activités,
+  // elle doit être visible dans la planification
+  const affairesPlanifiees = affaires;
 
   if (affairesPlanifiees.length === 0) {
     return null;
