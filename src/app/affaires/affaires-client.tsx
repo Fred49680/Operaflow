@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, Search, Trash2, X, AlertTriangle } from "lucide-react";
 import type { Affaire } from "@/types/affaires";
+import AffaireDetailModal from "@/components/affaires/AffaireDetailModal";
 
 interface AffairesClientProps {
   initialAffaires: Affaire[];
@@ -31,6 +32,19 @@ export default function AffairesClient({
   const [affaireToDelete, setAffaireToDelete] = useState<Affaire | null>(null);
   const [confirmText, setConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedAffaireId, setSelectedAffaireId] = useState<string | null>(null);
+  const [showAffaireModal, setShowAffaireModal] = useState(false);
+
+  const handleOpenAffaire = (affaireId: string) => {
+    setSelectedAffaireId(affaireId);
+    setShowAffaireModal(true);
+  };
+
+  const handleCloseAffaireModal = () => {
+    setShowAffaireModal(false);
+    setSelectedAffaireId(null);
+    router.refresh(); // Rafraîchir la liste après fermeture
+  };
 
   // Filtrage et recherche
   const filteredAffaires = useMemo(() => {
@@ -269,13 +283,13 @@ export default function AffairesClient({
                     >
                       <td 
                         className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 cursor-pointer"
-                        onClick={() => router.push(`/affaires/${affaire.id}`)}
+                        onClick={() => handleOpenAffaire(affaire.id)}
                       >
                         {affaire.numero}
                       </td>
                       <td 
                         className="px-3 sm:px-6 py-4 cursor-pointer"
-                        onClick={() => router.push(`/affaires/${affaire.id}`)}
+                        onClick={() => handleOpenAffaire(affaire.id)}
                       >
                         <div className="text-sm font-medium text-gray-900">{affaire.libelle}</div>
                         <div className="text-xs text-gray-500 sm:hidden mt-1">
@@ -285,25 +299,25 @@ export default function AffairesClient({
                       </td>
                       <td 
                         className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden md:table-cell cursor-pointer"
-                        onClick={() => router.push(`/affaires/${affaire.id}`)}
+                        onClick={() => handleOpenAffaire(affaire.id)}
                       >
                         {affaire.partenaire?.raison_sociale || "-"}
                       </td>
                       <td 
                         className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden lg:table-cell cursor-pointer"
-                        onClick={() => router.push(`/affaires/${affaire.id}`)}
+                        onClick={() => handleOpenAffaire(affaire.id)}
                       >
                         {affaire.site?.site_code || "-"}
                       </td>
                       <td 
                         className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden xl:table-cell cursor-pointer"
-                        onClick={() => router.push(`/affaires/${affaire.id}`)}
+                        onClick={() => handleOpenAffaire(affaire.id)}
                       >
                         {affaire.montant_total ? `${affaire.montant_total.toFixed(2)} €` : "-"}
                       </td>
                       <td 
                         className="px-3 sm:px-6 py-4 whitespace-nowrap cursor-pointer"
-                        onClick={() => router.push(`/affaires/${affaire.id}`)}
+                        onClick={() => handleOpenAffaire(affaire.id)}
                       >
                         {getStatutBadge(affaire.statut)}
                       </td>
@@ -424,6 +438,18 @@ export default function AffairesClient({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal détail affaire */}
+      {selectedAffaireId && (
+        <AffaireDetailModal
+          isOpen={showAffaireModal}
+          onClose={handleCloseAffaireModal}
+          affaireId={selectedAffaireId}
+          onUpdate={() => {
+            router.refresh();
+          }}
+        />
       )}
     </div>
   );
