@@ -104,7 +104,6 @@ export default function AffairesPlanifiees({
       
       // Récupérer les affaires qui ont des activités (peu importe leur statut)
       if (affaireIdsAvecActivites.size > 0) {
-        const affaireIdsArray = Array.from(affaireIdsAvecActivites);
         // Récupérer toutes les affaires (sans filtre de statut) puis filtrer par ID
         const responseAffaires = await fetch("/api/affaires");
         if (responseAffaires.ok) {
