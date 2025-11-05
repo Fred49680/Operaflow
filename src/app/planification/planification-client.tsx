@@ -95,20 +95,57 @@ export default function PlanificationClient({
     type_dependance: "FS" | "SS" | "FF" | "SF";
     delai_jours?: number;
   }>>([]);
-  const [uniteDuree, setUniteDuree] = useState<"jours" | "semaines">("jours");
+  const [uniteDuree, setUniteDuree] = useState<"jours" | "semaines" | "heures">("jours");
   const [typeHoraireSelectionne, setTypeHoraireSelectionne] = useState<string>("jour");
   const [selectedCalendrierId, setSelectedCalendrierId] = useState<string>("");
   const [heuresPrevuesAuto, setHeuresPrevuesAuto] = useState<number | null>(null);
   const [heuresTravailleesDuree, setHeuresTravailleesDuree] = useState<number | null>(null);
   
   // Fonction pour récupérer les heures du calendrier selon le jour
-  const getHeuresCalendrier = async (calendrierId: string, date: string): Promise<{ heure_debut: string | null; heure_fin: string | null; heures_travail: number }> => {
+  // Fonction pour obtenir l'heure de reprise après pause si la date est avant la pause
+  const ajusterDateApresPause = async (dateFin: Date, calendrierId: string | null): Promise<Date> => {
+    if (!calendrierId) {
+      // Pas de calendrier, retourner la date telle quelle
+      return dateFin;
+    }
+
+    const dateOnly = dateFin.toISOString().split('T')[0];
+    const heures = await getHeuresCalendrier(calendrierId, dateOnly);
+    
+    if (!heures.heure_pause_debut || !heures.heure_pause_fin) {
+      // Pas de pause définie, retourner la date telle quelle
+      return dateFin;
+    }
+
+    const [hPauseDebut, mPauseDebut] = heures.heure_pause_debut.split(':').map(Number);
+    const [hPauseFin, mPauseFin] = heures.heure_pause_fin.split(':').map(Number);
+    
+    const heureFinTache = dateFin.getHours();
+    const minutesFinTache = dateFin.getMinutes();
+    
+    const minutesFinTacheTotal = heureFinTache * 60 + minutesFinTache;
+    const minutesPauseDebut = hPauseDebut * 60 + mPauseDebut;
+    const minutesPauseFin = hPauseFin * 60 + mPauseFin;
+    
+    // Si la tâche se termine avant ou pendant la pause, commencer après la pause
+    if (minutesFinTacheTotal <= minutesPauseFin) {
+      const nouvelleDate = new Date(dateFin);
+      nouvelleDate.setHours(hPauseFin, mPauseFin, 0, 0);
+      return nouvelleDate;
+    }
+    
+    return dateFin;
+  };
+
+  const getHeuresCalendrier = async (calendrierId: string, date: string): Promise<{ heure_debut: string | null; heure_fin: string | null; heure_pause_debut: string | null; heure_pause_fin: string | null; heures_travail: number }> => {
     try {
       const response = await fetch(`/api/planification/calendrier-heures?calendrier_id=${calendrierId}&date=${date}`);
       if (response.ok) {
         const data = await response.json();
         return {
           heure_debut: data.heure_debut || "08:00",
+          heure_pause_debut: data.heure_pause_debut || null,
+          heure_pause_fin: data.heure_pause_fin || null,
           heure_fin: data.heure_fin || "16:00",
           heures_travail: data.heures_travail || 0,
         };
@@ -117,7 +154,7 @@ export default function PlanificationClient({
       console.error("Erreur récupération heures calendrier:", error);
     }
     // Valeurs par défaut si erreur
-    return { heure_debut: "08:00", heure_fin: "16:00", heures_travail: 7 };
+    return { heure_debut: "08:00", heure_pause_debut: null, heure_pause_fin: null, heure_fin: "16:00", heures_travail: 7 };
   };
   
   // Initialiser selectedAffaireGantt depuis l'URL si présent
@@ -510,16 +547,16 @@ export default function PlanificationClient({
   };
 
   // Fonction pour calculer les nouvelles dates des tâches dépendantes (propagation récursive)
-  const calculerDatesTachesDependantes = (
+  const calculerDatesTachesDependantes = async (
     activiteModifiee: ActivitePlanification,
     nouvelleDateDebut: Date,
     nouvelleDateFin: Date
-  ): Map<string, { date_debut_prevue: string; date_fin_prevue: string }> => {
+  ): Promise<Map<string, { date_debut_prevue: string; date_fin_prevue: string }>> => {
     const updates = new Map<string, { date_debut_prevue: string; date_fin_prevue: string }>();
     const processed = new Set<string>(); // Pour éviter les boucles infinies
     
-    // Fonction récursive pour calculer les dates d'une tâche en fonction de toutes ses dépendances
-    const calculerDatesTache = (tache: ActivitePlanification): { dateDebut: Date; dateFin: Date } | null => {
+      // Fonction récursive pour calculer les dates d'une tâche en fonction de toutes ses dépendances
+      const calculerDatesTache = async (tache: ActivitePlanification): Promise<{ dateDebut: Date; dateFin: Date } | null> => {
       if (processed.has(tache.id)) {
         // Si déjà traité, retourner les dates déjà calculées
         const existingUpdate = updates.get(tache.id);
@@ -543,7 +580,7 @@ export default function PlanificationClient({
       
       // Parcourir toutes les dépendances de cette tâche
       if (tache.dependances && tache.dependances.length > 0) {
-        tache.dependances.forEach(dep => {
+        for (const dep of tache.dependances) {
           // Trouver l'activité précédente
           const activitePrecedente = activites.find(a => a.id === dep.activite_precedente_id);
           if (!activitePrecedente) return;
@@ -558,7 +595,7 @@ export default function PlanificationClient({
             dateFinPrecedente = nouvelleDateFin;
           } else {
             // Sinon, calculer récursivement les dates de l'activité précédente
-            const datesPrecedente = calculerDatesTache(activitePrecedente);
+            const datesPrecedente = await calculerDatesTache(activitePrecedente);
             if (datesPrecedente) {
               dateDebutPrecedente = datesPrecedente.dateDebut;
               dateFinPrecedente = datesPrecedente.dateFin;
@@ -573,7 +610,20 @@ export default function PlanificationClient({
           
           switch (dep.type_dependance) {
             case 'FS': // Finish-to-Start : début après fin de la précédente
-              const dateDebutFS = new Date(dateFinPrecedente.getTime() + delaiMs);
+              let dateDebutFS = new Date(dateFinPrecedente.getTime() + delaiMs);
+              
+              // Si l'activité précédente a un calendrier, ajuster pour commencer après la pause si nécessaire
+              const calendrierPrecedente = activitePrecedente.calendrier_id || null;
+              if (calendrierPrecedente) {
+                dateDebutFS = await ajusterDateApresPause(dateDebutFS, calendrierPrecedente);
+              }
+              
+              // Si la tâche actuelle a aussi un calendrier, utiliser celui-ci pour ajuster
+              const calendrierActuelle = tache.calendrier_id || null;
+              if (calendrierActuelle && calendrierActuelle !== calendrierPrecedente) {
+                dateDebutFS = await ajusterDateApresPause(dateDebutFS, calendrierActuelle);
+              }
+              
               if (!nouvelleDateDebutTache || dateDebutFS > nouvelleDateDebutTache) {
                 nouvelleDateDebutTache = dateDebutFS;
               }
@@ -597,7 +647,7 @@ export default function PlanificationClient({
               }
               break;
           }
-        });
+        }
       }
       
       // Si on a calculé de nouvelles dates, les appliquer
@@ -636,9 +686,9 @@ export default function PlanificationClient({
     );
     
     // Calculer récursivement les dates pour chaque tâche dépendante
-    tachesDependantesDirectes.forEach(tache => {
-      calculerDatesTache(tache);
-    });
+    for (const tache of tachesDependantesDirectes) {
+      await calculerDatesTache(tache);
+    }
     
     return updates;
   };
@@ -693,7 +743,7 @@ export default function PlanificationClient({
     ));
     
     // Calculer les nouvelles dates des tâches dépendantes
-    const updatesTachesDependantes = calculerDatesTachesDependantes(
+    const updatesTachesDependantes = await calculerDatesTachesDependantes(
       activiteModifiee,
       nouvelleDateDebut,
       nouvelleDateFin
@@ -840,7 +890,7 @@ export default function PlanificationClient({
     ));
     
     // Calculer les nouvelles dates des tâches dépendantes (utiliser les dates finales)
-    const updatesTachesDependantes = calculerDatesTachesDependantes(
+    const updatesTachesDependantes = await calculerDatesTachesDependantes(
       activiteModifiee,
       dateDebutFinale,
       dateFinFinale
@@ -918,8 +968,47 @@ export default function PlanificationClient({
   };
 
   // Fonction pour calculer la date de fin en fonction de la durée et du type horaire
-  const calculerDateFin = async (dateDebutStr: string, duree: number, unite: "jours" | "semaines", typeHoraire: string) => {
+  const calculerDateFin = async (dateDebutStr: string, duree: number, unite: "jours" | "semaines" | "heures", typeHoraire: string) => {
     try {
+      // Si l'unité est en heures, utiliser l'API de calcul par heures
+      if (unite === "heures" && selectedCalendrierId) {
+        const response = await fetch("/api/planification/calculer-date-fin-heures", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date_debut: dateDebutStr,
+            duree_heures: duree,
+            calendrier_id: selectedCalendrierId,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.date_fin) {
+            // Convertir en format datetime-local (YYYY-MM-DDTHH:mm)
+            const dateFin = new Date(data.date_fin);
+            const formattedDate = new Date(dateFin.getTime() - dateFin.getTimezoneOffset() * 60000)
+              .toISOString()
+              .slice(0, 16);
+            setDateFinCalculee(formattedDate);
+            
+            // Les heures prévues sont égales à la durée en heures
+            setHeuresPrevuesAuto(duree);
+            setHeuresTravailleesDuree(duree);
+            
+            // Mettre à jour le champ heures_prevues dans le formulaire
+            const heuresInput = document.querySelector('input[name="heures_prevues"]') as HTMLInputElement;
+            if (heuresInput) {
+              heuresInput.value = duree.toString();
+            }
+            return;
+          }
+        } else {
+          console.error("Erreur calcul date fin par heures:", await response.text());
+        }
+      }
+      
+      // Pour jours et semaines, utiliser l'API existante
       // Convertir semaines en jours si nécessaire
       const joursCalcul = unite === "semaines" ? duree * 7 : duree;
       
@@ -1748,42 +1837,58 @@ export default function PlanificationClient({
                         <select
                           value={uniteDuree}
                           onChange={async (e) => {
-                            setUniteDuree(e.target.value as "jours" | "semaines");
+                            setUniteDuree(e.target.value as "jours" | "semaines" | "heures");
                             if (calculAutoDateFin && dateDebut && dureeJoursOuvres) {
-                              await calculerDateFin(dateDebut, parseInt(dureeJoursOuvres), e.target.value as "jours" | "semaines", typeHoraireSelectionne);
+                              await calculerDateFin(dateDebut, parseFloat(dureeJoursOuvres), e.target.value as "jours" | "semaines" | "heures", typeHoraireSelectionne);
+                            }
+                            // Réinitialiser les heures travaillées si changement d'unité
+                            if (e.target.value === "heures" && dureeJoursOuvres) {
+                              setHeuresTravailleesDuree(parseFloat(dureeJoursOuvres));
+                            } else {
+                              setHeuresTravailleesDuree(null);
                             }
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white"
                         >
                           <option value="jours">Jours</option>
                           <option value="semaines">Semaines</option>
+                          <option value="heures">Heures</option>
                         </select>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Durée {uniteDuree === "semaines" ? "(semaines)" : "(jours)"}
+                          Durée {
+                            uniteDuree === "semaines" ? "(semaines)" : 
+                            uniteDuree === "heures" ? "(heures)" : 
+                            "(jours)"
+                          }
                         </label>
                         <input
                           type="number"
                           name="duree_jours_ouvres"
-                          min="1"
-                          step={uniteDuree === "semaines" ? "0.5" : "1"}
+                          min="0.5"
+                          step={uniteDuree === "semaines" ? "0.5" : uniteDuree === "heures" ? "0.5" : "1"}
                           value={dureeJoursOuvres || (editingActivite?.duree_jours_ouvres || "")}
                           onChange={async (e) => {
                             setDureeJoursOuvres(e.target.value);
                             if (calculAutoDateFin && dateDebut && e.target.value) {
                               await calculerDateFin(dateDebut, parseFloat(e.target.value), uniteDuree, typeHoraireSelectionne);
                             }
-                            // Recalculer les heures travaillées si calendrier sélectionné
-                            if (selectedCalendrierId && dateDebut && e.target.value) {
+                            // Recalculer les heures travaillées si calendrier sélectionné et unité en jours/semaines
+                            if (selectedCalendrierId && dateDebut && e.target.value && uniteDuree !== "heures") {
                               await calculerHeuresTravailleesDuree(dateDebut, parseFloat(e.target.value));
+                            } else if (uniteDuree === "heures" && e.target.value) {
+                              // Si unité en heures, les heures travaillées = la durée
+                              setHeuresTravailleesDuree(parseFloat(e.target.value));
                             }
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white"
-                          placeholder={uniteDuree === "semaines" ? "Ex: 2" : "Ex: 5"}
+                          placeholder={uniteDuree === "semaines" ? "Ex: 2" : uniteDuree === "heures" ? "Ex: 4" : "Ex: 5"}
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          {typeHoraireSelectionne === "jour" 
+                          {uniteDuree === "heures" 
+                            ? "La tâche se terminera une fois le volume d'heures écoulé"
+                            : typeHoraireSelectionne === "jour" 
                             ? "Exclut weekends et jours fériés"
                             : typeHoraireSelectionne === "3x8"
                             ? "Travail 24/7 (inclut weekends)"

@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Récupérer les heures du calendrier pour ce jour
     const { data, error } = await supabase
       .from("tbl_calendrier_semaine_type")
-      .select("heure_debut, heure_fin, heures_travail, type_jour")
+      .select("heure_debut, heure_pause_debut, heure_pause_fin, heure_fin, heures_travail, type_jour")
       .eq("calendrier_id", calendrierId)
       .eq("jour_semaine", jourSemaine)
       .single();
@@ -59,6 +59,8 @@ export async function GET(request: NextRequest) {
     if (!data || data.type_jour === "chome") {
       return NextResponse.json({
         heure_debut: null,
+        heure_pause_debut: null,
+        heure_pause_fin: null,
         heure_fin: null,
         heures_travail: 0,
         type_jour: "chome",
@@ -67,6 +69,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       heure_debut: data.heure_debut || "08:00",
+      heure_pause_debut: data.heure_pause_debut || null,
+      heure_pause_fin: data.heure_pause_fin || null,
       heure_fin: data.heure_fin || "16:00",
       heures_travail: data.heures_travail || 0,
       type_jour: data.type_jour || "ouvre",
