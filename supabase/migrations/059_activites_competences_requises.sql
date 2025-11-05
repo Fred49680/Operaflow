@@ -48,8 +48,9 @@ CREATE POLICY "Users can read activites_competences_requises for their activitie
         ap.created_by = auth.uid()
         OR EXISTS (
           SELECT 1 FROM public.user_roles ur
+          JOIN public.roles r ON ur.role_id = r.id
           WHERE ur.user_id = auth.uid()
-          AND ur.role IN ('admin', 'rh', 'planificateur', 'responsable_activite')
+          AND r.name IN ('Administrateur', 'Planificateur', 'Responsable d''Activité', 'Administratif RH')
         )
       )
     )
@@ -62,8 +63,9 @@ CREATE POLICY "Authorized users can manage activites_competences_requises"
   USING (
     EXISTS (
       SELECT 1 FROM public.user_roles ur
+      JOIN public.roles r ON ur.role_id = r.id
       WHERE ur.user_id = auth.uid()
-      AND ur.role IN ('admin', 'rh', 'planificateur', 'responsable_activite')
+      AND r.name IN ('Administrateur', 'Planificateur', 'Responsable d''Activité', 'Administratif RH')
     )
   );
 
