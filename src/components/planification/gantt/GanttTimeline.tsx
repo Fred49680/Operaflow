@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { startOfDay, endOfDay, addDays, subDays } from "date-fns";
-import { getProchainJourOuvre, isJourOuvre, getJourOuvrePrecedent } from "@/utils/gantt-calendar";
+import { getProchainJourOuvre, isJourOuvre, getJourOuvrePrecedent, getLundiReference } from "@/utils/gantt-calendar";
 import GanttHeader from "./GanttHeader";
 import GanttGrid from "./GanttGrid";
 import GanttJalonBar from "./GanttJalonBar";
@@ -59,11 +59,19 @@ export default function GanttTimeline({
   // Calculer la plage de dates si non fournie (incluant les jalons)
   const { dateDebut, dateFin } = useMemo(() => {
     if (dateDebutProp && dateFinProp) {
-      // Normaliser les dates fournies en props pour qu'elles soient sur des jours ouvrés
+      // Normaliser la date de début : doit être un lundi
       let dateDebutNorm = startOfDay(dateDebutProp);
       dateDebutNorm.setHours(8, 0, 0, 0);
-      if (!isJourOuvre(dateDebutNorm)) {
-        dateDebutNorm = getJourOuvrePrecedent(dateDebutNorm);
+      // Si ce n'est pas un lundi, trouver le lundi précédent
+      if (dateDebutNorm.getDay() !== 1) {
+        const lundi = new Date(dateDebutNorm);
+        const jour = lundi.getDay();
+        if (jour === 0) {
+          lundi.setDate(lundi.getDate() - 6); // Dimanche -> lundi précédent
+        } else {
+          lundi.setDate(lundi.getDate() - (jour - 1)); // Autre jour -> lundi de la semaine
+        }
+        dateDebutNorm = lundi;
       }
       
       let dateFinNorm = endOfDay(dateFinProp);
@@ -102,11 +110,8 @@ export default function GanttTimeline({
 
     if (toutesDates.length === 0) {
       const aujourdhui = new Date();
-      let dateDebutDefault = startOfDay(subDays(aujourdhui, 7));
-      dateDebutDefault.setHours(8, 0, 0, 0);
-      if (!isJourOuvre(dateDebutDefault)) {
-        dateDebutDefault = getJourOuvrePrecedent(dateDebutDefault);
-      }
+      // Utiliser le lundi entre 5 et 7 jours avant aujourd'hui
+      const dateDebutDefault = getLundiReference(aujourdhui);
       
       let dateFinDefault = endOfDay(addDays(aujourdhui, 30));
       dateFinDefault.setHours(8, 0, 0, 0);
@@ -123,13 +128,8 @@ export default function GanttTimeline({
     const dateMin = new Date(Math.min(...toutesDates.map((d) => d.getTime())));
     const dateMax = new Date(Math.max(...toutesDates.map((d) => d.getTime())));
 
-    // Calculer la date de début avec marge de 7 jours
-    let dateDebutCalc = startOfDay(subDays(dateMin, 7));
-    dateDebutCalc.setHours(8, 0, 0, 0);
-    // S'assurer que la date de début est un jour ouvré
-    if (!isJourOuvre(dateDebutCalc)) {
-      dateDebutCalc = getJourOuvrePrecedent(dateDebutCalc);
-    }
+    // Calculer la date de début : lundi entre 5 et 7 jours avant la première activité
+    const dateDebutCalc = getLundiReference(dateMin);
     
     // Calculer la date de fin avec marge de 7 jours
     let dateFinCalc = endOfDay(addDays(dateMax, 7));

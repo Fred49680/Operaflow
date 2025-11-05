@@ -110,3 +110,40 @@ export function alignerSurJourOuvre(
   return setHeureDebutCalendrier(dateAligned, heureDebut);
 }
 
+/**
+ * Trouve le lundi précédent d'une date (ou le lundi de la même semaine si c'est déjà un lundi)
+ */
+export function getLundiPrecedent(date: Date): Date {
+  const dateCourante = new Date(date);
+  const jour = dateCourante.getDay(); // 0 = dimanche, 1 = lundi, ..., 6 = samedi
+  
+  // Si c'est dimanche (0), on remonte de 6 jours pour avoir le lundi précédent
+  // Si c'est lundi (1), on reste sur le lundi
+  // Sinon, on remonte jusqu'au lundi de la semaine
+  let joursARemonter = 0;
+  if (jour === 0) {
+    joursARemonter = 6; // Dimanche -> lundi précédent
+  } else if (jour > 1) {
+    joursARemonter = jour - 1; // Mardi à samedi -> lundi de la semaine
+  }
+  
+  dateCourante.setDate(dateCourante.getDate() - joursARemonter);
+  return dateCourante;
+}
+
+/**
+ * Trouve le lundi entre 5 et 7 jours avant une date donnée
+ */
+export function getLundiReference(dateMin: Date): Date {
+  // Soustraire 6 jours pour être au milieu de la plage 5-7 jours
+  const dateReference = new Date(dateMin);
+  dateReference.setDate(dateReference.getDate() - 6);
+  dateReference.setHours(8, 0, 0, 0);
+  
+  // Trouver le lundi précédent (ou le lundi de cette semaine)
+  const lundi = getLundiPrecedent(dateReference);
+  lundi.setHours(8, 0, 0, 0);
+  
+  return lundi;
+}
+
