@@ -42,6 +42,9 @@ export interface ActivitePlanification {
   duree_jours_ouvres?: number | null;
   calcul_auto_date_fin?: boolean;
   
+  // Calendrier pour le calcul des heures
+  calendrier_id?: string | null;
+  
   created_at: string;
   updated_at: string;
   created_by?: string | null;
