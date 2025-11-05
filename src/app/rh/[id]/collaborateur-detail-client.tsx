@@ -42,6 +42,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import Modal from "@/components/rh/Modal";
 import HabilitationForm from "@/components/rh/forms/HabilitationForm";
+import CompetenceForm from "@/components/rh/forms/CompetenceForm";
 import AbsenceForm from "@/components/rh/forms/AbsenceForm";
 import DosimetrieForm from "@/components/rh/forms/DosimetrieForm";
 import VisiteMedicaleForm from "@/components/rh/forms/VisiteMedicaleForm";
@@ -103,6 +104,15 @@ export default function CollaborateurDetailClient({
   const [selectedDosimetrie, setSelectedDosimetrie] = useState<Dosimetrie | null>(null);
   const [modalVisiteOpen, setModalVisiteOpen] = useState(false);
   const [selectedVisite, setSelectedVisite] = useState<VisiteMedicale | null>(null);
+  const [modalCompetenceOpen, setModalCompetenceOpen] = useState(false);
+  const [selectedCompetence, setSelectedCompetence] = useState<{
+    id: string;
+    competence_id: string;
+    niveau?: string | null;
+    date_obtention?: string | null;
+    date_expiration?: string | null;
+    statut: string;
+  } | null>(null);
   const [modalEditOpen, setModalEditOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -215,6 +225,7 @@ export default function CollaborateurDetailClient({
               habilitations={habilitations}
               competences={competences}
               hasRHAccess={hasRHAccess}
+              collaborateurId={collaborateur.id}
               onAddHabilitation={() => {
                 setSelectedHabilitation(null);
                 setModalHabilitationOpen(true);
@@ -222,6 +233,14 @@ export default function CollaborateurDetailClient({
               onEditHabilitation={(hab) => {
                 setSelectedHabilitation(hab);
                 setModalHabilitationOpen(true);
+              }}
+              onAddCompetence={() => {
+                setSelectedCompetence(null);
+                setModalCompetenceOpen(true);
+              }}
+              onEditCompetence={(comp) => {
+                setSelectedCompetence(comp);
+                setModalCompetenceOpen(true);
               }}
             />
           )}
@@ -288,6 +307,27 @@ export default function CollaborateurDetailClient({
           onClose={() => {
             setModalHabilitationOpen(false);
             setSelectedHabilitation(null);
+          }}
+          onSuccess={refreshData}
+        />
+      </Modal>
+
+      {/* Modal Compétence */}
+      <Modal
+        isOpen={modalCompetenceOpen}
+        onClose={() => {
+          setModalCompetenceOpen(false);
+          setSelectedCompetence(null);
+        }}
+        title={selectedCompetence ? "Modifier la compétence" : "Nouvelle compétence"}
+        size="lg"
+      >
+        <CompetenceForm
+          collaborateurId={collaborateur.id}
+          competence={selectedCompetence}
+          onClose={() => {
+            setModalCompetenceOpen(false);
+            setSelectedCompetence(null);
           }}
           onSuccess={refreshData}
         />
@@ -1033,8 +1073,11 @@ function OngletCompetences({
   habilitations,
   competences,
   hasRHAccess,
+  collaborateurId,
   onAddHabilitation,
   onEditHabilitation,
+  onAddCompetence,
+  onEditCompetence,
 }: {
   habilitations: Habilitation[];
   competences: Array<{
@@ -1051,10 +1094,20 @@ function OngletCompetences({
     } | null;
   }>;
   hasRHAccess: boolean;
+  collaborateurId: string;
   onAddHabilitation: () => void;
   onEditHabilitation: (hab: Habilitation) => void;
+  onAddCompetence: () => void;
+  onEditCompetence: (comp: {
+    id: string;
+    competence_id: string;
+    niveau?: string | null;
+    date_obtention?: string | null;
+    date_expiration?: string | null;
+    statut: string;
+  }) => void;
 }) {
-  const handleDelete = async (id: string) => {
+  const handleDeleteHabilitation = async (id: string) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer cette habilitation ?")) return;
     
     try {
@@ -1063,6 +1116,25 @@ function OngletCompetences({
       const { error } = await supabase.from("habilitations").delete().eq("id", id);
       
       if (error) throw error;
+      window.location.reload();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Erreur lors de la suppression");
+    }
+  };
+
+  const handleDeleteCompetence = async (id: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette compétence ?")) return;
+    
+    try {
+      const response = await fetch(`/api/rh/collaborateurs-competences/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors de la suppression");
+      }
+
       window.location.reload();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Erreur lors de la suppression");
@@ -1113,7 +1185,7 @@ function OngletCompetences({
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(hab.id)}
+                      onClick={() => handleDeleteHabilitation(hab.id)}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Supprimer"
                     >
@@ -1197,7 +1269,7 @@ function OngletCompetences({
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-gray-900">Compétences</h3>
           {hasRHAccess && (
-            <button className="btn-primary text-sm flex items-center gap-2">
+            <button onClick={onAddCompetence} className="btn-primary text-sm flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Ajouter une compétence
             </button>
@@ -1221,17 +1293,39 @@ function OngletCompetences({
                     <div className="p-2 bg-blue-50 rounded-lg">
                       <GraduationCap className="h-5 w-5 text-blue-600" />
                     </div>
-                    <h4 className="font-semibold text-gray-900">{comp.competence?.libelle || "Compétence"}</h4>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{comp.competence?.libelle || "Compétence"}</h4>
+                    </div>
                   </div>
-                  <span
-                    className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full ${
-                      comp.statut === "valide"
-                        ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200"
-                        : "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 border border-amber-200"
-                    }`}
-                  >
-                    {comp.statut}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full ${
+                        comp.statut === "valide"
+                          ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border border-green-200"
+                          : "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 border border-amber-200"
+                      }`}
+                    >
+                      {comp.statut}
+                    </span>
+                    {hasRHAccess && (
+                      <>
+                        <button
+                          onClick={() => onEditCompetence(comp)}
+                          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          title="Modifier"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCompetence(comp.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <dl className="space-y-3">
                   {comp.niveau && (
