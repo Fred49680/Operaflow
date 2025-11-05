@@ -1288,7 +1288,10 @@ export default function CalendriersClient({
                 Configuration Semaine Type
               </h3>
               <button
-                onClick={() => setSemaineTypeModalOpen(false)}
+                onClick={() => {
+                  setSemaineTypeModalOpen(false);
+                  setJoursSelectionnes(new Set()); // Réinitialiser la sélection
+                }}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
               >
                 <X className="h-5 w-5" />
@@ -1353,7 +1356,10 @@ export default function CalendriersClient({
 
             <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200">
               <button
-                onClick={() => setSemaineTypeModalOpen(false)}
+                onClick={() => {
+                  setSemaineTypeModalOpen(false);
+                  setJoursSelectionnes(new Set()); // Réinitialiser la sélection
+                }}
                 className="px-3 py-1.5 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Annuler
