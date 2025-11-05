@@ -908,7 +908,7 @@ export default function PlanificationClient({
         const data = await response.json();
         if (data.date_fin) {
           // Convertir en format datetime-local (YYYY-MM-DDTHH:mm)
-          let dateFin = new Date(data.date_fin);
+          const dateFin = new Date(data.date_fin);
           
           // Si calendrier sélectionné, utiliser l'heure de fin du calendrier pour le jour de fin
           if (selectedCalendrierId) {
