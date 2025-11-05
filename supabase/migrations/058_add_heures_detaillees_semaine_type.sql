@@ -77,7 +77,7 @@ SET
   heure_debut = '08:00'::TIME,
   heure_pause_debut = '12:00'::TIME,
   heure_pause_fin = '13:00'::TIME,
-  heure_fin = '17:00'::TIME
+  heure_fin = '16:00'::TIME
 WHERE 
   type_jour = 'ouvre' 
   AND heures_travail > 0

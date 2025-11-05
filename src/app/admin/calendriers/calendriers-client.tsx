@@ -88,11 +88,11 @@ export default function CalendriersClient({
     heure_fin: string; // Format HH:mm
   }>>([
     { jour_semaine: 0, nom_jour: "Dimanche", heures_travail: 0, heures_travail_display: "00:00", type_jour: "chome", heure_debut: "00:00", heure_pause_debut: "00:00", heure_pause_fin: "00:00", heure_fin: "00:00" },
-    { jour_semaine: 1, nom_jour: "Lundi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "17:00" },
-    { jour_semaine: 2, nom_jour: "Mardi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "17:00" },
-    { jour_semaine: 3, nom_jour: "Mercredi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "17:00" },
-    { jour_semaine: 4, nom_jour: "Jeudi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "17:00" },
-    { jour_semaine: 5, nom_jour: "Vendredi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "17:00" },
+    { jour_semaine: 1, nom_jour: "Lundi", heures_travail: 7, heures_travail_display: "07:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "16:00" },
+    { jour_semaine: 2, nom_jour: "Mardi", heures_travail: 7, heures_travail_display: "07:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "16:00" },
+    { jour_semaine: 3, nom_jour: "Mercredi", heures_travail: 7, heures_travail_display: "07:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "16:00" },
+    { jour_semaine: 4, nom_jour: "Jeudi", heures_travail: 7, heures_travail_display: "07:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "16:00" },
+    { jour_semaine: 5, nom_jour: "Vendredi", heures_travail: 7, heures_travail_display: "07:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "16:00" },
     { jour_semaine: 6, nom_jour: "Samedi", heures_travail: 0, heures_travail_display: "00:00", type_jour: "chome", heure_debut: "00:00", heure_pause_debut: "00:00", heure_pause_fin: "00:00", heure_fin: "00:00" },
   ]);
   const [jourFormData, setJourFormData] = useState<JourFormData>({
@@ -887,7 +887,7 @@ export default function CalendriersClient({
                               value={jour.heure_fin}
                               onChange={(e) => {
                                 const newSemaineType = [...semaineType];
-                                newSemaineType[index].heure_fin = e.target.value || "17:00";
+                                newSemaineType[index].heure_fin = e.target.value || "16:00";
                                 const heuresCalc = calculerHeuresTravail(
                                   newSemaineType[index].heure_debut,
                                   newSemaineType[index].heure_pause_debut,
