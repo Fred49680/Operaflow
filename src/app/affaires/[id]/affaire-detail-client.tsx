@@ -12,6 +12,7 @@ interface AffaireDetailClientProps {
   collaborateurs: Array<{ id: string; nom: string; prenom: string }>;
   partenaires?: Array<{ id: string; raison_sociale: string; type_partenaire: string }>;
   canEditPrePlanif?: boolean; // Permissions pour éditer la pré-planification
+  isInModal?: boolean; // Indique si le composant est utilisé dans un modal
 }
 
 export default function AffaireDetailClient({
@@ -20,6 +21,7 @@ export default function AffaireDetailClient({
   collaborateurs,
   partenaires = [],
   canEditPrePlanif = false,
+  isInModal = false,
 }: AffaireDetailClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"general" | "lots" | "activites" | "preplanif" | "documents">("general");
@@ -166,20 +168,24 @@ export default function AffaireDetailClient({
   })();
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <Link
-            href="/affaires"
-            className="inline-flex items-center gap-2 text-primary hover:text-primary-dark mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour à la liste
-          </Link>
+    <div className={isInModal ? "" : "min-h-screen bg-background p-4 sm:p-6 lg:p-8"}>
+      <div className={isInModal ? "" : "max-w-7xl mx-auto"}>
+        {!isInModal && (
+          <div className="mb-6">
+            <Link
+              href="/affaires"
+              className="inline-flex items-center gap-2 text-primary hover:text-primary-dark mb-4"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour à la liste
+            </Link>
+          </div>
+        )}
+        <div className={`${isInModal ? "mb-4" : "mb-6"}`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl sm:text-3xl font-bold text-primary">
+                <h1 className={`font-bold text-primary ${isInModal ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"}`}>
                   {affaire.numero} - {affaire.libelle}
                 </h1>
                 {getStatutBadge(affaire.statut)}
