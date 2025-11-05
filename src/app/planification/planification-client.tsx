@@ -101,6 +101,25 @@ export default function PlanificationClient({
   const [heuresPrevuesAuto, setHeuresPrevuesAuto] = useState<number | null>(null);
   const [heuresTravailleesDuree, setHeuresTravailleesDuree] = useState<number | null>(null);
   
+  // Fonction pour récupérer les heures du calendrier selon le jour
+  const getHeuresCalendrier = async (calendrierId: string, date: string): Promise<{ heure_debut: string | null; heure_fin: string | null; heures_travail: number }> => {
+    try {
+      const response = await fetch(`/api/planification/calendrier-heures?calendrier_id=${calendrierId}&date=${date}`);
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          heure_debut: data.heure_debut || "08:00",
+          heure_fin: data.heure_fin || "16:00",
+          heures_travail: data.heures_travail || 0,
+        };
+      }
+    } catch (error) {
+      console.error("Erreur récupération heures calendrier:", error);
+    }
+    // Valeurs par défaut si erreur
+    return { heure_debut: "08:00", heure_fin: "16:00", heures_travail: 7 };
+  };
+  
   // Initialiser selectedAffaireGantt depuis l'URL si présent
   useEffect(() => {
     const affaireId = searchParams.get("affaire");
@@ -866,25 +885,6 @@ export default function PlanificationClient({
     saveTimeoutRef.current = setTimeout(() => {
       savePendingChanges();
     }, 2000);
-  };
-
-  // Fonction pour récupérer les heures du calendrier selon le jour
-  const getHeuresCalendrier = async (calendrierId: string, date: string): Promise<{ heure_debut: string | null; heure_fin: string | null; heures_travail: number }> => {
-    try {
-      const response = await fetch(`/api/planification/calendrier-heures?calendrier_id=${calendrierId}&date=${date}`);
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          heure_debut: data.heure_debut || "08:00",
-          heure_fin: data.heure_fin || "16:00",
-          heures_travail: data.heures_travail || 0,
-        };
-      }
-    } catch (error) {
-      console.error("Erreur récupération heures calendrier:", error);
-    }
-    // Valeurs par défaut si erreur
-    return { heure_debut: "08:00", heure_fin: "16:00", heures_travail: 7 };
   };
 
   // Fonction pour calculer la date de fin en fonction de la durée et du type horaire
