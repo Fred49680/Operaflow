@@ -163,6 +163,8 @@ export default function PlanificationClient({
       setCalculAutoDateFin(initCalculAuto);
       setStatutActivite(editingActivite.statut || "planifiee");
       setMotifReport("");
+      // Initialiser le calendrier sélectionné avec la valeur de l'activité
+      setSelectedCalendrierId(editingActivite.calendrier_id || "");
       
       if (initCalculAuto && initDateDebut && initDuree) {
         calculerDateFin(initDateDebut, parseInt(initDuree), "jours", editingActivite.type_horaire || "jour");
@@ -191,6 +193,8 @@ export default function PlanificationClient({
       setTypeHoraireSelectionne("jour");
       setStatutActivite("planifiee");
       setMotifReport("");
+      setSelectedCalendrierId("");
+      setHeuresPrevuesAuto(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showActiviteModal, editingActivite]);

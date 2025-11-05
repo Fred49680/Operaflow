@@ -102,6 +102,7 @@ export async function PATCH(
       commentaire,
       lot_id,
       site_id,
+      calendrier_id,
       // Nouveaux champs
       parent_id,
       duree_jours_ouvres,
@@ -301,6 +302,7 @@ export async function PATCH(
     if (commentaire !== undefined) updates.commentaire = commentaire || null;
     if (lot_id !== undefined) updates.lot_id = lot_id || null;
     if (site_id !== undefined) updates.site_id = site_id || null;
+    if (calendrier_id !== undefined) updates.calendrier_id = calendrier_id || null;
     // Nouveaux champs
     if (parent_id !== undefined) updates.parent_id = parent_id || null;
     if (duree_jours_ouvres !== undefined) updates.duree_jours_ouvres = duree_jours_ouvres || null;

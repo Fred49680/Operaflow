@@ -152,6 +152,7 @@ export async function POST(request: NextRequest) {
       activite_precedente_id,
       type_dependance,
       commentaire,
+      calendrier_id,
       // Nouveaux champs
       parent_id,
       duree_jours_ouvres,
@@ -193,6 +194,7 @@ export async function POST(request: NextRequest) {
         activite_precedente_id: activite_precedente_id || null,
         type_dependance: type_dependance || null,
         commentaire: commentaire || null,
+        calendrier_id: calendrier_id || null,
         // Nouveaux champs
         parent_id: parent_id || null,
         duree_jours_ouvres: duree_jours_ouvres || null,
