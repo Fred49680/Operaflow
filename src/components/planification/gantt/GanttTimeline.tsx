@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { startOfDay, endOfDay, addDays, subDays } from "date-fns";
+import { getProchainJourOuvre, isJourOuvre, getJourOuvrePrecedent } from "@/utils/gantt-calendar";
 import GanttHeader from "./GanttHeader";
 import GanttGrid from "./GanttGrid";
 import GanttJalonBar from "./GanttJalonBar";
@@ -58,9 +59,22 @@ export default function GanttTimeline({
   // Calculer la plage de dates si non fournie (incluant les jalons)
   const { dateDebut, dateFin } = useMemo(() => {
     if (dateDebutProp && dateFinProp) {
+      // Normaliser les dates fournies en props pour qu'elles soient sur des jours ouvrés
+      let dateDebutNorm = startOfDay(dateDebutProp);
+      dateDebutNorm.setHours(8, 0, 0, 0);
+      if (!isJourOuvre(dateDebutNorm)) {
+        dateDebutNorm = getJourOuvrePrecedent(dateDebutNorm);
+      }
+      
+      let dateFinNorm = endOfDay(dateFinProp);
+      dateFinNorm.setHours(8, 0, 0, 0);
+      if (!isJourOuvre(dateFinNorm)) {
+        dateFinNorm = getProchainJourOuvre(dateFinNorm);
+      }
+      
       return {
-        dateDebut: startOfDay(dateDebutProp),
-        dateFin: endOfDay(dateFinProp),
+        dateDebut: dateDebutNorm,
+        dateFin: dateFinNorm,
       };
     }
 
@@ -88,19 +102,46 @@ export default function GanttTimeline({
 
     if (toutesDates.length === 0) {
       const aujourdhui = new Date();
+      let dateDebutDefault = startOfDay(subDays(aujourdhui, 7));
+      dateDebutDefault.setHours(8, 0, 0, 0);
+      if (!isJourOuvre(dateDebutDefault)) {
+        dateDebutDefault = getJourOuvrePrecedent(dateDebutDefault);
+      }
+      
+      let dateFinDefault = endOfDay(addDays(aujourdhui, 30));
+      dateFinDefault.setHours(8, 0, 0, 0);
+      if (!isJourOuvre(dateFinDefault)) {
+        dateFinDefault = getProchainJourOuvre(dateFinDefault);
+      }
+      
       return {
-        dateDebut: startOfDay(subDays(aujourdhui, 7)),
-        dateFin: endOfDay(addDays(aujourdhui, 30)),
+        dateDebut: dateDebutDefault,
+        dateFin: dateFinDefault,
       };
     }
 
     const dateMin = new Date(Math.min(...toutesDates.map((d) => d.getTime())));
     const dateMax = new Date(Math.max(...toutesDates.map((d) => d.getTime())));
 
-    // Ajouter une marge de 7 jours avant et après
+    // Calculer la date de début avec marge de 7 jours
+    let dateDebutCalc = startOfDay(subDays(dateMin, 7));
+    dateDebutCalc.setHours(8, 0, 0, 0);
+    // S'assurer que la date de début est un jour ouvré
+    if (!isJourOuvre(dateDebutCalc)) {
+      dateDebutCalc = getJourOuvrePrecedent(dateDebutCalc);
+    }
+    
+    // Calculer la date de fin avec marge de 7 jours
+    let dateFinCalc = endOfDay(addDays(dateMax, 7));
+    dateFinCalc.setHours(8, 0, 0, 0);
+    // S'assurer que la date de fin est un jour ouvré
+    if (!isJourOuvre(dateFinCalc)) {
+      dateFinCalc = getProchainJourOuvre(dateFinCalc);
+    }
+
     return {
-      dateDebut: startOfDay(subDays(dateMin, 7)),
-      dateFin: endOfDay(addDays(dateMax, 7)),
+      dateDebut: dateDebutCalc,
+      dateFin: dateFinCalc,
     };
   }, [activites, jalons, dateDebutProp, dateFinProp]);
 
