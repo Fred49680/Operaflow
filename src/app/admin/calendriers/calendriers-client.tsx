@@ -143,8 +143,11 @@ export default function CalendriersClient({
     // Durée totale en heures
     const dureeTotale = (hFin * 60 + mFin - (hDebut * 60 + mDebut)) / 60;
     
-    // Si pause définie, soustraire sa durée
-    if (heurePauseDebut && heurePauseFin && heurePauseDebut !== "00:00" && heurePauseFin !== "00:00") {
+    // Si pause définie (non vide et non "00:00"), soustraire sa durée
+    // Permet les demi-journées sans pause (ex: 8:00-12:00)
+    if (heurePauseDebut && heurePauseFin && 
+        heurePauseDebut !== "00:00" && heurePauseFin !== "00:00" &&
+        heurePauseDebut.trim() !== "" && heurePauseFin.trim() !== "") {
       const [hPauseDebut, mPauseDebut] = heurePauseDebut.split(":").map(Number);
       const [hPauseFin, mPauseFin] = heurePauseFin.split(":").map(Number);
       const dureePause = (hPauseFin * 60 + mPauseFin - (hPauseDebut * 60 + mPauseDebut)) / 60;
@@ -166,18 +169,19 @@ export default function CalendriersClient({
             const dbJour = st.find((j: { jour_semaine: number }) => j.jour_semaine === jour.jour_semaine);
             if (dbJour) {
               // Convertir les heures TIME en format HH:mm
-              const formatTime = (time: string | null): string => {
-                if (!time) return "00:00";
+              // Retourne "" si null pour permettre les demi-journées sans pause
+              const formatTime = (time: string | null, isRequired: boolean = false): string => {
+                if (!time) return isRequired ? "08:00" : ""; // Vide pour pause (optionnel), valeur par défaut pour début/fin
                 // Si c'est déjà au format HH:mm, retourner tel quel
                 if (time.includes(":")) return time;
                 // Sinon, convertir depuis TIME SQL
                 return time.slice(0, 5);
               };
               
-              const heureDebut = formatTime(dbJour.heure_debut);
-              const heurePauseDebut = formatTime(dbJour.heure_pause_debut);
-              const heurePauseFin = formatTime(dbJour.heure_pause_fin);
-              const heureFin = formatTime(dbJour.heure_fin);
+              const heureDebut = formatTime(dbJour.heure_debut, true);
+              const heurePauseDebut = formatTime(dbJour.heure_pause_debut, false); // Optionnel
+              const heurePauseFin = formatTime(dbJour.heure_pause_fin, false); // Optionnel
+              const heureFin = formatTime(dbJour.heure_fin, true);
               
               // Calculer les heures travaillées si les heures détaillées sont renseignées
               const heuresCalc = (heureDebut && heureFin && heureDebut !== "00:00" && heureFin !== "00:00")
@@ -190,8 +194,8 @@ export default function CalendriersClient({
                 heures_travail_display: decimalToTime(heuresCalc),
                 type_jour: dbJour.type_jour,
                 heure_debut: heureDebut || jour.heure_debut,
-                heure_pause_debut: heurePauseDebut || jour.heure_pause_debut,
-                heure_pause_fin: heurePauseFin || jour.heure_pause_fin,
+                heure_pause_debut: heurePauseDebut !== "" ? heurePauseDebut : (jour.heure_pause_debut || ""),
+                heure_pause_fin: heurePauseFin !== "" ? heurePauseFin : (jour.heure_pause_fin || ""),
                 heure_fin: heureFin || jour.heure_fin,
               };
             }
@@ -216,10 +220,10 @@ export default function CalendriersClient({
         jour_semaine: jour.jour_semaine,
         heures_travail: jour.heures_travail, // Calculé automatiquement côté serveur si heures détaillées renseignées
         type_jour: jour.type_jour,
-        heure_debut: jour.type_jour === "ouvre" ? jour.heure_debut : null,
-        heure_pause_debut: jour.type_jour === "ouvre" ? jour.heure_pause_debut : null,
-        heure_pause_fin: jour.type_jour === "ouvre" ? jour.heure_pause_fin : null,
-        heure_fin: jour.type_jour === "ouvre" ? jour.heure_fin : null,
+        heure_debut: jour.type_jour === "ouvre" ? (jour.heure_debut || null) : null,
+        heure_pause_debut: jour.type_jour === "ouvre" ? (jour.heure_pause_debut && jour.heure_pause_debut.trim() !== "" ? jour.heure_pause_debut : null) : null,
+        heure_pause_fin: jour.type_jour === "ouvre" ? (jour.heure_pause_fin && jour.heure_pause_fin.trim() !== "" ? jour.heure_pause_fin : null) : null,
+        heure_fin: jour.type_jour === "ouvre" ? (jour.heure_fin || null) : null,
       }));
 
       const response = await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/semaine-type`, {
@@ -879,20 +883,34 @@ export default function CalendriersClient({
                           
                           {/* Pause repas */}
                           <div>
-                            <label className="text-xs text-gray-600 mb-0.5 block">Pause</label>
+                            <label className="text-xs text-gray-600 mb-0.5 block">
+                              Pause <span className="text-gray-400 font-normal">(optionnel)</span>
+                            </label>
+                            <p className="text-xs text-gray-400 mb-1">
+                              Laissez vide pour demi-journée
+                            </p>
                             <div className="space-y-1">
                               <input
                                 type="time"
-                                value={jour.heure_pause_debut}
+                                value={jour.heure_pause_debut || ""}
                                 onChange={(e) => {
-                                  const newValue = e.target.value || "12:00";
+                                  const newValue = e.target.value || "";
                                   const newSemaineType = [...semaineType];
+                                  
+                                  // Si on vide la pause début, vider aussi la pause fin
+                                  let newPauseFin = newSemaineType[index].heure_pause_fin;
+                                  if (!newValue) {
+                                    newPauseFin = "";
+                                  }
                                   
                                   // Appliquer aux jours sélectionnés
                                   joursSelectionnes.forEach((jourSemaine) => {
                                     const idx = semaineType.findIndex(j => j.jour_semaine === jourSemaine);
                                     if (idx !== -1 && semaineType[idx].type_jour === "ouvre") {
                                       newSemaineType[idx].heure_pause_debut = newValue;
+                                      if (!newValue) {
+                                        newSemaineType[idx].heure_pause_fin = "";
+                                      }
                                       const heuresCalc = calculerHeuresTravail(
                                         newSemaineType[idx].heure_debut,
                                         newSemaineType[idx].heure_pause_debut,
@@ -906,10 +924,14 @@ export default function CalendriersClient({
                                   
                                   // Mettre à jour le jour actuel
                                   newSemaineType[index].heure_pause_debut = newValue;
+                                  if (!newValue) {
+                                    newSemaineType[index].heure_pause_fin = "";
+                                    newPauseFin = "";
+                                  }
                                   const heuresCalc = calculerHeuresTravail(
                                     newSemaineType[index].heure_debut,
                                     newSemaineType[index].heure_pause_debut,
-                                    newSemaineType[index].heure_pause_fin,
+                                    newPauseFin,
                                     newSemaineType[index].heure_fin
                                   );
                                   newSemaineType[index].heures_travail = heuresCalc;
@@ -919,13 +941,13 @@ export default function CalendriersClient({
                                 className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
                                 onClick={(e) => e.stopPropagation()}
                                 placeholder="Début"
-                                title="Début de la pause"
+                                title="Début de la pause (vide pour demi-journée)"
                               />
                               <input
                                 type="time"
-                                value={jour.heure_pause_fin}
+                                value={jour.heure_pause_fin || ""}
                                 onChange={(e) => {
-                                  const newValue = e.target.value || "13:00";
+                                  const newValue = e.target.value || "";
                                   const newSemaineType = [...semaineType];
                                   
                                   // Appliquer aux jours sélectionnés
@@ -960,6 +982,7 @@ export default function CalendriersClient({
                                 onClick={(e) => e.stopPropagation()}
                                 placeholder="Fin"
                                 title="Fin de la pause (reprise)"
+                                disabled={!jour.heure_pause_debut || jour.heure_pause_debut === ""}
                               />
                             </div>
                           </div>
