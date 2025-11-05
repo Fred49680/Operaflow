@@ -76,6 +76,7 @@ export default function CalendriersClient({
     return hours + (minutes || 0) / 60;
   };
 
+  const [joursSelectionnes, setJoursSelectionnes] = useState<Set<number>>(new Set());
   const [semaineType, setSemaineType] = useState<Array<{
     jour_semaine: number;
     nom_jour: string;
@@ -764,15 +765,42 @@ export default function CalendriersClient({
                   <p className="text-sm text-gray-600">
                     Modifiez directement dans les cellules. Les modifications seront sauvegardées automatiquement à la fermeture du modal.
                   </p>
+                  <p className="text-xs text-primary mt-2">
+                    💡 Sélectionnez plusieurs jours pour appliquer les mêmes horaires automatiquement
+                  </p>
                 </div>
                 <div className="grid grid-cols-7 gap-2">
-                  {semaineType.map((jour, index) => (
+                  {semaineType.map((jour, index) => {
+                    const isSelected = joursSelectionnes.has(jour.jour_semaine);
+                    return (
                     <div
                       key={jour.jour_semaine}
-                      className="p-3 bg-gray-50 rounded-lg border border-gray-200 hover:border-primary transition-colors"
+                      className={`p-3 rounded-lg border transition-colors ${
+                        isSelected 
+                          ? "bg-primary/10 border-primary border-2" 
+                          : "bg-gray-50 border-gray-200 hover:border-primary"
+                      }`}
                     >
-                      <div className="text-xs font-medium text-gray-700 mb-2 text-center">
-                        {jour.nom_jour}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-xs font-medium text-gray-700 text-center flex-1">
+                          {jour.nom_jour}
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            const newSelection = new Set(joursSelectionnes);
+                            if (e.target.checked) {
+                              newSelection.add(jour.jour_semaine);
+                            } else {
+                              newSelection.delete(jour.jour_semaine);
+                            }
+                            setJoursSelectionnes(newSelection);
+                          }}
+                          className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary ml-2"
+                          title="Sélectionner ce jour"
+                        />
                       </div>
                       
                       {/* Type de jour - Éditable */}
@@ -812,9 +840,27 @@ export default function CalendriersClient({
                               type="time"
                               value={jour.heure_debut}
                               onChange={(e) => {
+                                const newValue = e.target.value || "08:00";
                                 const newSemaineType = [...semaineType];
-                                newSemaineType[index].heure_debut = e.target.value || "08:00";
-                                // Recalculer les heures travaillées
+                                
+                                // Appliquer aux jours sélectionnés (sauf celui modifié qui est déjà dans la liste)
+                                joursSelectionnes.forEach((jourSemaine) => {
+                                  const idx = semaineType.findIndex(j => j.jour_semaine === jourSemaine);
+                                  if (idx !== -1 && semaineType[idx].type_jour === "ouvre") {
+                                    newSemaineType[idx].heure_debut = newValue;
+                                    const heuresCalc = calculerHeuresTravail(
+                                      newSemaineType[idx].heure_debut,
+                                      newSemaineType[idx].heure_pause_debut,
+                                      newSemaineType[idx].heure_pause_fin,
+                                      newSemaineType[idx].heure_fin
+                                    );
+                                    newSemaineType[idx].heures_travail = heuresCalc;
+                                    newSemaineType[idx].heures_travail_display = decimalToTime(heuresCalc);
+                                  }
+                                });
+                                
+                                // Mettre à jour le jour actuel
+                                newSemaineType[index].heure_debut = newValue;
                                 const heuresCalc = calculerHeuresTravail(
                                   newSemaineType[index].heure_debut,
                                   newSemaineType[index].heure_pause_debut,
@@ -838,8 +884,27 @@ export default function CalendriersClient({
                                 type="time"
                                 value={jour.heure_pause_debut}
                                 onChange={(e) => {
+                                  const newValue = e.target.value || "12:00";
                                   const newSemaineType = [...semaineType];
-                                  newSemaineType[index].heure_pause_debut = e.target.value || "12:00";
+                                  
+                                  // Appliquer aux jours sélectionnés
+                                  joursSelectionnes.forEach((jourSemaine) => {
+                                    const idx = semaineType.findIndex(j => j.jour_semaine === jourSemaine);
+                                    if (idx !== -1 && semaineType[idx].type_jour === "ouvre") {
+                                      newSemaineType[idx].heure_pause_debut = newValue;
+                                      const heuresCalc = calculerHeuresTravail(
+                                        newSemaineType[idx].heure_debut,
+                                        newSemaineType[idx].heure_pause_debut,
+                                        newSemaineType[idx].heure_pause_fin,
+                                        newSemaineType[idx].heure_fin
+                                      );
+                                      newSemaineType[idx].heures_travail = heuresCalc;
+                                      newSemaineType[idx].heures_travail_display = decimalToTime(heuresCalc);
+                                    }
+                                  });
+                                  
+                                  // Mettre à jour le jour actuel
+                                  newSemaineType[index].heure_pause_debut = newValue;
                                   const heuresCalc = calculerHeuresTravail(
                                     newSemaineType[index].heure_debut,
                                     newSemaineType[index].heure_pause_debut,
@@ -859,8 +924,27 @@ export default function CalendriersClient({
                                 type="time"
                                 value={jour.heure_pause_fin}
                                 onChange={(e) => {
+                                  const newValue = e.target.value || "13:00";
                                   const newSemaineType = [...semaineType];
-                                  newSemaineType[index].heure_pause_fin = e.target.value || "13:00";
+                                  
+                                  // Appliquer aux jours sélectionnés
+                                  joursSelectionnes.forEach((jourSemaine) => {
+                                    const idx = semaineType.findIndex(j => j.jour_semaine === jourSemaine);
+                                    if (idx !== -1 && semaineType[idx].type_jour === "ouvre") {
+                                      newSemaineType[idx].heure_pause_fin = newValue;
+                                      const heuresCalc = calculerHeuresTravail(
+                                        newSemaineType[idx].heure_debut,
+                                        newSemaineType[idx].heure_pause_debut,
+                                        newSemaineType[idx].heure_pause_fin,
+                                        newSemaineType[idx].heure_fin
+                                      );
+                                      newSemaineType[idx].heures_travail = heuresCalc;
+                                      newSemaineType[idx].heures_travail_display = decimalToTime(heuresCalc);
+                                    }
+                                  });
+                                  
+                                  // Mettre à jour le jour actuel
+                                  newSemaineType[index].heure_pause_fin = newValue;
                                   const heuresCalc = calculerHeuresTravail(
                                     newSemaineType[index].heure_debut,
                                     newSemaineType[index].heure_pause_debut,
@@ -886,8 +970,27 @@ export default function CalendriersClient({
                               type="time"
                               value={jour.heure_fin}
                               onChange={(e) => {
+                                const newValue = e.target.value || "16:00";
                                 const newSemaineType = [...semaineType];
-                                newSemaineType[index].heure_fin = e.target.value || "16:00";
+                                
+                                // Appliquer aux jours sélectionnés
+                                joursSelectionnes.forEach((jourSemaine) => {
+                                  const idx = semaineType.findIndex(j => j.jour_semaine === jourSemaine);
+                                  if (idx !== -1 && semaineType[idx].type_jour === "ouvre") {
+                                    newSemaineType[idx].heure_fin = newValue;
+                                    const heuresCalc = calculerHeuresTravail(
+                                      newSemaineType[idx].heure_debut,
+                                      newSemaineType[idx].heure_pause_debut,
+                                      newSemaineType[idx].heure_pause_fin,
+                                      newSemaineType[idx].heure_fin
+                                    );
+                                    newSemaineType[idx].heures_travail = heuresCalc;
+                                    newSemaineType[idx].heures_travail_display = decimalToTime(heuresCalc);
+                                  }
+                                });
+                                
+                                // Mettre à jour le jour actuel
+                                newSemaineType[index].heure_fin = newValue;
                                 const heuresCalc = calculerHeuresTravail(
                                   newSemaineType[index].heure_debut,
                                   newSemaineType[index].heure_pause_debut,
