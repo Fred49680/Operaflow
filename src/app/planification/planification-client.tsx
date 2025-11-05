@@ -99,6 +99,7 @@ export default function PlanificationClient({
   const [typeHoraireSelectionne, setTypeHoraireSelectionne] = useState<string>("jour");
   const [selectedCalendrierId, setSelectedCalendrierId] = useState<string>("");
   const [heuresPrevuesAuto, setHeuresPrevuesAuto] = useState<number | null>(null);
+  const [heuresTravailleesDuree, setHeuresTravailleesDuree] = useState<number | null>(null);
   
   // Initialiser selectedAffaireGantt depuis l'URL si présent
   useEffect(() => {
@@ -164,9 +165,28 @@ export default function PlanificationClient({
       setStatutActivite(editingActivite.statut || "planifiee");
       setMotifReport("");
       // Initialiser le calendrier sélectionné avec la valeur de l'activité
-      setSelectedCalendrierId(editingActivite.calendrier_id || "");
+      const calendrierId = editingActivite.calendrier_id || "";
+      setSelectedCalendrierId(calendrierId);
       
-      if (initCalculAuto && initDateDebut && initDuree) {
+      // Si calendrier sélectionné, ajuster l'heure de début selon le calendrier
+      if (calendrierId && initDateDebut) {
+        const dateObj = new Date(initDateDebut);
+        const dateOnly = dateObj.toISOString().split('T')[0];
+        getHeuresCalendrier(calendrierId, dateOnly).then((heures) => {
+          if (heures.heure_debut) {
+            const [heuresDebut, minutesDebut] = heures.heure_debut.split(':').map(Number);
+            dateObj.setHours(heuresDebut, minutesDebut, 0, 0);
+            const nouvelleDateDebut = new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000)
+              .toISOString()
+              .slice(0, 16);
+            setDateDebut(nouvelleDateDebut);
+            
+            if (initCalculAuto && initDuree) {
+              calculerDateFin(nouvelleDateDebut, parseInt(initDuree), "jours", editingActivite.type_horaire || "jour");
+            }
+          }
+        });
+      } else if (initCalculAuto && initDateDebut && initDuree) {
         calculerDateFin(initDateDebut, parseInt(initDuree), "jours", editingActivite.type_horaire || "jour");
       } else {
         // Normaliser aussi la date de fin si elle existe
@@ -195,6 +215,7 @@ export default function PlanificationClient({
       setMotifReport("");
       setSelectedCalendrierId("");
       setHeuresPrevuesAuto(null);
+      setHeuresTravailleesDuree(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showActiviteModal, editingActivite]);
@@ -847,6 +868,25 @@ export default function PlanificationClient({
     }, 2000);
   };
 
+  // Fonction pour récupérer les heures du calendrier selon le jour
+  const getHeuresCalendrier = async (calendrierId: string, date: string): Promise<{ heure_debut: string | null; heure_fin: string | null; heures_travail: number }> => {
+    try {
+      const response = await fetch(`/api/planification/calendrier-heures?calendrier_id=${calendrierId}&date=${date}`);
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          heure_debut: data.heure_debut || "08:00",
+          heure_fin: data.heure_fin || "16:00",
+          heures_travail: data.heures_travail || 0,
+        };
+      }
+    } catch (error) {
+      console.error("Erreur récupération heures calendrier:", error);
+    }
+    // Valeurs par défaut si erreur
+    return { heure_debut: "08:00", heure_fin: "16:00", heures_travail: 7 };
+  };
+
   // Fonction pour calculer la date de fin en fonction de la durée et du type horaire
   const calculerDateFin = async (dateDebutStr: string, duree: number, unite: "jours" | "semaines", typeHoraire: string) => {
     try {
@@ -868,7 +908,17 @@ export default function PlanificationClient({
         const data = await response.json();
         if (data.date_fin) {
           // Convertir en format datetime-local (YYYY-MM-DDTHH:mm)
-          const dateFin = new Date(data.date_fin);
+          let dateFin = new Date(data.date_fin);
+          
+          // Si calendrier sélectionné, utiliser l'heure de fin du calendrier pour le jour de fin
+          if (selectedCalendrierId) {
+            const heuresFin = await getHeuresCalendrier(selectedCalendrierId, dateFin.toISOString().split('T')[0]);
+            if (heuresFin.heure_fin) {
+              const [heures, minutes] = heuresFin.heure_fin.split(':').map(Number);
+              dateFin.setHours(heures, minutes, 0, 0);
+            }
+          }
+          
           const formattedDate = new Date(dateFin.getTime() - dateFin.getTimezoneOffset() * 60000)
             .toISOString()
             .slice(0, 16);
@@ -878,10 +928,67 @@ export default function PlanificationClient({
           if (selectedCalendrierId && dateDebutStr && formattedDate) {
             await calculerHeuresPrevues(dateDebutStr, formattedDate);
           }
+          
+          // Calculer les heures travaillées pour la durée
+          if (selectedCalendrierId && duree) {
+            await calculerHeuresTravailleesDuree(dateDebutStr, joursCalcul);
+          }
         }
       }
     } catch (error) {
       console.error("Erreur lors du calcul de la date de fin:", error);
+    }
+  };
+
+  // Fonction pour calculer les heures travaillées selon la durée en jours
+  const calculerHeuresTravailleesDuree = async (dateDebutStr: string, dureeJours: number) => {
+    if (!selectedCalendrierId || !dateDebutStr || !dureeJours) {
+      setHeuresTravailleesDuree(null);
+      return;
+    }
+
+    try {
+      // Récupérer le site_id de l'affaire sélectionnée si disponible
+      const affaireSelectionnee = affaires.find(a => a.id === selectedAffaireId);
+      const siteId = affaireSelectionnee?.site_id || null;
+
+      // Calculer la date de fin temporaire pour le calcul
+      const response = await fetch("/api/planification/calculer-date-fin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date_debut: dateDebutStr,
+          duree_jours_ouvres: dureeJours,
+          type_horaire: typeHoraireSelectionne,
+          calendrier_id: selectedCalendrierId || null,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.date_fin) {
+          // Utiliser la date de fin calculée pour calculer les heures
+          const responseHeures = await fetch("/api/planification/calculer-heures-prevues", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              date_debut: dateDebutStr,
+              date_fin: data.date_fin,
+              calendrier_id: selectedCalendrierId,
+              site_id: siteId,
+            }),
+          });
+
+          if (responseHeures.ok) {
+            const dataHeures = await responseHeures.json();
+            if (dataHeures.heures_prevues !== undefined) {
+              setHeuresTravailleesDuree(dataHeures.heures_prevues);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors du calcul des heures travaillées:", error);
     }
   };
 
@@ -1536,12 +1643,38 @@ export default function PlanificationClient({
                         value={selectedCalendrierId}
                         onChange={async (e) => {
                           setSelectedCalendrierId(e.target.value);
+                          
+                          // Si date de début définie, ajuster l'heure selon le calendrier
+                          if (e.target.value && dateDebut) {
+                            const dateObj = new Date(dateDebut);
+                            const dateOnly = dateObj.toISOString().split('T')[0];
+                            const heures = await getHeuresCalendrier(e.target.value, dateOnly);
+                            if (heures.heure_debut) {
+                              const [heuresDebut, minutesDebut] = heures.heure_debut.split(':').map(Number);
+                              dateObj.setHours(heuresDebut, minutesDebut, 0, 0);
+                              const nouvelleDateDebut = new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000)
+                                .toISOString()
+                                .slice(0, 16);
+                              setDateDebut(nouvelleDateDebut);
+                              
+                              // Recalculer la date de fin si calcul auto activé
+                              if (calculAutoDateFin && dureeJoursOuvres) {
+                                await calculerDateFin(nouvelleDateDebut, parseFloat(dureeJoursOuvres), uniteDuree, typeHoraireSelectionne);
+                              }
+                            }
+                          }
+                          
                           // Recalculer les heures prévues si dates et durée sont définies
                           if (e.target.value && dateDebut && (dateFinCalculee || (editingActivite?.date_fin_prevue))) {
                             const dateFin = dateFinCalculee || (editingActivite?.date_fin_prevue ? new Date(editingActivite.date_fin_prevue).toISOString().slice(0, 16) : "");
                             if (dateFin) {
                               await calculerHeuresPrevues(dateDebut, dateFin);
                             }
+                          }
+                          
+                          // Recalculer les heures travaillées pour la durée
+                          if (e.target.value && dateDebut && dureeJoursOuvres) {
+                            await calculerHeuresTravailleesDuree(dateDebut, parseFloat(dureeJoursOuvres));
                           }
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
@@ -1611,6 +1744,10 @@ export default function PlanificationClient({
                             if (calculAutoDateFin && dateDebut && e.target.value) {
                               await calculerDateFin(dateDebut, parseFloat(e.target.value), uniteDuree, typeHoraireSelectionne);
                             }
+                            // Recalculer les heures travaillées si calendrier sélectionné
+                            if (selectedCalendrierId && dateDebut && e.target.value) {
+                              await calculerHeuresTravailleesDuree(dateDebut, parseFloat(e.target.value));
+                            }
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white"
                           placeholder={uniteDuree === "semaines" ? "Ex: 2" : "Ex: 5"}
@@ -1624,6 +1761,11 @@ export default function PlanificationClient({
                             ? "Inclut tous les jours"
                             : "Calcul selon le calendrier sélectionné"}
                         </p>
+                        {heuresTravailleesDuree !== null && selectedCalendrierId && dureeJoursOuvres && (
+                          <p className="text-xs text-primary font-semibold mt-1">
+                            {heuresTravailleesDuree.toFixed(2)} heures travaillées
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-end">
                         <label className="flex items-center gap-2 cursor-pointer w-full">
@@ -1661,23 +1803,37 @@ export default function PlanificationClient({
                         name="date_debut_prevue"
                         required
                         value={dateDebut || (editingActivite?.date_debut_prevue ? new Date(editingActivite.date_debut_prevue).toISOString().slice(0, 16) : "")}
-                        onChange={(e) => {
-                          setDateDebut(e.target.value);
+                        onChange={async (e) => {
+                          let nouvelleDateDebut = e.target.value;
+                          
+                          // Si calendrier sélectionné, utiliser l'heure de début du calendrier
+                          if (selectedCalendrierId && e.target.value) {
+                            const dateObj = new Date(e.target.value);
+                            const dateOnly = dateObj.toISOString().split('T')[0];
+                            const heures = await getHeuresCalendrier(selectedCalendrierId, dateOnly);
+                            if (heures.heure_debut) {
+                              const [heuresDebut, minutesDebut] = heures.heure_debut.split(':').map(Number);
+                              dateObj.setHours(heuresDebut, minutesDebut, 0, 0);
+                              nouvelleDateDebut = new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000)
+                                .toISOString()
+                                .slice(0, 16);
+                            }
+                          }
+                          
+                          setDateDebut(nouvelleDateDebut);
                           
                           // Si le statut est "reportee", recalculer automatiquement la date de fin
-                          if (statutActivite === 'reportee' && editingActivite && e.target.value) {
+                          if (statutActivite === 'reportee' && editingActivite && nouvelleDateDebut) {
                             const ancienneDateDebut = new Date(editingActivite.date_debut_prevue);
                             const ancienneDateFin = new Date(editingActivite.date_fin_prevue);
                             const dureeInitiale = ancienneDateFin.getTime() - ancienneDateDebut.getTime();
                             
-                            const nouvelleDateDebut = new Date(e.target.value);
-                            nouvelleDateDebut.setHours(0, 0, 0, 0);
-                            const nouvelleDateFin = new Date(nouvelleDateDebut.getTime() + dureeInitiale);
-                            nouvelleDateFin.setHours(0, 0, 0, 0);
+                            const dateDebutObj = new Date(nouvelleDateDebut);
+                            const nouvelleDateFin = new Date(dateDebutObj.getTime() + dureeInitiale);
                             
                             setDateFinCalculee(nouvelleDateFin.toISOString().slice(0, 16));
-                          } else if (calculAutoDateFin && dureeJoursOuvres && e.target.value) {
-                            calculerDateFin(e.target.value, parseInt(dureeJoursOuvres), uniteDuree, typeHoraireSelectionne);
+                          } else if (calculAutoDateFin && dureeJoursOuvres && nouvelleDateDebut) {
+                            await calculerDateFin(nouvelleDateDebut, parseInt(dureeJoursOuvres), uniteDuree, typeHoraireSelectionne);
                           }
                         }}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
