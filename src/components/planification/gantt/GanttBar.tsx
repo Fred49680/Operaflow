@@ -63,13 +63,21 @@ export default function GanttBar({
         dateFinNorm = getProchainJourOuvre(dateFinNorm);
       }
       
-      const dateDebutTimelineNorm = new Date(dateDebutTimeline);
+      let dateDebutTimelineNorm = new Date(dateDebutTimeline);
       dateDebutTimelineNorm.setHours(8, 0, 0, 0);
-      const dateFinTimelineNorm = new Date(dateFinTimeline);
-      dateFinTimelineNorm.setHours(8, 0, 0, 0);
+      if (!isJourOuvre(dateDebutTimelineNorm)) {
+        dateDebutTimelineNorm = getProchainJourOuvre(dateDebutTimelineNorm);
+      }
       
-      // Pour la position, on exclut la date de début de l'activité
-      const joursOuvresAvant = getNombreJoursOuvres(dateDebutTimelineNorm, dateDebutNorm, false);
+      let dateFinTimelineNorm = new Date(dateFinTimeline);
+      dateFinTimelineNorm.setHours(8, 0, 0, 0);
+      if (!isJourOuvre(dateFinTimelineNorm)) {
+        dateFinTimelineNorm = getProchainJourOuvre(dateFinTimelineNorm);
+      }
+      
+      // Pour la position, on compte les jours ouvrés depuis le début jusqu'à (et incluant) la date de début, moins 1
+      const joursOuvresTotal = getNombreJoursOuvres(dateDebutTimelineNorm, dateDebutNorm, true);
+      const joursOuvresAvant = Math.max(0, joursOuvresTotal - 1);
       // Pour la durée, on inclut la date de fin
       const joursOuvresDuree = getNombreJoursOuvres(dateDebutNorm, dateFinNorm, true);
       // Pour le total, on inclut la date de fin
@@ -115,18 +123,27 @@ export default function GanttBar({
       dateFinNormalisee = getProchainJourOuvre(dateFinNormalisee);
     }
     
-    // Normaliser aussi les dates de la timeline
-    const dateDebutTimelineNorm = new Date(dateDebutTimeline);
+    // Normaliser aussi les dates de la timeline - s'assurer qu'elles sont sur des jours ouvrés
+    let dateDebutTimelineNorm = new Date(dateDebutTimeline);
     dateDebutTimelineNorm.setHours(8, 0, 0, 0);
-    const dateFinTimelineNorm = new Date(dateFinTimeline);
+    if (!isJourOuvre(dateDebutTimelineNorm)) {
+      dateDebutTimelineNorm = getProchainJourOuvre(dateDebutTimelineNorm);
+    }
+    
+    let dateFinTimelineNorm = new Date(dateFinTimeline);
     dateFinTimelineNorm.setHours(8, 0, 0, 0);
+    if (!isJourOuvre(dateFinTimelineNorm)) {
+      dateFinTimelineNorm = getProchainJourOuvre(dateFinTimelineNorm);
+    }
     
     // Calculer le nombre de jours ouvrés pour la position
-    // Pour la position, on exclut la date de début de l'activité (joursOuvresAvant)
-    const joursOuvresAvant = getNombreJoursOuvres(dateDebutTimelineNorm, dateDebutNormalisee, false);
-    // Pour la durée, on inclut la date de fin
+    // Position = nombre de jours ouvrés depuis le début de la timeline jusqu'à (et incluant) la date de début
+    // Mais on doit soustraire 1 car la position 0 correspond au premier jour ouvré de la timeline
+    const joursOuvresTotal = getNombreJoursOuvres(dateDebutTimelineNorm, dateDebutNormalisee, true);
+    const joursOuvresAvant = Math.max(0, joursOuvresTotal - 1);
+    // Pour la durée, on compte les jours ouvrés entre début et fin (inclus les deux)
     const joursOuvresDuree = getNombreJoursOuvres(dateDebutNormalisee, dateFinNormalisee, true);
-    // Pour le total, on inclut la date de fin
+    // Pour le total, on compte tous les jours ouvrés de la timeline (inclus)
     const joursOuvresTotaux = getNombreJoursOuvres(dateDebutTimelineNorm, dateFinTimelineNorm, true);
 
     // Vérifier que les dates sont valides
