@@ -119,7 +119,7 @@ export async function POST(
       );
     }
 
-    const { data, error } = await supabase
+    const { data: nouvelleCompetenceRequise, error } = await supabase
       .from("activites_competences_requises")
       .insert({
         activite_id: id,
@@ -134,26 +134,41 @@ export async function POST(
         activite_id,
         competence_id,
         niveau_requis,
-        est_obligatoire,
-        competences (
-          id,
-          code,
-          libelle,
-          description,
-          categorie
-        )
+        est_obligatoire
       `)
       .single();
 
     if (error) {
       console.error("Erreur ajout compétence requise:", error);
       return NextResponse.json(
-        { error: error.message || "Erreur lors de l'ajout" },
+        { 
+          error: error.message || "Erreur lors de l'ajout",
+          details: error.details,
+          code: error.code
+        },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ competence: data });
+    // Récupérer les détails de la compétence séparément
+    const { data: competence, error: errorCompetence } = await supabase
+      .from("competences")
+      .select("id, code, libelle, description, categorie")
+      .eq("id", competence_id)
+      .single();
+
+    const competenceAvecDetails = {
+      ...nouvelleCompetenceRequise,
+      competences: competence ? {
+        id: competence.id,
+        code: competence.code,
+        libelle: competence.libelle,
+        description: competence.description,
+        categorie: competence.categorie
+      } : null
+    };
+
+    return NextResponse.json({ competence: competenceAvecDetails });
   } catch (error) {
     console.error("Erreur serveur:", error);
     return NextResponse.json(
