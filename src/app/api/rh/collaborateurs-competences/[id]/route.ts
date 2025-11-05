@@ -81,12 +81,10 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { niveau, date_obtention, date_expiration, statut } = body;
+    const { niveau, statut } = body;
 
     const updateData: Record<string, unknown> = {};
     if (niveau !== undefined) updateData.niveau = niveau;
-    if (date_obtention !== undefined) updateData.date_obtention = date_obtention || null;
-    if (date_expiration !== undefined) updateData.date_expiration = date_expiration || null;
     if (statut !== undefined) updateData.statut = statut;
     updateData.updated_at = new Date().toISOString();
 

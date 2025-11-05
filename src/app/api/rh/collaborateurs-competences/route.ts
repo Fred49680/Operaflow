@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { collaborateur_id, competence_id, niveau, date_obtention, date_expiration, statut } = body;
+    const { collaborateur_id, competence_id, niveau, statut } = body;
 
     if (!collaborateur_id || !competence_id) {
       return NextResponse.json(
@@ -114,8 +114,6 @@ export async function POST(request: Request) {
         collaborateur_id,
         competence_id,
         niveau: niveau || "base",
-        date_obtention: date_obtention || null,
-        date_expiration: date_expiration || null,
         statut: statut || "valide",
         valide_par: user.id,
         date_validation: new Date().toISOString(),
