@@ -30,6 +30,13 @@ export default async function SuiviQuotidienPage() {
     redirect("/dashboard");
   }
 
+  // Récupérer le collaborateur de l'utilisateur connecté
+  const { data: collaborateur } = await supabase
+    .from("collaborateurs")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
   // Charger les activités avec leurs relations
   const { data: activites } = await supabase
     .from("tbl_planification_activites")
@@ -67,6 +74,7 @@ export default async function SuiviQuotidienPage() {
       sites={sites || []}
       userId={user.id}
       userRoles={userRoles}
+      collaborateurId={collaborateur?.id || null}
     />
   );
 }

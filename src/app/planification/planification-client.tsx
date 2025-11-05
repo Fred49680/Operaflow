@@ -100,6 +100,26 @@ export default function PlanificationClient({
   const [selectedCalendrierId, setSelectedCalendrierId] = useState<string>("");
   const [heuresPrevuesAuto, setHeuresPrevuesAuto] = useState<number | null>(null);
   const [heuresTravailleesDuree, setHeuresTravailleesDuree] = useState<number | null>(null);
+  const [competencesRequises, setCompetencesRequises] = useState<Array<{
+    id: string;
+    competence_id: string;
+    niveau_requis: string;
+    est_obligatoire: boolean;
+    competences?: {
+      id: string;
+      code: string;
+      libelle: string;
+      categorie: string;
+    };
+  }>>([]);
+  const [competencesDisponibles, setCompetencesDisponibles] = useState<Array<{
+    id: string;
+    code: string;
+    libelle: string;
+    description?: string;
+    categorie?: string;
+  }>>([]);
+  const [showCompetencesModal, setShowCompetencesModal] = useState(false);
   
   // Fonction pour récupérer les heures du calendrier selon le jour
   // Fonction pour obtenir l'heure de reprise après pause si la date est avant la pause

@@ -15,13 +15,71 @@ interface AffectationsModalProps {
 export default function AffectationsModal({
   activite,
   affectations: initialAffectations,
-  collaborateurs,
+  collaborateurs: initialCollaborateurs,
   onClose,
   onRefresh,
 }: AffectationsModalProps) {
   const [affectations, setAffectations] = useState(initialAffectations);
+  const [collaborateurs, setCollaborateurs] = useState(initialCollaborateurs);
   const [showAddForm, setShowAddForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loadingCollaborateurs, setLoadingCollaborateurs] = useState(false);
+  const [competencesRequises, setCompetencesRequises] = useState<Array<{
+    id: string;
+    competence_id: string;
+    niveau_requis: string;
+    est_obligatoire: boolean;
+    competences?: {
+      id: string;
+      code: string;
+      libelle: string;
+      categorie: string;
+    };
+  }>>([]);
+
+  // Charger les compétences requises et filtrer les collaborateurs
+  useEffect(() => {
+    const chargerCompetencesEtFiltrer = async () => {
+      setLoadingCollaborateurs(true);
+      try {
+        // Récupérer les compétences requises
+        const competencesResponse = await fetch(
+          `/api/planification/activites/${activite.id}/competences-requises`
+        );
+        if (competencesResponse.ok) {
+          const competencesData = await competencesResponse.json();
+          setCompetencesRequises(competencesData.competences || []);
+        }
+
+        // Récupérer les collaborateurs filtrés
+        const siteId = activite.affaire?.site_id || activite.site_id || null;
+        const params = new URLSearchParams({
+          activite_id: activite.id,
+        });
+        if (siteId) {
+          params.append("site_id", siteId);
+        }
+
+        const collabResponse = await fetch(
+          `/api/planification/collaborateurs-filtres?${params.toString()}`
+        );
+        if (collabResponse.ok) {
+          const collabData = await collabResponse.json();
+          setCollaborateurs(collabData.collaborateurs || []);
+        } else {
+          // Si erreur, utiliser la liste initiale
+          setCollaborateurs(initialCollaborateurs);
+        }
+      } catch (error) {
+        console.error("Erreur chargement collaborateurs:", error);
+        setCollaborateurs(initialCollaborateurs);
+      } finally {
+        setLoadingCollaborateurs(false);
+      }
+    };
+
+    chargerCompetencesEtFiltrer();
+  }, [activite.id, activite.affaire?.site_id, activite.site_id, initialCollaborateurs]);
 
   const handleAddAffectation = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -117,6 +175,21 @@ export default function AffectationsModal({
             <p className="text-sm text-gray-500 mt-1">
               Gérer les ressources affectées à cette activité
             </p>
+            {competencesRequises.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className="text-xs text-gray-600">Compétences requises:</span>
+                {competencesRequises.map((cr) => (
+                  <span
+                    key={cr.id}
+                    className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded"
+                    title={`Niveau: ${cr.niveau_requis}`}
+                  >
+                    {cr.competences?.libelle || cr.competence_id}
+                    {!cr.est_obligatoire && " (recommandée)"}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -198,19 +271,40 @@ export default function AffectationsModal({
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Collaborateur <span className="text-red-500">*</span>
+                      {loadingCollaborateurs && (
+                        <span className="ml-2 text-xs text-gray-500">(Chargement...)</span>
+                      )}
                     </label>
                     <select
                       name="collaborateur_id"
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                      disabled={loadingCollaborateurs}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100"
                     >
                       <option value="">Sélectionner...</option>
-                      {collaborateurs.map((collab) => (
-                        <option key={collab.id} value={collab.id}>
-                          {collab.prenom} {collab.nom}
+                      {collaborateurs.length === 0 ? (
+                        <option value="" disabled>
+                          {competencesRequises.length > 0
+                            ? "Aucun collaborateur ne correspond aux compétences requises"
+                            : "Aucun collaborateur disponible"}
                         </option>
-                      ))}
+                      ) : (
+                        collaborateurs.map((collab) => (
+                          <option key={collab.id} value={collab.id}>
+                            {collab.prenom} {collab.nom}
+                            {(collab as any).competences && (collab as any).competences.length > 0 && (
+                              ` ✓ (${(collab as any).competences.length} compétence(s))`
+                            )}
+                          </option>
+                        ))
+                      )}
                     </select>
+                    {competencesRequises.length > 0 && collaborateurs.length === 0 && (
+                      <p className="text-xs text-orange-600 mt-1">
+                        ⚠ Aucun collaborateur ne possède toutes les compétences requises. 
+                        Vous pouvez ajouter des compétences recommandées dans les paramètres de l'activité.
+                      </p>
+                    )}
                   </div>
 
                   <div>

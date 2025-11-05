@@ -33,6 +33,7 @@ interface SuiviQuotidienClientProps {
   sites: Array<{ site_id: string; site_code: string; site_label: string }>;
   userId: string;
   userRoles: string[];
+  collaborateurId: string | null;
 }
 
 export default function SuiviQuotidienClient({
@@ -41,11 +42,13 @@ export default function SuiviQuotidienClient({
   sites,
   userId,
   userRoles,
+  collaborateurId,
 }: SuiviQuotidienClientProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSite, setFilterSite] = useState("");
   const [filterStatut, setFilterStatut] = useState("");
+  const [filterMesActivites, setFilterMesActivites] = useState(false);
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedActivite, setSelectedActivite] = useState<ActivitePlanification | null>(null);
@@ -112,6 +115,11 @@ export default function SuiviQuotidienClient({
   // Filtrer les activités
   const filteredActivites = useMemo(() => {
     return activites.filter((activite) => {
+      // Filtre "Mes activités" (responsable)
+      if (filterMesActivites && collaborateurId) {
+        if (activite.responsable_id !== collaborateurId) return false;
+      }
+      
       // Filtre par site
       if (filterSite && activite.affaire?.site_id !== filterSite) return false;
       
@@ -132,7 +140,7 @@ export default function SuiviQuotidienClient({
       
       return true;
     });
-  }, [activites, filterSite, filterStatut, searchTerm]);
+  }, [activites, filterSite, filterStatut, searchTerm, filterMesActivites, collaborateurId]);
 
   // Fonction pour obtenir la couleur du statut (selon design app, pas PRD)
   const getStatutColor = (statut: string) => {
@@ -464,6 +472,23 @@ export default function SuiviQuotidienClient({
                 <option value="annulee">Annulée</option>
               </select>
             </div>
+
+            {/* Filtre "Mes activités" (responsable) */}
+            {collaborateurId && (
+              <div className="w-full sm:w-auto flex items-center">
+                <label className="flex items-center gap-2 cursor-pointer px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={filterMesActivites}
+                    onChange={(e) => setFilterMesActivites(e.target.checked)}
+                    className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Mes activités (responsable)
+                  </span>
+                </label>
+              </div>
+            )}
           </div>
         </div>
 
