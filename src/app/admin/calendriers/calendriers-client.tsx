@@ -82,14 +82,18 @@ export default function CalendriersClient({
     heures_travail: number;
     heures_travail_display: string; // Format HH:mm pour l'affichage
     type_jour: string;
+    heure_debut: string; // Format HH:mm
+    heure_pause_debut: string; // Format HH:mm
+    heure_pause_fin: string; // Format HH:mm
+    heure_fin: string; // Format HH:mm
   }>>([
-    { jour_semaine: 0, nom_jour: "Dimanche", heures_travail: 0, heures_travail_display: "00:00", type_jour: "chome" },
-    { jour_semaine: 1, nom_jour: "Lundi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre" },
-    { jour_semaine: 2, nom_jour: "Mardi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre" },
-    { jour_semaine: 3, nom_jour: "Mercredi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre" },
-    { jour_semaine: 4, nom_jour: "Jeudi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre" },
-    { jour_semaine: 5, nom_jour: "Vendredi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre" },
-    { jour_semaine: 6, nom_jour: "Samedi", heures_travail: 0, heures_travail_display: "00:00", type_jour: "chome" },
+    { jour_semaine: 0, nom_jour: "Dimanche", heures_travail: 0, heures_travail_display: "00:00", type_jour: "chome", heure_debut: "00:00", heure_pause_debut: "00:00", heure_pause_fin: "00:00", heure_fin: "00:00" },
+    { jour_semaine: 1, nom_jour: "Lundi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "17:00" },
+    { jour_semaine: 2, nom_jour: "Mardi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "17:00" },
+    { jour_semaine: 3, nom_jour: "Mercredi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "17:00" },
+    { jour_semaine: 4, nom_jour: "Jeudi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "17:00" },
+    { jour_semaine: 5, nom_jour: "Vendredi", heures_travail: 8, heures_travail_display: "08:00", type_jour: "ouvre", heure_debut: "08:00", heure_pause_debut: "12:00", heure_pause_fin: "13:00", heure_fin: "17:00" },
+    { jour_semaine: 6, nom_jour: "Samedi", heures_travail: 0, heures_travail_display: "00:00", type_jour: "chome", heure_debut: "00:00", heure_pause_debut: "00:00", heure_pause_fin: "00:00", heure_fin: "00:00" },
   ]);
   const [jourFormData, setJourFormData] = useState<JourFormData>({
     date_jour: "",
@@ -126,6 +130,29 @@ export default function CalendriersClient({
     }
   };
 
+  // Fonction pour calculer les heures travaillées à partir des heures détaillées
+  const calculerHeuresTravail = (heureDebut: string, heurePauseDebut: string, heurePauseFin: string, heureFin: string): number => {
+    if (!heureDebut || !heureFin || heureDebut === "00:00" || heureFin === "00:00") {
+      return 0;
+    }
+    
+    const [hDebut, mDebut] = heureDebut.split(":").map(Number);
+    const [hFin, mFin] = heureFin.split(":").map(Number);
+    
+    // Durée totale en heures
+    const dureeTotale = (hFin * 60 + mFin - (hDebut * 60 + mDebut)) / 60;
+    
+    // Si pause définie, soustraire sa durée
+    if (heurePauseDebut && heurePauseFin && heurePauseDebut !== "00:00" && heurePauseFin !== "00:00") {
+      const [hPauseDebut, mPauseDebut] = heurePauseDebut.split(":").map(Number);
+      const [hPauseFin, mPauseFin] = heurePauseFin.split(":").map(Number);
+      const dureePause = (hPauseFin * 60 + mPauseFin - (hPauseDebut * 60 + mPauseDebut)) / 60;
+      return Math.max(0, dureeTotale - dureePause);
+    }
+    
+    return Math.max(0, dureeTotale);
+  };
+
   const fetchSemaineType = async (calendrierId: string) => {
     try {
       const response = await fetch(`/api/admin/calendriers/${calendrierId}/semaine-type`);
@@ -136,14 +163,38 @@ export default function CalendriersClient({
         setSemaineType((prev) =>
           prev.map((jour) => {
             const dbJour = st.find((j: { jour_semaine: number }) => j.jour_semaine === jour.jour_semaine);
-            return dbJour
-              ? {
-                  ...jour,
-                  heures_travail: dbJour.heures_travail,
-                  heures_travail_display: decimalToTime(dbJour.heures_travail),
-                  type_jour: dbJour.type_jour,
-                }
-              : jour;
+            if (dbJour) {
+              // Convertir les heures TIME en format HH:mm
+              const formatTime = (time: string | null): string => {
+                if (!time) return "00:00";
+                // Si c'est déjà au format HH:mm, retourner tel quel
+                if (time.includes(":")) return time;
+                // Sinon, convertir depuis TIME SQL
+                return time.slice(0, 5);
+              };
+              
+              const heureDebut = formatTime(dbJour.heure_debut);
+              const heurePauseDebut = formatTime(dbJour.heure_pause_debut);
+              const heurePauseFin = formatTime(dbJour.heure_pause_fin);
+              const heureFin = formatTime(dbJour.heure_fin);
+              
+              // Calculer les heures travaillées si les heures détaillées sont renseignées
+              const heuresCalc = (heureDebut && heureFin && heureDebut !== "00:00" && heureFin !== "00:00")
+                ? calculerHeuresTravail(heureDebut, heurePauseDebut, heurePauseFin, heureFin)
+                : dbJour.heures_travail || 0;
+              
+              return {
+                ...jour,
+                heures_travail: heuresCalc,
+                heures_travail_display: decimalToTime(heuresCalc),
+                type_jour: dbJour.type_jour,
+                heure_debut: heureDebut || jour.heure_debut,
+                heure_pause_debut: heurePauseDebut || jour.heure_pause_debut,
+                heure_pause_fin: heurePauseFin || jour.heure_pause_fin,
+                heure_fin: heureFin || jour.heure_fin,
+              };
+            }
+            return jour;
           })
         );
       }
@@ -159,11 +210,15 @@ export default function CalendriersClient({
     setError(null);
 
     try {
-      // Convertir les heures en format décimal avant envoi
+      // Préparer les données avec les heures détaillées
       const semaineTypeToSend = semaineType.map((jour) => ({
         jour_semaine: jour.jour_semaine,
-        heures_travail: jour.heures_travail, // Déjà en décimal
+        heures_travail: jour.heures_travail, // Calculé automatiquement côté serveur si heures détaillées renseignées
         type_jour: jour.type_jour,
+        heure_debut: jour.type_jour === "ouvre" ? jour.heure_debut : null,
+        heure_pause_debut: jour.type_jour === "ouvre" ? jour.heure_pause_debut : null,
+        heure_pause_fin: jour.type_jour === "ouvre" ? jour.heure_pause_fin : null,
+        heure_fin: jour.type_jour === "ouvre" ? jour.heure_fin : null,
       }));
 
       const response = await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/semaine-type`, {
@@ -300,6 +355,10 @@ export default function CalendriersClient({
           jour_semaine: jour.jour_semaine,
           heures_travail: jour.heures_travail,
           type_jour: jour.type_jour,
+          heure_debut: jour.type_jour === "ouvre" ? jour.heure_debut : null,
+          heure_pause_debut: jour.type_jour === "ouvre" ? jour.heure_pause_debut : null,
+          heure_pause_fin: jour.type_jour === "ouvre" ? jour.heure_pause_fin : null,
+          heure_fin: jour.type_jour === "ouvre" ? jour.heure_fin : null,
         }));
 
         await fetch(`/api/admin/calendriers/${selectedCalendrier.id}/semaine-type`, {
@@ -726,6 +785,10 @@ export default function CalendriersClient({
                             if (e.target.value === "chome" || e.target.value === "ferie") {
                               newSemaineType[index].heures_travail = 0;
                               newSemaineType[index].heures_travail_display = "00:00";
+                              newSemaineType[index].heure_debut = "00:00";
+                              newSemaineType[index].heure_pause_debut = "00:00";
+                              newSemaineType[index].heure_pause_fin = "00:00";
+                              newSemaineType[index].heure_fin = "00:00";
                             }
                             setSemaineType(newSemaineType);
                           }}
@@ -739,23 +802,118 @@ export default function CalendriersClient({
                         </select>
                       </div>
 
-                      {/* Heures travaillées - Éditable */}
-                      <div>
-                        <input
-                          type="time"
-                          value={jour.heures_travail_display}
-                          onChange={(e) => {
-                            const newSemaineType = [...semaineType];
-                            const timeValue = e.target.value || "00:00";
-                            newSemaineType[index].heures_travail_display = timeValue;
-                            newSemaineType[index].heures_travail = timeToDecimal(timeValue);
-                            setSemaineType(newSemaineType);
-                          }}
-                          disabled={jour.type_jour === "chome" || jour.type_jour === "ferie"}
-                          className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 text-center font-semibold"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
+                      {/* Heures détaillées - Éditable uniquement pour jours ouvrés */}
+                      {jour.type_jour === "ouvre" ? (
+                        <div className="space-y-1.5">
+                          {/* Heure de début */}
+                          <div>
+                            <label className="text-xs text-gray-600 mb-0.5 block">Début</label>
+                            <input
+                              type="time"
+                              value={jour.heure_debut}
+                              onChange={(e) => {
+                                const newSemaineType = [...semaineType];
+                                newSemaineType[index].heure_debut = e.target.value || "08:00";
+                                // Recalculer les heures travaillées
+                                const heuresCalc = calculerHeuresTravail(
+                                  newSemaineType[index].heure_debut,
+                                  newSemaineType[index].heure_pause_debut,
+                                  newSemaineType[index].heure_pause_fin,
+                                  newSemaineType[index].heure_fin
+                                );
+                                newSemaineType[index].heures_travail = heuresCalc;
+                                newSemaineType[index].heures_travail_display = decimalToTime(heuresCalc);
+                                setSemaineType(newSemaineType);
+                              }}
+                              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          
+                          {/* Pause repas */}
+                          <div>
+                            <label className="text-xs text-gray-600 mb-0.5 block">Pause</label>
+                            <div className="flex gap-1">
+                              <input
+                                type="time"
+                                value={jour.heure_pause_debut}
+                                onChange={(e) => {
+                                  const newSemaineType = [...semaineType];
+                                  newSemaineType[index].heure_pause_debut = e.target.value || "12:00";
+                                  const heuresCalc = calculerHeuresTravail(
+                                    newSemaineType[index].heure_debut,
+                                    newSemaineType[index].heure_pause_debut,
+                                    newSemaineType[index].heure_pause_fin,
+                                    newSemaineType[index].heure_fin
+                                  );
+                                  newSemaineType[index].heures_travail = heuresCalc;
+                                  newSemaineType[index].heures_travail_display = decimalToTime(heuresCalc);
+                                  setSemaineType(newSemaineType);
+                                }}
+                                className="flex-1 px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder="Début"
+                              />
+                              <input
+                                type="time"
+                                value={jour.heure_pause_fin}
+                                onChange={(e) => {
+                                  const newSemaineType = [...semaineType];
+                                  newSemaineType[index].heure_pause_fin = e.target.value || "13:00";
+                                  const heuresCalc = calculerHeuresTravail(
+                                    newSemaineType[index].heure_debut,
+                                    newSemaineType[index].heure_pause_debut,
+                                    newSemaineType[index].heure_pause_fin,
+                                    newSemaineType[index].heure_fin
+                                  );
+                                  newSemaineType[index].heures_travail = heuresCalc;
+                                  newSemaineType[index].heures_travail_display = decimalToTime(heuresCalc);
+                                  setSemaineType(newSemaineType);
+                                }}
+                                className="flex-1 px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder="Fin"
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Heure de fin */}
+                          <div>
+                            <label className="text-xs text-gray-600 mb-0.5 block">Fin</label>
+                            <input
+                              type="time"
+                              value={jour.heure_fin}
+                              onChange={(e) => {
+                                const newSemaineType = [...semaineType];
+                                newSemaineType[index].heure_fin = e.target.value || "17:00";
+                                const heuresCalc = calculerHeuresTravail(
+                                  newSemaineType[index].heure_debut,
+                                  newSemaineType[index].heure_pause_debut,
+                                  newSemaineType[index].heure_pause_fin,
+                                  newSemaineType[index].heure_fin
+                                );
+                                newSemaineType[index].heures_travail = heuresCalc;
+                                newSemaineType[index].heures_travail_display = decimalToTime(heuresCalc);
+                                setSemaineType(newSemaineType);
+                              }}
+                              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          
+                          {/* Heures travaillées calculées (lecture seule) */}
+                          <div className="pt-1 border-t border-gray-200">
+                            <div className="text-xs text-gray-600 mb-0.5">Total</div>
+                            <div className="text-xs font-semibold text-primary text-center">
+                              {jour.heures_travail_display}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-gray-400 text-center py-2">
+                          Jour chômé
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

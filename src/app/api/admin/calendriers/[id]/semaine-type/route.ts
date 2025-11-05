@@ -89,16 +89,24 @@ export async function POST(
       .delete()
       .eq("calendrier_id", id);
 
-    // Insérer la nouvelle semaine type
+    // Insérer la nouvelle semaine type avec les heures détaillées
     const joursToInsert = semaine_type.map((jour: {
       jour_semaine: number;
-      heures_travail: number;
+      heures_travail?: number;
       type_jour: string;
+      heure_debut?: string | null;
+      heure_pause_debut?: string | null;
+      heure_pause_fin?: string | null;
+      heure_fin?: string | null;
     }) => ({
       calendrier_id: id,
       jour_semaine: jour.jour_semaine,
-      heures_travail: jour.heures_travail || 0,
+      heures_travail: jour.heures_travail || 0, // Sera calculé automatiquement par le trigger si heures détaillées renseignées
       type_jour: jour.type_jour || "ouvre",
+      heure_debut: jour.heure_debut || null,
+      heure_pause_debut: jour.heure_pause_debut || null,
+      heure_pause_fin: jour.heure_pause_fin || null,
+      heure_fin: jour.heure_fin || null,
       created_by: user.id,
       updated_by: user.id,
     }));
