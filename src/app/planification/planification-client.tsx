@@ -117,7 +117,6 @@ export default function PlanificationClient({
       return dateFin;
     }
 
-    const [hPauseDebut, mPauseDebut] = heures.heure_pause_debut.split(':').map(Number);
     const [hPauseFin, mPauseFin] = heures.heure_pause_fin.split(':').map(Number);
     
     const heureFinTache = dateFin.getHours();
@@ -582,7 +581,7 @@ export default function PlanificationClient({
         for (const dep of tache.dependances) {
           // Trouver l'activité précédente
           const activitePrecedente = activites.find(a => a.id === dep.activite_precedente_id);
-          if (!activitePrecedente) return;
+          if (!activitePrecedente) continue;
           
           // Si l'activité précédente a été modifiée, utiliser ses nouvelles dates
           let dateDebutPrecedente: Date;
