@@ -833,7 +833,7 @@ export default function CalendriersClient({
                           {/* Pause repas */}
                           <div>
                             <label className="text-xs text-gray-600 mb-0.5 block">Pause</label>
-                            <div className="flex gap-1">
+                            <div className="space-y-1">
                               <input
                                 type="time"
                                 value={jour.heure_pause_debut}
@@ -850,9 +850,10 @@ export default function CalendriersClient({
                                   newSemaineType[index].heures_travail_display = decimalToTime(heuresCalc);
                                   setSemaineType(newSemaineType);
                                 }}
-                                className="flex-1 px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
                                 onClick={(e) => e.stopPropagation()}
                                 placeholder="Début"
+                                title="Début de la pause"
                               />
                               <input
                                 type="time"
@@ -870,9 +871,10 @@ export default function CalendriersClient({
                                   newSemaineType[index].heures_travail_display = decimalToTime(heuresCalc);
                                   setSemaineType(newSemaineType);
                                 }}
-                                className="flex-1 px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
+                                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary focus:border-primary"
                                 onClick={(e) => e.stopPropagation()}
                                 placeholder="Fin"
+                                title="Fin de la pause (reprise)"
                               />
                             </div>
                           </div>
