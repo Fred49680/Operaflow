@@ -11,18 +11,26 @@
 -- ============================================
 -- 1. tbl_catalogue_formations
 -- ============================================
+DROP POLICY IF EXISTS "Tous les utilisateurs authentifiés peuvent voir le catalogue actif" ON public.tbl_catalogue_formations;
 DROP POLICY IF EXISTS "Tous les utilisateurs authentifiés peuvent voir le catalogue a" ON public.tbl_catalogue_formations;
 DROP POLICY IF EXISTS "RH et Admin peuvent gérer le catalogue" ON public.tbl_catalogue_formations;
 
-CREATE POLICY "Tous les utilisateurs authentifiés peuvent voir le catalogue a"
+CREATE POLICY "Tous les utilisateurs authentifiés peuvent voir le catalogue actif"
   ON public.tbl_catalogue_formations
   FOR SELECT
-  USING ((select auth.role()) = 'authenticated' AND is_active = true);
+  USING ((select auth.uid()) IS NOT NULL AND is_active = true);
 
 CREATE POLICY "RH et Admin peuvent gérer le catalogue"
   ON public.tbl_catalogue_formations
   FOR ALL
-  USING (public.is_rh_or_admin((select auth.uid())));
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.user_roles ur
+      JOIN public.roles r ON ur.role_id = r.id
+      WHERE ur.user_id = (select auth.uid())
+      AND r.name IN ('Administrateur', 'Administratif RH', 'RH')
+    )
+  );
 
 -- ============================================
 -- 2. tbl_plan_previsionnel_formations
@@ -35,8 +43,19 @@ CREATE POLICY "Les utilisateurs peuvent voir leur plan prévisionnel"
   ON public.tbl_plan_previsionnel_formations
   FOR SELECT
   USING (
-    collaborateur_id IN (
-      SELECT id FROM public.collaborateurs WHERE user_id = (select auth.uid())
+    (select auth.uid()) IS NOT NULL AND (
+      -- Voir ses propres demandes
+      demandeur_id = (select auth.uid())
+      OR collaborateur_id IN (
+        SELECT id FROM public.collaborateurs WHERE user_id = (select auth.uid())
+      )
+      -- Ou si RH/Admin
+      OR EXISTS (
+        SELECT 1 FROM public.user_roles ur
+        JOIN public.roles r ON ur.role_id = r.id
+        WHERE ur.user_id = (select auth.uid())
+        AND r.name IN ('Administrateur', 'Administratif RH', 'RH')
+      )
     )
   );
 
@@ -44,15 +63,32 @@ CREATE POLICY "Les utilisateurs peuvent créer leur plan prévisionnel"
   ON public.tbl_plan_previsionnel_formations
   FOR INSERT
   WITH CHECK (
-    collaborateur_id IN (
-      SELECT id FROM public.collaborateurs WHERE user_id = (select auth.uid())
+    (select auth.uid()) IS NOT NULL AND (
+      -- Créer pour soi-même
+      collaborateur_id IN (
+        SELECT id FROM public.collaborateurs WHERE user_id = (select auth.uid())
+      )
+      -- Ou si RH/Admin/Conducteur
+      OR EXISTS (
+        SELECT 1 FROM public.user_roles ur
+        JOIN public.roles r ON ur.role_id = r.id
+        WHERE ur.user_id = (select auth.uid())
+        AND r.name IN ('Administrateur', 'Administratif RH', 'RH', 'Conducteur de Travaux', 'Chef de Chantier')
+      )
     )
   );
 
 CREATE POLICY "RH et Admin peuvent modifier le plan prévisionnel"
   ON public.tbl_plan_previsionnel_formations
-  FOR ALL
-  USING (public.is_rh_or_admin((select auth.uid())));
+  FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.user_roles ur
+      JOIN public.roles r ON ur.role_id = r.id
+      WHERE ur.user_id = (select auth.uid())
+      AND r.name IN ('Administrateur', 'Administratif RH', 'RH')
+    )
+  );
 
 -- ============================================
 -- 3. tbl_partenaire_documents
