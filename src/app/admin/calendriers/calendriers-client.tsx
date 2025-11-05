@@ -349,6 +349,7 @@ export default function CalendriersClient({
   };
 
   const handleCloseDetailModal = async () => {
+    setJoursSelectionnes(new Set()); // Réinitialiser la sélection
     // Sauvegarder automatiquement la semaine type si elle a été modifiée
     if (selectedCalendrier && semaineType.length > 0) {
       try {
