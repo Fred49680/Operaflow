@@ -212,9 +212,22 @@ export default function PlanificationClient({
       .catch((err) => console.error("Erreur chargement templates:", err));
   }, []);
 
+  // Charger les compétences disponibles au montage
+  useEffect(() => {
+    fetch("/api/rh/competences")
+      .then((res) => res.json())
+      .then((data) => setCompetencesDisponibles(data.competences || []))
+      .catch((err) => console.error("Erreur chargement compétences:", err));
+  }, []);
+
   // Réinitialiser les états quand on ouvre/ferme la modal
   useEffect(() => {
     if (showActiviteModal && editingActivite) {
+      // Charger les compétences requises de l'activité
+      fetch(`/api/planification/activites/${editingActivite.id}/competences-requises`)
+        .then((res) => res.json())
+        .then((data) => setCompetencesRequises(data.competences || []))
+        .catch((err) => console.error("Erreur chargement compétences requises:", err));
       const initCalculAuto = editingActivite.calcul_auto_date_fin || false;
       
       // Normaliser les dates pour aligner sur l'heure de début du calendrier (8h) et jour ouvré
@@ -320,6 +333,7 @@ export default function PlanificationClient({
       setSelectedCalendrierId("");
       setHeuresPrevuesAuto(null);
       setHeuresTravailleesDuree(null);
+      setCompetencesRequises([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showActiviteModal, editingActivite]);
@@ -2121,6 +2135,106 @@ export default function PlanificationClient({
                     </div>
                   </div>
 
+                  {/* Section 4.5 : Compétences requises */}
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-800">Compétences requises</h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Définissez les compétences nécessaires pour cette activité. Les ressources seront filtrées automatiquement.
+                        </p>
+                      </div>
+                      {editingActivite && (
+                        <button
+                          type="button"
+                          onClick={() => setShowCompetencesModal(true)}
+                          className="btn-primary text-sm px-3 py-1.5 flex items-center gap-1"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Ajouter
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Liste des compétences requises */}
+                    {competencesRequises.length > 0 ? (
+                      <div className="space-y-2">
+                        {competencesRequises.map((cr) => (
+                          <div
+                            key={cr.id}
+                            className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-medium text-gray-800">
+                                  {cr.competences?.libelle || cr.competence_id}
+                                </span>
+                                {cr.competences?.code && (
+                                  <span className="text-xs text-gray-500">({cr.competences.code})</span>
+                                )}
+                                <span className={`text-xs px-2 py-0.5 rounded ${
+                                  cr.niveau_requis === "expert" 
+                                    ? "bg-purple-100 text-purple-700"
+                                    : cr.niveau_requis === "intermediaire"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-gray-100 text-gray-700"
+                                }`}>
+                                  {cr.niveau_requis}
+                                </span>
+                                {cr.est_obligatoire ? (
+                                  <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded">
+                                    Obligatoire
+                                  </span>
+                                ) : (
+                                  <span className="text-xs px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">
+                                    Recommandée
+                                  </span>
+                                )}
+                              </div>
+                              {cr.competences?.categorie && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Catégorie: {cr.competences.categorie}
+                                </p>
+                              )}
+                            </div>
+                            {editingActivite && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch(
+                                      `/api/planification/activites/${editingActivite.id}/competences-requises?id=${cr.id}`,
+                                      { method: "DELETE" }
+                                    );
+                                    if (response.ok) {
+                                      setCompetencesRequises(competencesRequises.filter((c) => c.id !== cr.id));
+                                    } else {
+                                      alert("Erreur lors de la suppression");
+                                    }
+                                  } catch (error) {
+                                    console.error("Erreur:", error);
+                                    alert("Une erreur est survenue");
+                                  }
+                                }}
+                                className="text-red-500 hover:text-red-700 p-1"
+                                title="Supprimer"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500 text-sm">
+                        {editingActivite 
+                          ? "Aucune compétence requise définie. Cliquez sur 'Ajouter' pour en définir."
+                          : "Les compétences requises pourront être définies après la création de l'activité."
+                        }
+                      </div>
+                    )}
+                  </div>
+
                   {/* Section 5 : Statut et Description */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -2311,6 +2425,148 @@ export default function PlanificationClient({
                     disabled={saving}
                   >
                     {saving ? "Enregistrement..." : editingActivite ? "Modifier" : "Créer"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal d'ajout de compétence requise */}
+        {showCompetencesModal && editingActivite && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-6 border-b">
+                <div>
+                  <h2 className="text-xl font-bold text-primary">Ajouter une compétence requise</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Pour l'activité : {editingActivite.libelle}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowCompetencesModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  const competenceId = formData.get("competence_id") as string;
+                  const niveauRequis = formData.get("niveau_requis") as string;
+                  const estObligatoire = formData.get("est_obligatoire") === "true";
+
+                  if (!competenceId) {
+                    alert("Veuillez sélectionner une compétence");
+                    return;
+                  }
+
+                  try {
+                    const response = await fetch(
+                      `/api/planification/activites/${editingActivite.id}/competences-requises`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          competence_id: competenceId,
+                          niveau_requis: niveauRequis || "base",
+                          est_obligatoire: estObligatoire,
+                        }),
+                      }
+                    );
+
+                    if (response.ok) {
+                      const data = await response.json();
+                      setCompetencesRequises([...competencesRequises, data.competence]);
+                      setShowCompetencesModal(false);
+                      (e.target as HTMLFormElement).reset();
+                    } else {
+                      const error = await response.json();
+                      alert(`Erreur: ${error.error || "Erreur inconnue"}`);
+                    }
+                  } catch (error) {
+                    console.error("Erreur:", error);
+                    alert("Une erreur est survenue");
+                  }
+                }}
+                className="p-6 space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Compétence <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="competence_id"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="">Sélectionner une compétence</option>
+                    {competencesDisponibles
+                      .filter((comp) => !competencesRequises.some((cr) => cr.competence_id === comp.id))
+                      .map((comp) => (
+                        <option key={comp.id} value={comp.id}>
+                          {comp.libelle} {comp.code && `(${comp.code})`}
+                          {comp.categorie && ` - ${comp.categorie}`}
+                        </option>
+                      ))}
+                  </select>
+                  {competencesDisponibles.filter((comp) => !competencesRequises.some((cr) => cr.competence_id === comp.id)).length === 0 && (
+                    <p className="text-xs text-orange-600 mt-1">
+                      Toutes les compétences disponibles ont déjà été ajoutées
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Niveau requis
+                  </label>
+                  <select
+                    name="niveau_requis"
+                    defaultValue="base"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="base">Base</option>
+                    <option value="intermediaire">Intermédiaire</option>
+                    <option value="expert">Expert</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="est_obligatoire"
+                      value="true"
+                      defaultChecked
+                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      Compétence obligatoire
+                    </span>
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1 ml-6">
+                    Si cochée, seuls les collaborateurs ayant cette compétence pourront être affectés.
+                    Sinon, la compétence est recommandée mais non obligatoire.
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <button
+                    type="button"
+                    onClick={() => setShowCompetencesModal(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary px-4 py-2"
+                  >
+                    Ajouter
                   </button>
                 </div>
               </form>
