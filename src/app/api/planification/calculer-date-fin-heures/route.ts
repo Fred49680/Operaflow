@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculer la date de fin en parcourant les jours selon le calendrier
-    let dateCourante = new Date(dateDebut);
+    const dateCourante = new Date(dateDebut);
     let heuresAccumulees = 0;
     
     // Extraire l'heure de début de la date de début

@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     // Récupérer les compétences requises pour l'activité
     let competencesRequises: string[] = [];
-    let niveauxRequis: Record<string, string> = {};
+    const niveauxRequis: Record<string, string> = {};
 
     if (activiteId) {
       const { data: competencesData } = await supabase
