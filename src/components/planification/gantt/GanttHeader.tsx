@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { format, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfWeek, endOfWeek } from "date-fns";
+import { getJoursOuvres, isJourOuvre } from "@/utils/gantt-calendar";
 
 interface GanttHeaderProps {
   dateDebut: Date;
@@ -13,13 +14,16 @@ export default function GanttHeader({ dateDebut, dateFin, vue }: GanttHeaderProp
   const colonnes = useMemo(() => {
     switch (vue) {
       case "jour":
-        return eachDayOfInterval({ start: dateDebut, end: dateFin });
+        // Filtrer pour n'afficher que les jours ouvrés (lundi-vendredi)
+        const tousJours = eachDayOfInterval({ start: dateDebut, end: dateFin });
+        return tousJours.filter(jour => isJourOuvre(jour));
       case "semaine":
         return eachWeekOfInterval({ start: dateDebut, end: dateFin }, { weekStartsOn: 1 });
       case "mois":
         return eachMonthOfInterval({ start: dateDebut, end: dateFin });
       default:
-        return eachDayOfInterval({ start: dateDebut, end: dateFin });
+        const tousJoursDefault = eachDayOfInterval({ start: dateDebut, end: dateFin });
+        return tousJoursDefault.filter(jour => isJourOuvre(jour));
     }
   }, [dateDebut, dateFin, vue]);
 
@@ -38,15 +42,16 @@ export default function GanttHeader({ dateDebut, dateFin, vue }: GanttHeaderProp
     }
   };
 
-  // Calculer les jours pour afficher dans la vue semaine
+  // Calculer les jours pour afficher dans la vue semaine (uniquement jours ouvrés)
   const joursSemaine = useMemo(() => {
     if (vue === "semaine") {
       return colonnes.map((semaine) => {
         const startWeek = startOfWeek(semaine, { weekStartsOn: 1 });
         const jours = [];
-        for (let i = 0; i < 7; i++) {
+        // Afficher seulement les jours ouvrés (lundi-vendredi = jours 1-5)
+        for (let i = 1; i <= 5; i++) {
           const jour = new Date(startWeek);
-          jour.setDate(startWeek.getDate() + i);
+          jour.setDate(startWeek.getDate() + i - 1); // -1 car lundi = 1 dans startOfWeek
           jours.push(jour);
         }
         return jours;
@@ -79,14 +84,14 @@ export default function GanttHeader({ dateDebut, dateFin, vue }: GanttHeaderProp
               <div className="mb-2">
                 {getLabel(date)}
               </div>
-              {/* Afficher les jours dans la vue semaine */}
+              {/* Afficher les jours dans la vue semaine (uniquement jours ouvrés) */}
               {vue === "semaine" && joursSemaine[index] && (
                 <div className="flex border-t border-gray-200 pt-1 mt-auto">
                   {joursSemaine[index].map((jour, jourIndex) => (
                     <div
                       key={jourIndex}
                       className="flex-1 text-xs text-gray-500 py-0.5 border-r border-gray-200 last:border-r-0 text-center"
-                      style={{ minWidth: `${100 / 7}%` }}
+                      style={{ minWidth: `${100 / 5}%` }}
                     >
                       {format(jour, "dd")}
                     </div>

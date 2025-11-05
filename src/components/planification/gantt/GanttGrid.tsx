@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfWeek } from "date-fns";
+import { getJoursOuvres, isJourOuvre } from "@/utils/gantt-calendar";
 import GanttBar from "./GanttBar";
 import GanttDependencies from "./GanttDependencies";
 import type { ActivitePlanification, DependancePlanification } from "@/types/planification";
@@ -25,17 +26,20 @@ export default function GanttGrid({
   onDragEnd,
   onResizeEnd,
 }: GanttGridProps) {
-  // Calculer les colonnes selon la vue
+  // Calculer les colonnes selon la vue (uniquement jours ouvrés pour la vue jour)
   const colonnes = useMemo(() => {
     switch (vue) {
       case "jour":
-        return eachDayOfInterval({ start: dateDebut, end: dateFin });
+        // Filtrer pour n'afficher que les jours ouvrés (lundi-vendredi)
+        const tousJours = eachDayOfInterval({ start: dateDebut, end: dateFin });
+        return tousJours.filter(jour => isJourOuvre(jour));
       case "semaine":
         return eachWeekOfInterval({ start: dateDebut, end: dateFin }, { weekStartsOn: 1 });
       case "mois":
         return eachMonthOfInterval({ start: dateDebut, end: dateFin });
       default:
-        return eachDayOfInterval({ start: dateDebut, end: dateFin });
+        const tousJoursDefault = eachDayOfInterval({ start: dateDebut, end: dateFin });
+        return tousJoursDefault.filter(jour => isJourOuvre(jour));
     }
   }, [dateDebut, dateFin, vue]);
 
@@ -69,15 +73,16 @@ export default function GanttGrid({
               className="border-l border-gray-200 flex-1 relative"
               style={{ minWidth: "140px" }}
             >
-              {/* Lignes verticales pour les jours dans la vue semaine */}
+              {/* Lignes verticales pour les jours ouvrés dans la vue semaine (lundi-vendredi) */}
               {isSemaine && (() => {
                 const startWeek = startOfWeek(col, { weekStartsOn: 1 });
                 const jours = [];
-                for (let i = 1; i < 7; i++) {
+                // Afficher seulement les jours ouvrés (lundi-vendredi = jours 1-5)
+                for (let i = 1; i <= 5; i++) {
                   jours.push(i);
                 }
                 return jours.map((jourIndex) => {
-                  const jourPosition = (jourIndex * 100) / 7;
+                  const jourPosition = ((jourIndex - 1) * 100) / 5; // -1 pour commencer à 0, /5 car 5 jours ouvrés
                   const leftValue = String(jourPosition) + "%";
                   return (
                     <div

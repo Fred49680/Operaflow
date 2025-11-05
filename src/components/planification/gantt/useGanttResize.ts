@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import type { ActivitePlanification } from "@/types/planification";
+import { alignerSurJourOuvre, setHeureDebutCalendrier } from "@/utils/gantt-calendar";
 
 interface UseGanttResizeProps {
   activite: ActivitePlanification;
@@ -71,11 +72,10 @@ export function useGanttResize({
     [activite.statut]
   );
 
-  // Fonction pour arrondir une date au jour le plus proche (snap quotidien)
+  // Fonction pour arrondir une date au jour le plus proche (snap quotidien) et aligner sur l'heure de début du calendrier
   const snapToDay = useCallback((date: Date): Date => {
-    const snapped = new Date(date);
-    snapped.setHours(0, 0, 0, 0);
-    return snapped;
+    // Aligner sur le jour ouvré le plus proche et définir l'heure de début (8h par défaut)
+    return alignerSurJourOuvre(date, 8, false);
   }, []);
 
   const handleMouseMove = useCallback(
