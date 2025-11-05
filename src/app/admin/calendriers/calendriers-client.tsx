@@ -774,7 +774,7 @@ export default function CalendriersClient({
                   {semaineType.map((jour, index) => {
                     const isSelected = joursSelectionnes.has(jour.jour_semaine);
                     return (
-                    <div
+                      <div
                       key={jour.jour_semaine}
                       className={`p-3 rounded-lg border transition-colors ${
                         isSelected 
@@ -1020,8 +1020,9 @@ export default function CalendriersClient({
                           Jour chômé
                         </div>
                       )}
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
