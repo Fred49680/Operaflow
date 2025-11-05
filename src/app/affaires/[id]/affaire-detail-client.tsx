@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Edit, Save, FileText, Upload, X, Plus, Trash2, FileSpreadsheet, DollarSign, Receipt, FileBarChart, Calendar, AlertCircle } from "lucide-react";
 import type { Affaire, ActiviteAffaire } from "@/types/affaires";
+import { formatCurrency } from "@/utils/format";
 
 interface AffaireDetailClientProps {
   affaire: Affaire;
@@ -553,13 +554,13 @@ export default function AffaireDetailClient({
                                 <td className="px-4 py-3 text-sm">{ligne.libelle_bpu}</td>
                                 <td className="px-4 py-3 text-sm">{ligne.unite || "-"}</td>
                                 <td className="px-4 py-3 text-sm text-right">{ligne.quantite_prevue}</td>
-                                <td className="px-4 py-3 text-sm text-right">{ligne.prix_unitaire_ht.toFixed(2)} €</td>
-                                <td className="px-4 py-3 text-sm font-semibold text-right">{ligne.montant_total_ht.toFixed(2)} €</td>
+                                <td className="px-4 py-3 text-sm text-right">{formatCurrency(ligne.prix_unitaire_ht)}</td>
+                                <td className="px-4 py-3 text-sm font-semibold text-right">{formatCurrency(ligne.montant_total_ht)}</td>
                               </tr>
                             ))}
                             <tr className="bg-gray-50 font-semibold">
                               <td colSpan={5} className="px-4 py-3 text-right">Total BPU HT</td>
-                              <td className="px-4 py-3 text-right">{totalBPU.toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-right">{formatCurrency(totalBPU)}</td>
                             </tr>
                           </tbody>
                         </table>
@@ -604,9 +605,9 @@ export default function AffaireDetailClient({
                               <tr key={dep.id}>
                                 <td className="px-4 py-3 text-sm">{dep.categorie || "-"}</td>
                                 <td className="px-4 py-3 text-sm">{dep.libelle}</td>
-                                <td className="px-4 py-3 text-sm text-right">{dep.montant_ht.toFixed(2)} €</td>
+                                <td className="px-4 py-3 text-sm text-right">{formatCurrency(dep.montant_ht)}</td>
                                 <td className="px-4 py-3 text-sm text-right">{dep.taux_tva}%</td>
-                                <td className="px-4 py-3 text-sm text-right">{dep.montant_ttc.toFixed(2)} €</td>
+                                <td className="px-4 py-3 text-sm text-right">{formatCurrency(dep.montant_ttc)}</td>
                                 <td className="px-4 py-3 text-sm">
                                   {new Date(dep.date_depense).toLocaleDateString("fr-FR")}
                                 </td>
@@ -614,7 +615,7 @@ export default function AffaireDetailClient({
                             ))}
                             <tr className="bg-gray-50 font-semibold">
                               <td colSpan={4} className="px-4 py-3 text-right">Total Dépenses</td>
-                              <td className="px-4 py-3 text-right">{totalDepensesTTC.toFixed(2)} €</td>
+                              <td className="px-4 py-3 text-right">{formatCurrency(totalDepensesTTC)}</td>
                               <td></td>
                             </tr>
                           </tbody>
@@ -643,7 +644,7 @@ export default function AffaireDetailClient({
                       />
                     ) : (
                       <div className="px-3 py-2 bg-gray-50 rounded">
-                        {affaire.montant_total ? `${affaire.montant_total.toFixed(2)} €` : "-"}
+                        {formatCurrency(affaire.montant_total)}
                       </div>
                     )}
                   </div>
@@ -653,7 +654,7 @@ export default function AffaireDetailClient({
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-semibold">Montant total de l'affaire</span>
                     <span className="text-2xl font-bold text-primary">
-                      {montantTotalCalcule > 0 ? `${montantTotalCalcule.toFixed(2)} €` : "-"}
+                      {formatCurrency(montantTotalCalcule)}
                     </span>
                   </div>
                 </div>
@@ -716,7 +717,7 @@ export default function AffaireDetailClient({
                               {lot.pourcentage_total.toFixed(2)}%
                             </td>
                             <td className="px-4 py-3 text-sm text-right font-semibold text-primary">
-                              {lot.montant_alloue ? `${lot.montant_alloue.toFixed(2)} €` : "-"}
+                              {formatCurrency(lot.montant_alloue)}
                             </td>
                             <td className="px-4 py-3 text-sm">
                               {lot.date_debut_previsionnelle || lot.date_fin_previsionnelle ? (
@@ -755,7 +756,7 @@ export default function AffaireDetailClient({
                           {affaire.lots.reduce((sum, l) => sum + l.pourcentage_total, 0).toFixed(2)}%
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {affaire.lots.reduce((sum, l) => sum + (l.montant_alloue || 0), 0).toFixed(2)} €
+                          {formatCurrency(affaire.lots.reduce((sum, l) => sum + (l.montant_alloue || 0), 0))}
                         </td>
                         <td colSpan={2}></td>
                       </tr>
@@ -830,7 +831,7 @@ export default function AffaireDetailClient({
                   if (affaire.type_valorisation && (affaire.type_valorisation === "forfait" || affaire.type_valorisation === "dépense" || affaire.type_valorisation === "mixte")) {
                     const totalMontant = totalMontantAutres + montant;
                     if (totalMontant > montantTotalCalcule) {
-                      setLotFormError(`Le total des montants alloués (${totalMontant.toFixed(2)} €) dépasse le montant total de l'affaire (${montantTotalCalcule.toFixed(2)} €). Maximum autorisé : ${(montantTotalCalcule - totalMontantAutres).toFixed(2)} €`);
+                      setLotFormError(`Le total des montants alloués (${formatCurrency(totalMontant)}) dépasse le montant total de l'affaire (${formatCurrency(montantTotalCalcule)}). Maximum autorisé : ${formatCurrency(montantTotalCalcule - totalMontantAutres)}`);
                       return;
                     }
                   }
@@ -1006,12 +1007,12 @@ export default function AffaireDetailClient({
                           {affaire.type_valorisation && (affaire.type_valorisation === "forfait" || affaire.type_valorisation === "dépense" || affaire.type_valorisation === "mixte") && (
                             <div className="flex justify-between">
                               <span>Total montants autres lots :</span>
-                              <span className="font-semibold">{totalMontantAutres.toFixed(2)} €</span>
+                              <span className="font-semibold">{formatCurrency(totalMontantAutres)}</span>
                             </div>
                           )}
                           <div className="flex justify-between text-primary font-semibold border-t pt-1 mt-1">
                             <span>Montant total affaire :</span>
-                            <span>{montantTotalCalcule.toFixed(2)} €</span>
+                            <span>{formatCurrency(montantTotalCalcule)}</span>
                           </div>
                         </div>
                       </div>
@@ -1056,7 +1057,7 @@ export default function AffaireDetailClient({
                           />
                           <p className="text-xs text-gray-500 mt-1">
                             {affaire.type_valorisation && (affaire.type_valorisation === "forfait" || affaire.type_valorisation === "dépense" || affaire.type_valorisation === "mixte") && (
-                              <>Maximum disponible : {(montantTotalCalcule - totalMontantAutres).toFixed(2)} €</>
+                              <>Maximum disponible : {formatCurrency(montantTotalCalcule - totalMontantAutres)}</>
                             )}
                           </p>
                         </div>

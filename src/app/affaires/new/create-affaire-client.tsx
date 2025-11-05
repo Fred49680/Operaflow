@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, Plus, X } from "lucide-react";
+import { formatCurrency } from "@/utils/format";
 
 interface Partenaire {
   id: string;
@@ -692,7 +693,7 @@ export default function CreateAffaireClient({
                             Total HT
                           </label>
                           <div className="px-2 py-1.5 text-sm bg-gray-50 rounded border border-gray-200">
-                            {(ligne.quantite_prevue * ligne.prix_unitaire_ht).toFixed(2)} €
+                            {formatCurrency(ligne.quantite_prevue * ligne.prix_unitaire_ht)}
                           </div>
                         </div>
                       </div>
@@ -798,7 +799,7 @@ export default function CreateAffaireClient({
                             Total TTC
                           </label>
                           <div className="px-2 py-1.5 text-sm bg-gray-50 rounded border border-gray-200">
-                            {(dep.montant_ht * (1 + dep.taux_tva / 100)).toFixed(2)} €
+                            {formatCurrency(dep.montant_ht * (1 + dep.taux_tva / 100))}
                           </div>
                         </div>
                         <div>
