@@ -42,7 +42,10 @@ interface TuileUniverselleProps {
 
 export default function TuileUniverselle({ collaborateurId, userId, isAdmin = false, userRoles = [], onSaisieComplete }: TuileUniverselleProps) {
   // Vérifier si l'utilisateur est Conducteur de travaux
-  const isConducteur = userRoles.includes("Conducteur de travaux") || isAdmin;
+  const isConducteur = userRoles.some((role) => {
+    const roleStr = role as string;
+    return roleStr === "Conducteur de travaux";
+  }) || isAdmin;
   
   // Tous les hooks doivent être appelés avant tout return conditionnel
   const [affaires, setAffaires] = useState<Affaire[]>([]);

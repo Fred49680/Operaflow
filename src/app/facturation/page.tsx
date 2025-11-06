@@ -17,11 +17,12 @@ export default async function FacturationPage() {
 
   // Vérifier les rôles (Conducteur de travaux, Responsable d'Affaire, Administratif/Compta, Admin)
   const userRoles = await getUserRoles(user.id);
-  const hasAccesFacturation = userRoles.some((role) => 
-    role === "Conducteur de travaux" || 
-    role === "Responsable d'Affaire" ||
-    role === "Administrateur"
-  );
+  const hasAccesFacturation = userRoles.some((role) => {
+    const roleStr = role as string;
+    return roleStr === "Conducteur de travaux" || 
+           roleStr === "Responsable d'Affaire" ||
+           roleStr === "Administrateur";
+  });
 
   if (!hasAccesFacturation) {
     redirect("/dashboard");

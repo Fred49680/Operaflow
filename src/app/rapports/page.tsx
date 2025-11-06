@@ -17,11 +17,12 @@ export default async function RapportsPage() {
 
   // Vérifier les rôles (Conducteur, Responsable d'Affaire, Admin)
   const userRoles = await getUserRoles(user.id);
-  const hasAccesRapports = userRoles.some((role) => 
-    role === "Conducteur de travaux" || 
-    role === "Responsable d'Affaire" ||
-    role === "Administrateur"
-  );
+  const hasAccesRapports = userRoles.some((role) => {
+    const roleStr = role as string;
+    return roleStr === "Conducteur de travaux" || 
+           roleStr === "Responsable d'Affaire" ||
+           roleStr === "Administrateur";
+  });
 
   if (!hasAccesRapports) {
     redirect("/dashboard");
