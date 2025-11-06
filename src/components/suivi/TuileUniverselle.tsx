@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { X, CheckCircle, Calendar, Save, Play, Pause, AlertCircle, TrendingUp } from "lucide-react";
+import { X, CheckCircle, Calendar, Save, Play } from "lucide-react";
 
 interface Affaire {
   id: string;
@@ -44,9 +44,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
   // Vérifier si l'utilisateur est Conducteur de travaux
   const isConducteur = userRoles.includes("Conducteur de travaux") || isAdmin;
   
-  if (!isConducteur) {
-    return null; // Ne pas afficher la tuile si pas conducteur
-  }
+  // Tous les hooks doivent être appelés avant tout return conditionnel
   const [affaires, setAffaires] = useState<Affaire[]>([]);
   const [activites, setActivites] = useState<ActiviteTerrain[]>([]);
   const [motifsReport, setMotifsReport] = useState<MotifReport[]>([]);
@@ -389,6 +387,11 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
   };
 
   const statutBadge = getStatutBadge();
+
+  // Ne pas afficher la tuile si pas conducteur (après tous les hooks)
+  if (!isConducteur) {
+    return null;
+  }
 
   return (
     <div className={`card border-l-4 ${getStatutColor()} hover:shadow-lg transition-shadow mb-6`}>
