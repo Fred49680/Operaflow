@@ -497,18 +497,17 @@ export default function SuiviQuotidienClient({
 
         {/* Tuiles d'activités */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Tuile Universelle */}
-          {(collaborateurId || isAdmin) && (
-            <TuileUniverselle 
-              collaborateurId={collaborateurId || userId} // Utiliser userId si pas de collaborateurId
-              userId={userId}
-              isAdmin={isAdmin}
-              onSaisieComplete={() => {
-                // Rafraîchir la page après une saisie
-                router.refresh();
-              }}
-            />
-          )}
+          {/* Tuile Universelle (pour Conducteur de travaux) */}
+          <TuileUniverselle 
+            collaborateurId={collaborateurId || userId || ""} // Utiliser userId si pas de collaborateurId
+            userId={userId}
+            isAdmin={isAdmin}
+            userRoles={userRoles}
+            onSaisieComplete={() => {
+              // Rafraîchir la page après une saisie
+              router.refresh();
+            }}
+          />
           
           {filteredActivites.map((activite) => {
             const statutColor = getStatutColor(activite.statut);

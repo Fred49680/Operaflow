@@ -36,10 +36,17 @@ interface TuileUniverselleProps {
   collaborateurId: string; // Peut être userId si pas de collaborateur
   userId?: string;
   isAdmin?: boolean;
+  userRoles?: string[];
   onSaisieComplete?: () => void;
 }
 
-export default function TuileUniverselle({ collaborateurId, userId, isAdmin = false, onSaisieComplete }: TuileUniverselleProps) {
+export default function TuileUniverselle({ collaborateurId, userId, isAdmin = false, userRoles = [], onSaisieComplete }: TuileUniverselleProps) {
+  // Vérifier si l'utilisateur est Conducteur de travaux
+  const isConducteur = userRoles.includes("Conducteur de travaux") || isAdmin;
+  
+  if (!isConducteur) {
+    return null; // Ne pas afficher la tuile si pas conducteur
+  }
   const [affaires, setAffaires] = useState<Affaire[]>([]);
   const [activites, setActivites] = useState<ActiviteTerrain[]>([]);
   const [motifsReport, setMotifsReport] = useState<MotifReport[]>([]);
@@ -48,14 +55,18 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
   // État du formulaire
   const [selectedActiviteId, setSelectedActiviteId] = useState<string>("");
   const [nouvelleActivite, setNouvelleActivite] = useState(false);
-  // L'affaire sera déterminée automatiquement depuis l'activité sélectionnée
+  const [selectedAffaireIdForNew, setSelectedAffaireIdForNew] = useState<string>(""); // Pour nouvelle activité
+  // L'affaire sera déterminée automatiquement depuis l'activité sélectionnée, ou depuis selectedAffaireIdForNew si nouvelle
   const selectedAffaireId = useMemo(() => {
-    if (selectedActiviteId && !nouvelleActivite) {
+    if (nouvelleActivite) {
+      return selectedAffaireIdForNew;
+    }
+    if (selectedActiviteId) {
       const activite = activites.find((a) => a.id === selectedActiviteId);
       return activite?.affaire_id || "";
     }
     return "";
-  }, [selectedActiviteId, nouvelleActivite, activites]);
+  }, [selectedActiviteId, nouvelleActivite, activites, selectedAffaireIdForNew]);
   const [libelle, setLibelle] = useState("");
   const [ot, setOt] = useState("");
   const [tranche, setTranche] = useState<string>("");
@@ -134,6 +145,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
     if (value === "nouvelle") {
       setNouvelleActivite(true);
       setSelectedActiviteId("");
+      setSelectedAffaireIdForNew(""); // Réinitialiser l'affaire pour nouvelle activité
       setLibelle("");
       setOt("");
       setTranche("");
@@ -144,6 +156,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
     } else {
       setNouvelleActivite(false);
       setSelectedActiviteId(value);
+      setSelectedAffaireIdForNew(""); // Réinitialiser
       // L'affaire sera déterminée automatiquement via le useMemo
     }
   };
@@ -169,7 +182,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
     }
     
     if (nouvelleActivite && !selectedAffaireId) {
-      alert("Impossible de créer une nouvelle activité sans affaire. Veuillez sélectionner une activité existante.");
+      alert("⚠️ Veuillez assigner une affaire à cette nouvelle activité avant de continuer.");
       return;
     }
 
@@ -277,6 +290,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
   const resetForm = () => {
     setSelectedActiviteId("");
     setNouvelleActivite(false);
+    setSelectedAffaireIdForNew("");
     setLibelle("");
     setOt("");
     setTranche("");
