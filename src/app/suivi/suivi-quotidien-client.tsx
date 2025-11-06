@@ -88,7 +88,7 @@ export default function SuiviQuotidienClient({
     r === "Responsable d'Activité" ||
     r === "Chargé d'Affaires"
   );
-  const isAdmin = userRoles.some((r) => r === "Administrateur");
+  // isAdmin est déjà passé en paramètre, pas besoin de le redéclarer
 
   // Générer les suggestions pour l'autocomplete
   const suggestions = useMemo(() => {
