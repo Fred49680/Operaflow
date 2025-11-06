@@ -35,7 +35,12 @@ export default async function SuiviQuotidienPage() {
     .from("collaborateurs")
     .select("id")
     .eq("user_id", user.id)
-    .single();
+    .maybeSingle();
+  
+  const isAdmin = userRoles.includes("Administrateur");
+  
+  // Pour les admins sans collaborateur, on peut quand même afficher la tuile
+  // Le collaborateur sera créé à la volée lors de la première saisie si nécessaire
 
   // Charger les activités avec leurs relations
   const { data: activites } = await supabase
@@ -75,6 +80,7 @@ export default async function SuiviQuotidienPage() {
       userId={user.id}
       userRoles={userRoles}
       collaborateurId={collaborateur?.id || null}
+      isAdmin={isAdmin}
     />
   );
 }

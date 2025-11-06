@@ -89,6 +89,7 @@ export async function POST(request: NextRequest) {
     const {
       activite_id,
       collaborateur_id,
+      user_id, // Optionnel : pour créer le collaborateur si nécessaire
       affaire_id,
       date_saisie,
       statut_jour,
@@ -97,9 +98,64 @@ export async function POST(request: NextRequest) {
       commentaire,
     } = body;
     
-    if (!activite_id || !collaborateur_id || !affaire_id || !date_saisie || !statut_jour) {
+    if (!activite_id || !affaire_id || !date_saisie || !statut_jour) {
       return NextResponse.json(
         { error: "Tous les champs obligatoires doivent être remplis" },
+        { status: 400 }
+      );
+    }
+    
+    // Si pas de collaborateur_id mais user_id fourni, créer ou récupérer le collaborateur
+    let collaborateurIdFinal = collaborateur_id;
+    if (!collaborateurIdFinal && user_id) {
+      // Vérifier si un collaborateur existe déjà pour cet user_id
+      const { data: existingCollab } = await supabase
+        .from("collaborateurs")
+        .select("id")
+        .eq("user_id", user_id)
+        .maybeSingle();
+      
+      if (existingCollab) {
+        collaborateurIdFinal = existingCollab.id;
+      } else {
+        // Créer un collaborateur minimal pour l'utilisateur
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user?.email) {
+          const { data: newCollab, error: collabError } = await supabase
+            .from("collaborateurs")
+            .insert({
+              user_id: user_id,
+              nom: userData.user.email.split("@")[0].split(".").pop() || "Admin",
+              prenom: userData.user.email.split("@")[0].split(".")[0] || "Admin",
+              email: userData.user.email,
+              statut: "actif",
+              created_by: user.id,
+              updated_by: user.id,
+            })
+            .select("id")
+            .single();
+          
+          if (collabError || !newCollab) {
+            console.error("Erreur création collaborateur:", collabError);
+            return NextResponse.json(
+              { error: "Impossible de créer le collaborateur. Veuillez contacter l'administrateur." },
+              { status: 500 }
+            );
+          }
+          
+          collaborateurIdFinal = newCollab.id;
+        } else {
+          return NextResponse.json(
+            { error: "Impossible de récupérer les informations utilisateur" },
+            { status: 400 }
+          );
+        }
+      }
+    }
+    
+    if (!collaborateurIdFinal) {
+      return NextResponse.json(
+        { error: "collaborateur_id est requis" },
         { status: 400 }
       );
     }
@@ -126,7 +182,7 @@ export async function POST(request: NextRequest) {
       .from("tbl_saisies_quotidiennes")
       .insert({
         activite_id,
-        collaborateur_id,
+        collaborateur_id: collaborateurIdFinal,
         affaire_id,
         date_saisie,
         statut_jour,

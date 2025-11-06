@@ -33,11 +33,13 @@ interface MotifReport {
 }
 
 interface TuileUniverselleProps {
-  collaborateurId: string;
+  collaborateurId: string; // Peut être userId si pas de collaborateur
+  userId?: string;
+  isAdmin?: boolean;
   onSaisieComplete?: () => void;
 }
 
-export default function TuileUniverselle({ collaborateurId, onSaisieComplete }: TuileUniverselleProps) {
+export default function TuileUniverselle({ collaborateurId, userId, isAdmin = false, onSaisieComplete }: TuileUniverselleProps) {
   const [affaires, setAffaires] = useState<Affaire[]>([]);
   const [activites, setActivites] = useState<ActiviteTerrain[]>([]);
   const [motifsReport, setMotifsReport] = useState<MotifReport[]>([]);
@@ -269,12 +271,14 @@ export default function TuileUniverselle({ collaborateurId, onSaisieComplete }: 
       }
       
       // Créer la saisie quotidienne
+      // L'API créera automatiquement le collaborateur si nécessaire (pour les admins)
       const responseSaisie = await fetch("/api/saisies-quotidiennes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           activite_id: activiteId,
-          collaborateur_id: collaborateurId,
+          collaborateur_id: collaborateurId || null, // Peut être null pour admin
+          user_id: userId, // Passer userId pour création auto si nécessaire
           affaire_id: selectedAffaireId,
           date_saisie: new Date().toISOString().split("T")[0],
           statut_jour: statutJour,

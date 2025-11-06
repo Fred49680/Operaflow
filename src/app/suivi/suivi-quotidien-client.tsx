@@ -35,6 +35,7 @@ interface SuiviQuotidienClientProps {
   userId: string;
   userRoles: string[];
   collaborateurId: string | null;
+  isAdmin?: boolean;
 }
 
 export default function SuiviQuotidienClient({
@@ -44,6 +45,7 @@ export default function SuiviQuotidienClient({
   userId,
   userRoles,
   collaborateurId,
+  isAdmin = false,
 }: SuiviQuotidienClientProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
@@ -398,10 +400,12 @@ export default function SuiviQuotidienClient({
         </div>
         
         {/* Tuile Universelle */}
-        {collaborateurId && (
+        {(collaborateurId || isAdmin) && (
           <div className="mb-6">
             <TuileUniverselle 
-              collaborateurId={collaborateurId}
+              collaborateurId={collaborateurId || userId} // Utiliser userId si pas de collaborateurId
+              userId={userId}
+              isAdmin={isAdmin}
               onSaisieComplete={() => {
                 // Rafraîchir la page après une saisie
                 router.refresh();
