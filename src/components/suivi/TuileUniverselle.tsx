@@ -603,7 +603,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Statut du jour <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => {
@@ -612,26 +612,26 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                   setMotifReportId("");
                   setNouveauMotifReport("");
                 }}
-                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all text-sm ${
+                className={`text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                   statutJour === "realise"
-                    ? "bg-blue-500 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-blue-500"
+                    ? "bg-blue-500 hover:bg-blue-600"
+                    : "bg-blue-500 hover:bg-blue-600 opacity-50"
                 }`}
               >
-                <CheckCircle className="h-5 w-5 mx-auto mb-1" />
+                <CheckCircle className="h-4 w-4" />
                 Réalisé
               </button>
 
               <button
                 type="button"
                 onClick={() => setStatutJour("reporte")}
-                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all text-sm ${
+                className={`text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                   statutJour === "reporte"
-                    ? "bg-orange-500 text-white border-orange-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-orange-500"
+                    ? "bg-orange-500 hover:bg-orange-600"
+                    : "bg-orange-500 hover:bg-orange-600 opacity-50"
                 }`}
               >
-                <Calendar className="h-5 w-5 mx-auto mb-1" />
+                <Calendar className="h-4 w-4" />
                 Reporté
               </button>
 
@@ -643,13 +643,13 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                   setMotifReportId("");
                   setNouveauMotifReport("");
                 }}
-                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all text-sm ${
+                className={`text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                   statutJour === "termine"
-                    ? "bg-green-500 text-white border-green-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-green-500"
+                    ? "bg-green-500 hover:bg-green-600"
+                    : "bg-green-500 hover:bg-green-600 opacity-50"
                 }`}
               >
-                <CheckCircle className="h-5 w-5 mx-auto mb-1" />
+                <CheckCircle className="h-4 w-4" />
                 Terminé
               </button>
             </div>
