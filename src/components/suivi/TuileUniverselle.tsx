@@ -369,51 +369,26 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
 
       {/* Formulaire */}
       <div className="space-y-4 mb-4">
-        {/* Sélection Affaire */}
+        {/* Sélection Activité */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Affaire <span className="text-red-500">*</span>
+            Activité <span className="text-red-500">*</span>
           </label>
           <select
-            value={selectedAffaireId}
-            onChange={(e) => {
-              setSelectedAffaireId(e.target.value);
-              setSelectedActiviteId("");
-              setNouvelleActivite(false);
-            }}
+            value={nouvelleActivite ? "nouvelle" : selectedActiviteId}
+            onChange={(e) => handleActiviteChange(e.target.value)}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
             required
           >
-            <option value="">Sélectionner une affaire</option>
-            {affaires.map((affaire) => (
-              <option key={affaire.id} value={affaire.id}>
-                {affaire.numero} - {affaire.libelle}
+            <option value="">Sélectionner une activité existante</option>
+            {activitesFiltrees.map((activite) => (
+              <option key={activite.id} value={activite.id}>
+                {activite.libelle} {activite.statut === "lancee" && "(Lancée)"}
               </option>
             ))}
+            <option value="nouvelle">+ Créer une nouvelle activité</option>
           </select>
         </div>
-
-        {/* Sélection Activité */}
-        {selectedAffaireId && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Activité
-            </label>
-            <select
-              value={nouvelleActivite ? "nouvelle" : selectedActiviteId}
-              onChange={(e) => handleActiviteChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-            >
-              <option value="">Sélectionner une activité existante</option>
-              {activitesFiltrees.map((activite) => (
-                <option key={activite.id} value={activite.id}>
-                  {activite.libelle} {activite.statut === "lancee" && "(Lancée)"}
-                </option>
-              ))}
-              <option value="nouvelle">+ Créer une nouvelle activité</option>
-            </select>
-          </div>
-        )}
 
         {/* Champs activité */}
         {(selectedActiviteId || nouvelleActivite) && (
