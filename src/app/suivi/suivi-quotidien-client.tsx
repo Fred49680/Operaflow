@@ -17,6 +17,7 @@ import {
   Edit
 } from "lucide-react";
 import type { ActivitePlanification } from "@/types/planification";
+import TuileUniverselle from "@/components/suivi/TuileUniverselle";
 
 interface SuiviQuotidienClientProps {
   activites: ActivitePlanification[];
@@ -395,6 +396,19 @@ export default function SuiviQuotidienClient({
             Interface de pilotage visuel et déclaration d'avancement quotidien
           </p>
         </div>
+        
+        {/* Tuile Universelle */}
+        {collaborateurId && (
+          <div className="mb-6">
+            <TuileUniverselle 
+              collaborateurId={collaborateurId}
+              onSaisieComplete={() => {
+                // Rafraîchir la page après une saisie
+                router.refresh();
+              }}
+            />
+          </div>
+        )}
 
         {/* Filtres - Tout sur une ligne */}
         <div className="card mb-6">
