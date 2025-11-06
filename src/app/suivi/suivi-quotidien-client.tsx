@@ -401,17 +401,15 @@ export default function SuiviQuotidienClient({
         
         {/* Tuile Universelle */}
         {(collaborateurId || isAdmin) && (
-          <div className="mb-6">
-            <TuileUniverselle 
-              collaborateurId={collaborateurId || userId} // Utiliser userId si pas de collaborateurId
-              userId={userId}
-              isAdmin={isAdmin}
-              onSaisieComplete={() => {
-                // Rafraîchir la page après une saisie
-                router.refresh();
-              }}
-            />
-          </div>
+          <TuileUniverselle 
+            collaborateurId={collaborateurId || userId} // Utiliser userId si pas de collaborateurId
+            userId={userId}
+            isAdmin={isAdmin}
+            onSaisieComplete={() => {
+              // Rafraîchir la page après une saisie
+              router.refresh();
+            }}
+          />
         )}
 
         {/* Filtres - Tout sur une ligne */}

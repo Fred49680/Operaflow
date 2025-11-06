@@ -335,7 +335,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
   };
   
   return (
-    <div className="card border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-white">
+    <div className="card mb-6">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-lg font-bold text-secondary">Tuile Universelle</h3>
