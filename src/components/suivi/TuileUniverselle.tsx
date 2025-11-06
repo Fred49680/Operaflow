@@ -614,12 +614,12 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 }}
                 className={`text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                   statutJour === "realise"
-                    ? "bg-blue-500 hover:bg-blue-600"
-                    : "bg-blue-500 hover:bg-blue-600 opacity-50"
+                    ? "bg-green-500 hover:bg-green-600"
+                    : "bg-green-500 hover:bg-green-600 opacity-50"
                 }`}
               >
-                <CheckCircle className="h-4 w-4" />
-                Réalisé
+                <Play className="h-4 w-4" />
+                Lancer
               </button>
 
               <button
