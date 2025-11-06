@@ -430,14 +430,31 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
           </div>
         )}
         {selectedActiviteId && !nouvelleActivite && (
-          <div>
-            <span className="font-medium">Activité:</span> {libelle}
-          </div>
-        )}
-        {ot && (
-          <div>
-            <span className="font-medium">OT:</span> {ot}
-          </div>
+          <>
+            <div>
+              <span className="font-medium">Activité:</span> {libelle}
+            </div>
+            {ot && (
+              <div>
+                <span className="font-medium">OT:</span> {ot}
+              </div>
+            )}
+            {tranche && (
+              <div>
+                <span className="font-medium">Tranche:</span> {tranche}
+              </div>
+            )}
+            {systemeElementaire && (
+              <div>
+                <span className="font-medium">Système élémentaire:</span> {systemeElementaire}
+              </div>
+            )}
+            {typeActivite && (
+              <div>
+                <span className="font-medium">Type d'activité:</span> {typeActivite}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -492,8 +509,8 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
           </div>
         )}
 
-        {/* Champs activité */}
-        {(selectedActiviteId || nouvelleActivite) && (
+        {/* Champs activité - Affichés uniquement pour nouvelle activité */}
+        {nouvelleActivite && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
