@@ -399,19 +399,6 @@ export default function SuiviQuotidienClient({
           </p>
         </div>
         
-        {/* Tuile Universelle */}
-        {(collaborateurId || isAdmin) && (
-          <TuileUniverselle 
-            collaborateurId={collaborateurId || userId} // Utiliser userId si pas de collaborateurId
-            userId={userId}
-            isAdmin={isAdmin}
-            onSaisieComplete={() => {
-              // Rafraîchir la page après une saisie
-              router.refresh();
-            }}
-          />
-        )}
-
         {/* Filtres - Tout sur une ligne */}
         <div className="card mb-6">
           <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center">
@@ -510,6 +497,19 @@ export default function SuiviQuotidienClient({
 
         {/* Tuiles d'activités */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Tuile Universelle */}
+          {(collaborateurId || isAdmin) && (
+            <TuileUniverselle 
+              collaborateurId={collaborateurId || userId} // Utiliser userId si pas de collaborateurId
+              userId={userId}
+              isAdmin={isAdmin}
+              onSaisieComplete={() => {
+                // Rafraîchir la page après une saisie
+                router.refresh();
+              }}
+            />
+          )}
+          
           {filteredActivites.map((activite) => {
             const statutColor = getStatutColor(activite.statut);
             const statutIcon = getStatutIcon(activite.statut);
