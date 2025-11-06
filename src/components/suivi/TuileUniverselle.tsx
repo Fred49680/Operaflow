@@ -423,12 +423,6 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
             {affaires.find((a) => a.id === selectedAffaireId)?.numero || "N/A"}
           </div>
         )}
-        {modeAffaire && (
-          <div>
-            <span className="font-medium">Mode:</span>{" "}
-            {modeAffaire === "BPU" ? "BPU (Bordereau Prix Unitaires)" : "Dépense Contrôlée"}
-          </div>
-        )}
         {selectedActiviteId && !nouvelleActivite && (
           <>
             <div>
@@ -447,11 +441,6 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
             {systemeElementaire && (
               <div>
                 <span className="font-medium">Système élémentaire:</span> {systemeElementaire}
-              </div>
-            )}
-            {typeActivite && (
-              <div>
-                <span className="font-medium">Type d'activité:</span> {typeActivite}
               </div>
             )}
           </>
