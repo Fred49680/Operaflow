@@ -630,7 +630,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 className={`text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                   statutJour === "realise"
                     ? "bg-green-500 hover:bg-green-600"
-                    : "bg-green-500 hover:bg-green-600 opacity-50"
+                    : "bg-green-500/50 hover:bg-green-600/50"
                 }`}
               >
                 <Play className="h-4 w-4" />
@@ -643,7 +643,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 className={`text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                   statutJour === "reporte"
                     ? "bg-orange-500 hover:bg-orange-600"
-                    : "bg-orange-500 hover:bg-orange-600 opacity-50"
+                    : "bg-orange-500/50 hover:bg-orange-600/50"
                 }`}
               >
                 <Calendar className="h-4 w-4" />
@@ -661,7 +661,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 className={`text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                   statutJour === "termine"
                     ? "bg-green-500 hover:bg-green-600"
-                    : "bg-green-500 hover:bg-green-600 opacity-50"
+                    : "bg-green-500/50 hover:bg-green-600/50"
                 }`}
               >
                 <CheckCircle className="h-4 w-4" />
