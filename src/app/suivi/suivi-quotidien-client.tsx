@@ -89,6 +89,8 @@ export default function SuiviQuotidienClient({
     r === "Chargé d'Affaires"
   );
   // isAdmin est déjà passé en paramètre, pas besoin de le redéclarer
+  // Pour les tests, les administrateurs peuvent lancer toutes les activités
+  const canManageActivites = isChefChantier || isAdmin;
 
   // Générer les suggestions pour l'autocomplete
   const suggestions = useMemo(() => {
@@ -190,17 +192,28 @@ export default function SuiviQuotidienClient({
     const buttons: Array<{ label: string; icon: React.ReactNode; action: string; color: string }> = [];
 
     if (activite.statut === "planifiee") {
-      if (isChefChantier || isAdmin) {
+      if (canManageActivites) {
         buttons.push({ label: "Lancer", icon: <Play className="h-4 w-4" />, action: "lancer", color: "bg-green-500 hover:bg-green-600" });
         buttons.push({ label: "Reporter", icon: <Calendar className="h-4 w-4" />, action: "reporter", color: "bg-orange-500 hover:bg-orange-600" });
       }
     } else if (activite.statut === "lancee") {
-      if (isChefChantier || isAdmin) {
+      if (canManageActivites) {
         buttons.push({ label: "Suspendre", icon: <Pause className="h-4 w-4" />, action: "suspendre", color: "bg-red-500 hover:bg-red-600" });
         buttons.push({ label: "Prolonger", icon: <AlertCircle className="h-4 w-4" />, action: "prolonger", color: "bg-purple-500 hover:bg-purple-600" });
         buttons.push({ label: "Terminer", icon: <CheckCircle className="h-4 w-4" />, action: "terminer", color: "bg-green-500 hover:bg-green-600" });
       }
       buttons.push({ label: "Avancement", icon: <TrendingUp className="h-4 w-4" />, action: "avancement", color: "bg-blue-500 hover:bg-blue-600" });
+    } else if (activite.statut === "reportee" || activite.statut === "suspendue" || activite.statut === "prolongee") {
+      // Pour les administrateurs, permettre de relancer depuis n'importe quel statut
+      if (isAdmin) {
+        buttons.push({ label: "Lancer", icon: <Play className="h-4 w-4" />, action: "lancer", color: "bg-green-500 hover:bg-green-600" });
+      }
+      if (canManageActivites) {
+        buttons.push({ label: "Reporter", icon: <Calendar className="h-4 w-4" />, action: "reporter", color: "bg-orange-500 hover:bg-orange-600" });
+        if (activite.statut === "suspendue" || activite.statut === "prolongee") {
+          buttons.push({ label: "Terminer", icon: <CheckCircle className="h-4 w-4" />, action: "terminer", color: "bg-green-500 hover:bg-green-600" });
+        }
+      }
     }
 
     return buttons;
