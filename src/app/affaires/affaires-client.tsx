@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Plus, Search, Trash2, X, AlertTriangle } from "lucide-react";
 import type { Affaire } from "@/types/affaires";
 import AffaireDetailModal from "@/components/affaires/AffaireDetailModal";
+import { formatCurrency } from "@/utils/format";
 
 interface AffairesClientProps {
   initialAffaires: Affaire[];
@@ -182,7 +183,7 @@ export default function AffairesClient({
           </div>
           <div className="card border-l-4 border-l-blue-600 bg-gradient-to-r from-blue-50 to-white hover:shadow-lg transition-shadow">
             <div className="text-sm text-gray-600 mb-1">Montant total</div>
-            <div className="text-2xl font-bold text-blue-600">{stats.montant_total.toFixed(0)} €</div>
+            <div className="text-2xl font-bold text-blue-600">{formatCurrency(stats.montant_total, 0)}</div>
           </div>
         </div>
 
@@ -294,7 +295,7 @@ export default function AffairesClient({
                         <div className="text-sm font-medium text-gray-900">{affaire.libelle}</div>
                         <div className="text-xs text-gray-500 sm:hidden mt-1">
                           {affaire.partenaire?.raison_sociale && `${affaire.partenaire.raison_sociale} • `}
-                          {affaire.montant_total ? `${affaire.montant_total.toFixed(0)} €` : ""}
+                          {affaire.montant_total ? formatCurrency(affaire.montant_total, 0) : ""}
                         </div>
                       </td>
                       <td 
@@ -313,7 +314,7 @@ export default function AffairesClient({
                         className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden xl:table-cell cursor-pointer"
                         onClick={() => handleOpenAffaire(affaire.id)}
                       >
-                        {affaire.montant_total ? `${affaire.montant_total.toFixed(2)} €` : "-"}
+                        {formatCurrency(affaire.montant_total)}
                       </td>
                       <td 
                         className="px-3 sm:px-6 py-4 whitespace-nowrap cursor-pointer"
