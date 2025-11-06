@@ -105,9 +105,33 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Si pas de collaborateur_id mais user_id fourni, créer ou récupérer le collaborateur
+    // Gérer le collaborateur_id
     let collaborateurIdFinal = collaborateur_id;
-    if (!collaborateurIdFinal && user_id) {
+    
+    // Si collaborateur_id est fourni, vérifier qu'il existe
+    if (collaborateurIdFinal) {
+      const { data: existingCollab, error: checkError } = await supabase
+        .from("collaborateurs")
+        .select("id")
+        .eq("id", collaborateurIdFinal)
+        .maybeSingle();
+      
+      if (checkError) {
+        console.error("Erreur vérification collaborateur:", checkError);
+        return NextResponse.json(
+          { error: "Erreur lors de la vérification du collaborateur" },
+          { status: 500 }
+        );
+      }
+      
+      if (!existingCollab) {
+        return NextResponse.json(
+          { error: "Le collaborateur spécifié n'existe pas" },
+          { status: 400 }
+        );
+      }
+    } else if (user_id) {
+      // Si pas de collaborateur_id mais user_id fourni, créer ou récupérer le collaborateur
       // Vérifier si un collaborateur existe déjà pour cet user_id
       const { data: existingCollab } = await supabase
         .from("collaborateurs")
@@ -119,37 +143,45 @@ export async function POST(request: NextRequest) {
         collaborateurIdFinal = existingCollab.id;
       } else {
         // Créer un collaborateur minimal pour l'utilisateur
-        const { data: userData } = await supabase.auth.getUser();
-        if (userData?.user?.email) {
-          const { data: newCollab, error: collabError } = await supabase
-            .from("collaborateurs")
-            .insert({
-              user_id: user_id,
-              nom: userData.user.email.split("@")[0].split(".").pop() || "Admin",
-              prenom: userData.user.email.split("@")[0].split(".")[0] || "Admin",
-              email: userData.user.email,
-              statut: "actif",
-              created_by: user.id,
-              updated_by: user.id,
-            })
-            .select("id")
-            .single();
-          
-          if (collabError || !newCollab) {
-            console.error("Erreur création collaborateur:", collabError);
-            return NextResponse.json(
-              { error: "Impossible de créer le collaborateur. Veuillez contacter l'administrateur." },
-              { status: 500 }
-            );
-          }
-          
-          collaborateurIdFinal = newCollab.id;
+        // Utiliser l'email de l'utilisateur actuel si c'est lui, sinon utiliser user_id comme base
+        let email = user.email;
+        let nom = "Admin";
+        let prenom = "Admin";
+        
+        if (email) {
+          const emailParts = email.split("@")[0].split(".");
+          nom = emailParts.pop() || "Admin";
+          prenom = emailParts[0] || "Admin";
         } else {
+          // Si pas d'email, utiliser user_id comme identifiant
+          nom = `User_${user_id.substring(0, 8)}`;
+          prenom = "Admin";
+          email = `${user_id}@system.local`;
+        }
+        
+        const { data: newCollab, error: collabError } = await supabase
+          .from("collaborateurs")
+          .insert({
+            user_id: user_id,
+            nom: nom,
+            prenom: prenom,
+            email: email,
+            statut: "actif",
+            created_by: user.id,
+            updated_by: user.id,
+          })
+          .select("id")
+          .single();
+        
+        if (collabError || !newCollab) {
+          console.error("Erreur création collaborateur:", collabError);
           return NextResponse.json(
-            { error: "Impossible de récupérer les informations utilisateur" },
-            { status: 400 }
+            { error: "Impossible de créer le collaborateur. Veuillez contacter l'administrateur." },
+            { status: 500 }
           );
         }
+        
+        collaborateurIdFinal = newCollab.id;
       }
     }
     
