@@ -612,11 +612,20 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => {
+                onClick={async () => {
+                  // Définir le statut
                   setStatutJour("realise");
                   setMotifReport("");
                   setMotifReportId("");
                   setNouveauMotifReport("");
+                  
+                  // Vérifier si tous les champs requis sont remplis pour validation automatique
+                  if (libelle && ot && (selectedActiviteId || (nouvelleActivite && selectedAffaireId))) {
+                    // Attendre un court instant pour que le statut soit mis à jour
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    // Valider automatiquement
+                    handleSubmit();
+                  }
                 }}
                 className={`text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
                   statutJour === "realise"
