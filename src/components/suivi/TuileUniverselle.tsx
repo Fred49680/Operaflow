@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { X, CheckCircle, Calendar, AlertCircle, Plus, Save } from "lucide-react";
+import { X, CheckCircle, Calendar, Save } from "lucide-react";
 
 interface Affaire {
   id: string;
@@ -41,7 +41,6 @@ export default function TuileUniverselle({ collaborateurId, onSaisieComplete }: 
   const [affaires, setAffaires] = useState<Affaire[]>([]);
   const [activites, setActivites] = useState<ActiviteTerrain[]>([]);
   const [motifsReport, setMotifsReport] = useState<MotifReport[]>([]);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   
   // État du formulaire
@@ -126,7 +125,6 @@ export default function TuileUniverselle({ collaborateurId, onSaisieComplete }: 
   };
   
   const fetchActivites = async (affaireId: string) => {
-    setLoading(true);
     try {
       const response = await fetch(`/api/activites-terrain?affaire_id=${affaireId}`);
       if (response.ok) {
@@ -135,8 +133,6 @@ export default function TuileUniverselle({ collaborateurId, onSaisieComplete }: 
       }
     } catch (error) {
       console.error("Erreur chargement activités:", error);
-    } finally {
-      setLoading(false);
     }
   };
   
@@ -162,9 +158,9 @@ export default function TuileUniverselle({ collaborateurId, onSaisieComplete }: 
       if (response.ok) {
         const data = await response.json();
         if (data.saisies && data.saisies.length > 0) {
-          const derniereSaisie = data.saisies[0];
           // Préremplir avec les valeurs de la dernière saisie
           // (selon PRD : préremplissage depuis dernière saisie)
+          // Les valeurs sont déjà préremplies depuis l'activité sélectionnée
         }
       }
     } catch (error) {

@@ -26,11 +26,24 @@ export async function POST(
     
     if (error) {
       console.error("Erreur incrémentation motif:", error);
-      // Si la fonction n'existe pas, faire une mise à jour manuelle
+      // Si la fonction n'existe pas, récupérer la valeur actuelle et l'incrémenter
+      const { data: motif, error: fetchError } = await supabase
+        .from("tbl_motifs_report")
+        .select("frequence_utilisation")
+        .eq("id", id)
+        .single();
+      
+      if (fetchError || !motif) {
+        return NextResponse.json(
+          { error: "Erreur lors de la récupération du motif" },
+          { status: 500 }
+        );
+      }
+      
       const { error: updateError } = await supabase
         .from("tbl_motifs_report")
         .update({
-          frequence_utilisation: supabase.raw("frequence_utilisation + 1"),
+          frequence_utilisation: (motif.frequence_utilisation || 0) + 1,
         })
         .eq("id", id);
       
