@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { X, CheckCircle, Calendar, Save } from "lucide-react";
+import { X, CheckCircle, Calendar, Save, Play, Pause, AlertCircle, TrendingUp } from "lucide-react";
 
 interface Affaire {
   id: string;
@@ -44,137 +44,91 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
   const [activites, setActivites] = useState<ActiviteTerrain[]>([]);
   const [motifsReport, setMotifsReport] = useState<MotifReport[]>([]);
   const [saving, setSaving] = useState(false);
-  
+
   // État du formulaire
   const [selectedAffaireId, setSelectedAffaireId] = useState<string>("");
   const [selectedActiviteId, setSelectedActiviteId] = useState<string>("");
   const [nouvelleActivite, setNouvelleActivite] = useState(false);
-  
-  // Champs activité (préremplis ou à saisir)
   const [libelle, setLibelle] = useState("");
   const [ot, setOt] = useState("");
-  const [tranche, setTranche] = useState<number | "">("");
+  const [tranche, setTranche] = useState<string>("");
   const [systemeElementaire, setSystemeElementaire] = useState("");
   const [typeActivite, setTypeActivite] = useState("");
   const [typeHoraire, setTypeHoraire] = useState("");
   const [commentaire, setCommentaire] = useState("");
-  
-  // Statut du jour
   const [statutJour, setStatutJour] = useState<"realise" | "reporte" | "termine" | null>(null);
   const [motifReport, setMotifReport] = useState("");
   const [motifReportId, setMotifReportId] = useState<string>("");
   const [nouveauMotifReport, setNouveauMotifReport] = useState("");
-  
+
   // Mode de l'affaire (BPU ou Dépense Contrôlée)
   const modeAffaire = useMemo(() => {
-    const affaire = affaires.find(a => a.id === selectedAffaireId);
+    const affaire = affaires.find((a) => a.id === selectedAffaireId);
     return affaire?.type_valorisation || null;
   }, [affaires, selectedAffaireId]);
-  
-  // Activités filtrées (seulement Planifiée / Lancée / Reportée)
+
+  // Filtrer les activités selon le statut et l'affaire
   const activitesFiltrees = useMemo(() => {
     if (!selectedAffaireId) return [];
-    return activites.filter(a => 
-      a.affaire_id === selectedAffaireId && 
-      ["planifiee", "lancee", "reportee"].includes(a.statut)
+    return activites.filter(
+      (act) =>
+        act.affaire_id === selectedAffaireId &&
+        (act.statut === "planifiee" || act.statut === "lancee" || act.statut === "reportee")
     );
   }, [activites, selectedAffaireId]);
-  
-  // Charger les données au montage
+
+  // Charger les données
   useEffect(() => {
-    fetchAffaires();
-    fetchMotifsReport();
+    const fetchData = async () => {
+      try {
+        // Charger les affaires
+        const responseAffaires = await fetch("/api/affaires");
+        if (responseAffaires.ok) {
+          const data = await responseAffaires.json();
+          setAffaires(data.affaires || []);
+        }
+
+        // Charger les activités terrain
+        const responseActivites = await fetch("/api/activites-terrain");
+        if (responseActivites.ok) {
+          const data = await responseActivites.json();
+          setActivites(data.activites || []);
+        }
+
+        // Charger les motifs de report
+        const responseMotifs = await fetch("/api/motifs-report");
+        if (responseMotifs.ok) {
+          const data = await responseMotifs.json();
+          setMotifsReport(data.motifs || []);
+        }
+      } catch (error) {
+        console.error("Erreur chargement données:", error);
+      }
+    };
+
+    fetchData();
   }, []);
-  
-  // Charger les activités quand une affaire est sélectionnée
-  useEffect(() => {
-    if (selectedAffaireId) {
-      fetchActivites(selectedAffaireId);
-    } else {
-      setActivites([]);
-    }
-  }, [selectedAffaireId]);
-  
-  // Préremplir les champs quand une activité est sélectionnée
+
+  // Préremplir les champs si activité sélectionnée
   useEffect(() => {
     if (selectedActiviteId && !nouvelleActivite) {
-      const activite = activites.find(a => a.id === selectedActiviteId);
+      const activite = activites.find((a) => a.id === selectedActiviteId);
       if (activite) {
-        setLibelle(activite.libelle || "");
+        setLibelle(activite.libelle);
         setOt(activite.ot || "");
-        setTranche(activite.tranche ?? "");
+        setTranche(activite.tranche?.toString() || "");
         setSystemeElementaire(activite.systeme_elementaire || "");
         setTypeActivite(activite.type_activite || "");
         setTypeHoraire(activite.type_horaire || "");
         setCommentaire(activite.commentaire || "");
-        
-        // Charger la dernière saisie pour préremplir
-        fetchDerniereSaisie(activite.id);
       }
     }
-  }, [selectedActiviteId, activites, nouvelleActivite]);
-  
-  const fetchAffaires = async () => {
-    try {
-      const response = await fetch("/api/affaires");
-      if (response.ok) {
-        const data = await response.json();
-        setAffaires(data.affaires || []);
-      }
-    } catch (error) {
-      console.error("Erreur chargement affaires:", error);
-    }
-  };
-  
-  const fetchActivites = async (affaireId: string) => {
-    try {
-      const response = await fetch(`/api/activites-terrain?affaire_id=${affaireId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setActivites(data.activites || []);
-      }
-    } catch (error) {
-      console.error("Erreur chargement activités:", error);
-    }
-  };
-  
-  const fetchMotifsReport = async () => {
-    try {
-      const response = await fetch("/api/motifs-report");
-      if (response.ok) {
-        const data = await response.json();
-        // Trier par fréquence décroissante
-        const sorted = (data.motifs || []).sort((a: MotifReport, b: MotifReport) => 
-          b.frequence_utilisation - a.frequence_utilisation
-        );
-        setMotifsReport(sorted);
-      }
-    } catch (error) {
-      console.error("Erreur chargement motifs:", error);
-    }
-  };
-  
-  const fetchDerniereSaisie = async (activiteId: string) => {
-    try {
-      const response = await fetch(`/api/saisies-quotidiennes?activite_id=${activiteId}&limit=1`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.saisies && data.saisies.length > 0) {
-          // Préremplir avec les valeurs de la dernière saisie
-          // (selon PRD : préremplissage depuis dernière saisie)
-          // Les valeurs sont déjà préremplies depuis l'activité sélectionnée
-        }
-      }
-    } catch (error) {
-      console.error("Erreur chargement dernière saisie:", error);
-    }
-  };
-  
-  const handleActiviteChange = (activiteId: string) => {
-    if (activiteId === "nouvelle") {
+  }, [selectedActiviteId, nouvelleActivite, activites]);
+
+  const handleActiviteChange = (value: string) => {
+    if (value === "nouvelle") {
       setNouvelleActivite(true);
       setSelectedActiviteId("");
-      // Réinitialiser les champs
       setLibelle("");
       setOt("");
       setTranche("");
@@ -184,50 +138,36 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
       setCommentaire("");
     } else {
       setNouvelleActivite(false);
-      setSelectedActiviteId(activiteId);
+      setSelectedActiviteId(value);
     }
   };
-  
+
   const handleMotifReportSelect = (motifId: string) => {
-    setMotifReportId(motifId);
-    const motif = motifsReport.find(m => m.id === motifId);
+    const motif = motifsReport.find((m) => m.id === motifId);
     if (motif) {
+      setMotifReportId(motifId);
       setMotifReport(motif.libelle);
+      setNouveauMotifReport("");
     }
   };
-  
+
   const handleSubmit = async () => {
-    if (!selectedAffaireId) {
-      alert("Veuillez sélectionner une affaire");
+    if (!selectedAffaireId || !libelle || !ot || !statutJour) {
+      alert("Veuillez remplir tous les champs obligatoires");
       return;
     }
-    
-    if (!libelle.trim()) {
-      alert("Le libellé est obligatoire");
+
+    if (statutJour === "reporte" && !motifReport && !nouveauMotifReport) {
+      alert("Veuillez saisir un motif de report");
       return;
     }
-    
-    if (!ot.trim()) {
-      alert("L'OT (Ordre de Travail) est obligatoire");
-      return;
-    }
-    
-    if (!statutJour) {
-      alert("Veuillez sélectionner un statut du jour");
-      return;
-    }
-    
-    if (statutJour === "reporte" && !motifReport.trim() && !nouveauMotifReport.trim()) {
-      alert("Le motif de report est obligatoire");
-      return;
-    }
-    
+
     setSaving(true);
+
     try {
+      // Créer l'activité si nouvelle
       let activiteId = selectedActiviteId;
-      
-      // Si nouvelle activité, la créer d'abord
-      if (nouvelleActivite || !activiteId) {
+      if (nouvelleActivite || !selectedActiviteId) {
         const responseActivite = await fetch("/api/activites-terrain", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -235,24 +175,25 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
             libelle,
             affaire_id: selectedAffaireId,
             ot,
-            tranche: tranche === "" ? null : Number(tranche),
+            tranche: tranche ? Number(tranche) : null,
             systeme_elementaire: systemeElementaire || null,
             type_activite: typeActivite || null,
             type_horaire: modeAffaire === "BPU" ? (typeHoraire || null) : null,
             commentaire: commentaire || null,
-            a_rattacher: true, // Activité créée à la volée
             statut: "planifiee",
+            a_rattacher: false,
           }),
         });
-        
+
         if (!responseActivite.ok) {
-          throw new Error("Erreur lors de la création de l'activité");
+          const error = await responseActivite.json();
+          throw new Error(error.error || "Erreur lors de la création de l'activité");
         }
-        
+
         const dataActivite = await responseActivite.json();
         activiteId = dataActivite.activite.id;
       }
-      
+
       // Créer ou mettre à jour le motif de report si nouveau
       let motifIdFinal = motifReportId;
       if (statutJour === "reporte" && nouveauMotifReport.trim() && !motifReportId) {
@@ -263,13 +204,13 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
             libelle: nouveauMotifReport,
           }),
         });
-        
+
         if (responseMotif.ok) {
           const dataMotif = await responseMotif.json();
           motifIdFinal = dataMotif.motif.id;
         }
       }
-      
+
       // Créer la saisie quotidienne
       // L'API créera automatiquement le collaborateur si nécessaire (pour les admins)
       const responseSaisie = await fetch("/api/saisies-quotidiennes", {
@@ -287,27 +228,27 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
           commentaire: commentaire || null,
         }),
       });
-      
+
       if (!responseSaisie.ok) {
         const error = await responseSaisie.json();
         throw new Error(error.error || "Erreur lors de la saisie");
       }
-      
+
       // Incrémenter la fréquence du motif si utilisé
       if (motifIdFinal) {
         await fetch(`/api/motifs-report/${motifIdFinal}/incrementer`, {
           method: "POST",
         });
       }
-      
+
       // Réinitialiser le formulaire
       resetForm();
-      
+
       // Appeler le callback
       if (onSaisieComplete) {
         onSaisieComplete();
       }
-      
+
       alert("Saisie enregistrée avec succès");
     } catch (error) {
       console.error("Erreur:", error);
@@ -316,7 +257,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
       setSaving(false);
     }
   };
-  
+
   const resetForm = () => {
     setSelectedAffaireId("");
     setSelectedActiviteId("");
@@ -333,17 +274,86 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
     setMotifReportId("");
     setNouveauMotifReport("");
   };
-  
+
+  // Déterminer la couleur de la barre gauche selon le statut
+  const getStatutColor = () => {
+    if (!statutJour) return "border-l-blue-400";
+    switch (statutJour) {
+      case "realise":
+        return "border-l-blue-400";
+      case "reporte":
+        return "border-l-orange-400";
+      case "termine":
+        return "border-l-green-400";
+      default:
+        return "border-l-blue-400";
+    }
+  };
+
+  // Déterminer le badge de statut
+  const getStatutBadge = () => {
+    if (!statutJour) return null;
+    switch (statutJour) {
+      case "realise":
+        return { label: "Réalisé", color: "bg-blue-100 text-blue-700 border-blue-300" };
+      case "reporte":
+        return { label: "Reporté", color: "bg-orange-100 text-orange-700 border-orange-300" };
+      case "termine":
+        return { label: "Terminé", color: "bg-green-100 text-green-700 border-green-300" };
+      default:
+        return null;
+    }
+  };
+
+  const statutBadge = getStatutBadge();
+
   return (
-    <div className="card mb-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-lg font-bold text-secondary">Tuile Universelle</h3>
-          <p className="text-sm text-gray-600">Saisie rapide des activités du jour</p>
+    <div className={`card border-l-4 ${getStatutColor()} hover:shadow-lg transition-shadow mb-6`}>
+      {/* En-tête tuile */}
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <Play className="h-5 w-5 text-gray-600" />
+            {statutBadge && (
+              <span className={`text-xs font-semibold px-2 py-1 rounded border ${statutBadge.color}`}>
+                {statutBadge.label}
+              </span>
+            )}
+          </div>
+          <h3 className="font-bold text-xl text-gray-800 mb-1">
+            Tuile Universelle
+          </h3>
         </div>
       </div>
-      
-      <div className="space-y-4">
+
+      {/* Informations */}
+      <div className="space-y-2 mb-4 text-base text-gray-600">
+        {selectedAffaireId && (
+          <div>
+            <span className="font-medium">Affaire:</span>{" "}
+            {affaires.find((a) => a.id === selectedAffaireId)?.numero || "N/A"}
+          </div>
+        )}
+        {modeAffaire && (
+          <div>
+            <span className="font-medium">Mode:</span>{" "}
+            {modeAffaire === "BPU" ? "BPU (Bordereau Prix Unitaires)" : "Dépense Contrôlée"}
+          </div>
+        )}
+        {selectedActiviteId && !nouvelleActivite && (
+          <div>
+            <span className="font-medium">Activité:</span> {libelle}
+          </div>
+        )}
+        {ot && (
+          <div>
+            <span className="font-medium">OT:</span> {ot}
+          </div>
+        )}
+      </div>
+
+      {/* Formulaire */}
+      <div className="space-y-4 mb-4">
         {/* Sélection Affaire */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -356,7 +366,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
               setSelectedActiviteId("");
               setNouvelleActivite(false);
             }}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
             required
           >
             <option value="">Sélectionner une affaire</option>
@@ -366,13 +376,8 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
               </option>
             ))}
           </select>
-          {modeAffaire && (
-            <p className="mt-1 text-xs text-gray-500">
-              Mode : {modeAffaire === "BPU" ? "BPU (Bordereau Prix Unitaires)" : "Dépense Contrôlée"}
-            </p>
-          )}
         </div>
-        
+
         {/* Sélection Activité */}
         {selectedAffaireId && (
           <div>
@@ -382,7 +387,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
             <select
               value={nouvelleActivite ? "nouvelle" : selectedActiviteId}
               onChange={(e) => handleActiviteChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
             >
               <option value="">Sélectionner une activité existante</option>
               {activitesFiltrees.map((activite) => (
@@ -394,7 +399,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
             </select>
           </div>
         )}
-        
+
         {/* Champs activité */}
         {selectedAffaireId && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -406,11 +411,11 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 type="text"
                 value={libelle}
                 onChange={(e) => setLibelle(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 OT (Ordre de Travail) <span className="text-red-500">*</span>
@@ -420,11 +425,11 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 value={ot}
                 onChange={(e) => setOt(e.target.value)}
                 placeholder="123456-01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Tranche (0-9)
@@ -434,11 +439,11 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 min="0"
                 max="9"
                 value={tranche}
-                onChange={(e) => setTranche(e.target.value === "" ? "" : Number(e.target.value))}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                onChange={(e) => setTranche(e.target.value === "" ? "" : Number(e.target.value).toString())}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Système élémentaire
@@ -447,10 +452,10 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 type="text"
                 value={systemeElementaire}
                 onChange={(e) => setSystemeElementaire(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Type d'activité
@@ -459,10 +464,10 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 type="text"
                 value={typeActivite}
                 onChange={(e) => setTypeActivite(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
               />
             </div>
-            
+
             {modeAffaire === "BPU" && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -471,7 +476,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 <select
                   value={typeHoraire}
                   onChange={(e) => setTypeHoraire(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
                 >
                   <option value="">Sélectionner</option>
                   <option value="jour">Jour (HN)</option>
@@ -484,7 +489,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
             )}
           </div>
         )}
-        
+
         {/* Commentaire */}
         {selectedAffaireId && (
           <div>
@@ -495,11 +500,11 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
               value={commentaire}
               onChange={(e) => setCommentaire(e.target.value)}
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
             />
           </div>
         )}
-        
+
         {/* Statut du jour */}
         {selectedAffaireId && libelle && ot && (
           <div>
@@ -515,20 +520,20 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                   setMotifReportId("");
                   setNouveauMotifReport("");
                 }}
-                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all text-sm ${
                   statutJour === "realise"
-                    ? "bg-green-500 text-white border-green-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-green-500"
+                    ? "bg-blue-500 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:border-blue-500"
                 }`}
               >
                 <CheckCircle className="h-5 w-5 mx-auto mb-1" />
                 Réalisé
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => setStatutJour("reporte")}
-                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all text-sm ${
                   statutJour === "reporte"
                     ? "bg-orange-500 text-white border-orange-600"
                     : "bg-white text-gray-700 border-gray-300 hover:border-orange-500"
@@ -537,7 +542,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 <Calendar className="h-5 w-5 mx-auto mb-1" />
                 Reporté
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => {
@@ -546,10 +551,10 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                   setMotifReportId("");
                   setNouveauMotifReport("");
                 }}
-                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all ${
+                className={`px-4 py-3 rounded-lg border-2 font-medium transition-all text-sm ${
                   statutJour === "termine"
-                    ? "bg-blue-500 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-blue-500"
+                    ? "bg-green-500 text-white border-green-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:border-green-500"
                 }`}
               >
                 <CheckCircle className="h-5 w-5 mx-auto mb-1" />
@@ -558,14 +563,14 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
             </div>
           </div>
         )}
-        
+
         {/* Motif de report (si reporté) */}
         {statutJour === "reporte" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Motif de report <span className="text-red-500">*</span>
             </label>
-            
+
             {/* Liste cliquable des motifs précédents */}
             {motifsReport.length > 0 && (
               <div className="mb-3">
@@ -588,7 +593,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 </div>
               </div>
             )}
-            
+
             {/* Champ texte libre pour nouveau motif */}
             <input
               type="text"
@@ -599,36 +604,35 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
                 setMotifReport(e.target.value);
               }}
               placeholder="Ou saisir un nouveau motif"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
             />
           </div>
         )}
-        
-        {/* Boutons d'action */}
-        {selectedAffaireId && libelle && ot && statutJour && (
-          <div className="flex gap-3 pt-4 border-t">
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={saving}
-              className="flex-1 btn-primary bg-primary hover:bg-primary/90 text-white flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <Save className="h-5 w-5" />
-              {saving ? "Enregistrement..." : "Valider la saisie"}
-            </button>
-            
-            <button
-              type="button"
-              onClick={resetForm}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-            >
-              <X className="h-5 w-5" />
-              Réinitialiser
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* Boutons d'action */}
+      {selectedAffaireId && libelle && ot && statutJour && (
+        <div className="flex flex-wrap gap-2 pt-4 border-t">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={saving}
+            className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors disabled:opacity-50"
+          >
+            <Save className="h-4 w-4" />
+            {saving ? "Enregistrement..." : "Valider la saisie"}
+          </button>
+
+          <button
+            type="button"
+            onClick={resetForm}
+            className="bg-gray-500 hover:bg-gray-600 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+          >
+            <X className="h-4 w-4" />
+            Réinitialiser
+          </button>
+        </div>
+      )}
     </div>
   );
 }
-
