@@ -404,6 +404,34 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
           </select>
         </div>
 
+        {/* Sélection Affaire (uniquement pour nouvelle activité) */}
+        {nouvelleActivite && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Affaire <span className="text-red-500">*</span>
+              <span className="ml-2 text-xs text-orange-600 font-semibold">⚠️ Obligatoire pour nouvelle activité</span>
+            </label>
+            <select
+              value={selectedAffaireIdForNew}
+              onChange={(e) => setSelectedAffaireIdForNew(e.target.value)}
+              className="w-full px-4 py-2 border-2 border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm bg-orange-50"
+              required
+            >
+              <option value="">⚠️ Sélectionner une affaire (obligatoire)</option>
+              {affaires.map((affaire) => (
+                <option key={affaire.id} value={affaire.id}>
+                  {affaire.numero} - {affaire.libelle}
+                </option>
+              ))}
+            </select>
+            {!selectedAffaireIdForNew && (
+              <p className="mt-1 text-xs text-orange-600 font-medium">
+                ⚠️ Vous devez assigner une affaire à cette nouvelle activité avant de continuer.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Champs activité */}
         {(selectedActiviteId || nouvelleActivite) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
