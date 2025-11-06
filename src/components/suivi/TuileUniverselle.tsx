@@ -117,13 +117,67 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
           const data = await responseMotifs.json();
           setMotifsReport(data.motifs || []);
         }
+
+        // Charger la dernière saisie du collaborateur pour préremplir (après avoir chargé les activités)
+        if (collaborateurId && activites.length > 0) {
+          const responseDerniereSaisie = await fetch(
+            `/api/saisies-quotidiennes?collaborateur_id=${collaborateurId}&limit=1`
+          );
+          if (responseDerniereSaisie.ok) {
+            const dataSaisie = await responseDerniereSaisie.json();
+            const derniereSaisie = dataSaisie.saisies?.[0];
+            
+            if (derniereSaisie && derniereSaisie.activite) {
+              // Préremplir avec la dernière activité utilisée
+              const activiteId = derniereSaisie.activite.id;
+              const activite = activites.find((a) => a.id === activiteId);
+              
+              if (activite) {
+                setSelectedActiviteId(activiteId);
+                setNouvelleActivite(false);
+                // Les autres champs seront préremplis par le useEffect suivant
+              }
+            }
+          }
+        }
       } catch (error) {
         console.error("Erreur chargement données:", error);
       }
     };
 
     fetchData();
-  }, []);
+  }, [collaborateurId]);
+
+  // Préremplir depuis la dernière saisie une fois les activités chargées
+  useEffect(() => {
+    if (collaborateurId && activites.length > 0 && !selectedActiviteId && !nouvelleActivite) {
+      const fetchDerniereSaisie = async () => {
+        try {
+          const responseDerniereSaisie = await fetch(
+            `/api/saisies-quotidiennes?collaborateur_id=${collaborateurId}&limit=1`
+          );
+          if (responseDerniereSaisie.ok) {
+            const dataSaisie = await responseDerniereSaisie.json();
+            const derniereSaisie = dataSaisie.saisies?.[0];
+            
+            if (derniereSaisie && derniereSaisie.activite) {
+              const activiteId = derniereSaisie.activite.id;
+              const activite = activites.find((a) => a.id === activiteId);
+              
+              if (activite) {
+                setSelectedActiviteId(activiteId);
+                setNouvelleActivite(false);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Erreur récupération dernière saisie:", error);
+        }
+      };
+      
+      fetchDerniereSaisie();
+    }
+  }, [collaborateurId, activites, selectedActiviteId, nouvelleActivite]);
 
   // Préremplir les champs si activité sélectionnée
   useEffect(() => {
