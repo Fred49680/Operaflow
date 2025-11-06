@@ -46,9 +46,16 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
   const [saving, setSaving] = useState(false);
 
   // État du formulaire
-  const [selectedAffaireId, setSelectedAffaireId] = useState<string>("");
   const [selectedActiviteId, setSelectedActiviteId] = useState<string>("");
   const [nouvelleActivite, setNouvelleActivite] = useState(false);
+  // L'affaire sera déterminée automatiquement depuis l'activité sélectionnée
+  const selectedAffaireId = useMemo(() => {
+    if (selectedActiviteId && !nouvelleActivite) {
+      const activite = activites.find((a) => a.id === selectedActiviteId);
+      return activite?.affaire_id || "";
+    }
+    return "";
+  }, [selectedActiviteId, nouvelleActivite, activites]);
   const [libelle, setLibelle] = useState("");
   const [ot, setOt] = useState("");
   const [tranche, setTranche] = useState<string>("");
@@ -67,15 +74,13 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
     return affaire?.type_valorisation || null;
   }, [affaires, selectedAffaireId]);
 
-  // Filtrer les activités selon le statut et l'affaire
+  // Filtrer les activités selon le statut (toutes les activités disponibles)
   const activitesFiltrees = useMemo(() => {
-    if (!selectedAffaireId) return [];
     return activites.filter(
       (act) =>
-        act.affaire_id === selectedAffaireId &&
-        (act.statut === "planifiee" || act.statut === "lancee" || act.statut === "reportee")
+        act.statut === "planifiee" || act.statut === "lancee" || act.statut === "reportee"
     );
-  }, [activites, selectedAffaireId]);
+  }, [activites]);
 
   // Charger les données
   useEffect(() => {
@@ -139,6 +144,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
     } else {
       setNouvelleActivite(false);
       setSelectedActiviteId(value);
+      // L'affaire sera déterminée automatiquement via le useMemo
     }
   };
 
@@ -152,8 +158,18 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
   };
 
   const handleSubmit = async () => {
-    if (!selectedAffaireId || !libelle || !ot || !statutJour) {
+    if (!selectedActiviteId && !nouvelleActivite) {
+      alert("Veuillez sélectionner ou créer une activité");
+      return;
+    }
+    
+    if (!libelle || !ot || !statutJour) {
       alert("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+    
+    if (nouvelleActivite && !selectedAffaireId) {
+      alert("Impossible de créer une nouvelle activité sans affaire. Veuillez sélectionner une activité existante.");
       return;
     }
 
@@ -259,7 +275,6 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
   };
 
   const resetForm = () => {
-    setSelectedAffaireId("");
     setSelectedActiviteId("");
     setNouvelleActivite(false);
     setLibelle("");
@@ -401,7 +416,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
         )}
 
         {/* Champs activité */}
-        {selectedAffaireId && (
+        {(selectedActiviteId || nouvelleActivite) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -491,7 +506,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
         )}
 
         {/* Commentaire */}
-        {selectedAffaireId && (
+        {(selectedActiviteId || nouvelleActivite) && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Commentaire interne
@@ -506,7 +521,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
         )}
 
         {/* Statut du jour */}
-        {selectedAffaireId && libelle && ot && (
+        {(selectedActiviteId || nouvelleActivite) && libelle && ot && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Statut du jour <span className="text-red-500">*</span>
@@ -611,7 +626,7 @@ export default function TuileUniverselle({ collaborateurId, userId, isAdmin = fa
       </div>
 
       {/* Boutons d'action */}
-      {selectedAffaireId && libelle && ot && statutJour && (
+      {(selectedActiviteId || nouvelleActivite) && libelle && ot && statutJour && (
         <div className="flex flex-wrap gap-2 pt-4 border-t">
           <button
             type="button"
