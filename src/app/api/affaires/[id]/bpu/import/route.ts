@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -87,21 +87,40 @@ export async function POST(
 
     // Lire le fichier
     const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: "array" });
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(arrayBuffer);
     
     // Prendre la première feuille
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
+    const worksheet = workbook.worksheets[0];
     
-    // Convertir en JSON
-    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
-    
-    if (data.length < 2) {
+    if (!worksheet || worksheet.rowCount < 2) {
       return NextResponse.json(
         { error: "Le fichier doit contenir au moins une ligne d'en-tête et une ligne de données" },
         { status: 400 }
       );
     }
+
+    // Convertir en tableau de tableaux
+    const data: any[][] = [];
+    worksheet.eachRow((row, rowNumber) => {
+      const rowData: any[] = [];
+      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        // Récupérer la valeur brute ou formatée
+        const value = cell.value;
+        if (value !== null && value !== undefined) {
+          if (typeof value === 'object' && 'text' in value) {
+            rowData[colNumber - 1] = value.text;
+          } else if (typeof value === 'object' && 'result' in value) {
+            rowData[colNumber - 1] = value.result;
+          } else {
+            rowData[colNumber - 1] = value;
+          }
+        } else {
+          rowData[colNumber - 1] = null;
+        }
+      });
+      data.push(rowData);
+    });
 
     // Trouver les colonnes (première ligne = en-têtes)
     const headers = data[0].map((h: any) => String(h || "").toLowerCase().trim());
