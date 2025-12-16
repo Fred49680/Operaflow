@@ -1,0 +1,425 @@
+---
+alwaysApply: true
+---
+
+🧾 PRD GLOBAL – Gestion des Activités + Tuile Universelle + Facturation + Rapports
+
+Projet : OperaFlow
+Version : 7.0
+Auteur : Fred
+
+1) 🎯 Objectif global
+
+Déployer un système complet permettant :
+
+✅ la déclaration quotidienne d’activités via une tuile universelle,
+✅ la mémoire opérationnelle des activités (Lancé / Reporté / Terminé),
+✅ la gestion complète par affaire (BPU → ou → Dépense Contrôlée),
+✅ la facturation mensuelle pilotée par le Conducteur,
+✅ des rapports automatiques envoyés chaque jour et archivés chaque mois.
+
+Le tout dans une logique terrain : simple, rapide, sans surcharge.
+
+2) 🧱 Structure générale
+
+Le système comporte 4 briques :
+
+✅ A – Activités
+
+Enregistrées, préconfigurées par le Conducteur ou créées à la volée dans la tuile.
+
+✅ B – Tuile universelle
+
+Formulaire minute pour saisir ce qu’il s’est passé aujourd’hui.
+
+✅ C – Facturation
+
+Compilation mensuelle, arbitrages BPU / Montant libre, export, PDF.
+
+✅ D – Rapports automatiques
+
+Journal terrain quotidien (RA, 17h30) + rapport mensuel archivé (Conducteur).
+
+3) 🧩 A. GESTION DES ACTIVITÉS
+3.1 Origine des activités
+
+Une activité peut venir :
+
+✅ 1) Du Conducteur
+
+Créées via :
+
+Import Excel (mapping)
+
+Création manuelle via interface dédiée
+
+✅ 2) De la tuile
+
+Créée à la volée par l’opérateur si absente de la liste.
+
+Ces activités vont dans la file “À rattacher / À compléter”
+→ Le Conducteur les valide, les rattache à l’affaire, et les complète.
+
+3.2 Champs d’une activité
+Tronc commun :
+
+Libellé
+
+Affaire (si connue)
+
+OT (obligatoire pour facturation)
+
+Tranche (0–9)
+
+Système élémentaire
+
+Type d’activité
+
+Commentaire interne (optionnel)
+
+Mode BPU (selon affaire)
+
+Type horaire (HN, WE, Nuit, 3×8…)
+(Le poste BPU lui-même n’est pas utilisé ici.)
+
+Mode Dépense Contrôlée
+
+Pas de BPU
+
+Pas de montant (montant libre vu en facturation)
+
+3.3 États des activités (mémoire interne)
+
+Chaque activité garde en mémoire son état opérationnel :
+
+🟦 PLANIFIÉE
+
+Créée mais pas encore lancée.
+
+🟨 LANCÉE
+
+Premier “Réalisé”
+
+Enregistre Date début
+
+Activité en cours
+
+🟧 REPORTÉE
+
+Report du jour (motif obligatoire)
+
+Ne touche pas à Date début
+
+Activité en attente
+
+🟩 TERMINÉE
+
+Saisie “Terminer”
+
+Enregistre Date fin
+
+Verrouille la modification
+
+En attente de facturation
+
+4) 🧩 B. TUILE UNIVERSELLE (Formulaire minute)
+4.1 Logique principale
+
+Une seule tuile pour tout le monde.
+Elle s’adapte selon l’affaire sélectionnée :
+
+Mode de valorisation de l’affaire	Affichage
+BPU	Tuile Mode BPU
+Dépense Contrôlée	Tuile Mode DC
+
+✅ Pas de montant dans la tuile
+✅ Pas de BPU dans la tuile
+→ Le BPU est géré en facturation uniquement.
+
+4.2 Flux d’utilisation
+1) Sélection AFFAIRE
+
+Obligatoire.
+Détermine le mode : BPU ou Dépense Contrôlée.
+
+2) Sélection ACTIVITÉ
+
+Liste filtrée :
+Affiche seulement les activités Planifiée / Lancée / Reportée.
+
+3) Si activité existante → préremplissage
+
+Champs remplis automatiquement :
+
+Libellé
+
+OT
+
+Tranche
+
+Système élémentaire
+
+Type d’activité
+
+Type horaire (si BPU)
+
+Commentaire
+
+Opérateur vérifie, puis choisit statut du jour.
+
+4) Si activité absente → création à la volée
+
+Champs à saisir :
+
+Libellé
+
+OT
+
+Tranche
+
+Système élémentaire
+
+Type activité
+
+Type horaire (si BPU)
+
+Commentaire
+
+Activité est créée au statut Planifiée, puis saisie du jour enregistrée.
+
+→ Flag “À rattacher par Conducteur”.
+
+4.3 Statut du jour saisissable dans la tuile
+
+✔ Réalisé
+
+↩ Reporté (motif obligatoire)
+
+✅ Terminé (fixe date fin + verrouille)
+
+✅ Plusieurs saisies par jour autorisées
+✅ Tuile se réinitialise après chaque VALIDATION
+
+5) 🧩 C. FACTURATION MENSUELLE
+5.1 Rôle
+
+Le Conducteur compile les activités du mois.
+
+Aucune facturation automatique depuis la tuile.
+
+5.2 Regroupement des lignes (selon affaire)
+En mode BPU :
+
+Groupe par :
+
+Tranche
+
+Système élémentaire
+
+Type d’activité
+
+Type horaire
+
+OT
+
+Poste BPU (automatiquement lié au type d’activité et aux règles de l’affaire)
+
+(Le poste BPU n’est pas choisi : il est déterminé par la structure de l’affaire.)
+
+En mode Dépense Contrôlée
+
+Regroupement simplifié :
+
+Type activité
+
+OT
+
+Zone/Équipe (si configuré)
+
+5.3 Valorisation (au moment de la facture)
+Mode BPU (par défaut)
+
+Montant = VolumeHeureAlloué(poste) × TarifHoraire × Coefficient(type horaire)
+
+Mode Montant Libre (dérogation)
+
+Saisie manuelle
+
+Motif obligatoire
+
+Traçabilité 100%
+
+Lignes REPORTÉES
+
+Par défaut → non facturées
+Option → Facturer malgré report (Conducteur)
+
+5.4 Conditions bloquantes
+
+OT manquant
+
+Activité non rattachée à une affaire
+
+Montant libre sans motif
+
+BPU inactif
+
+Date fin incohérente (Terminer absent)
+
+5.5 Sorties facture
+
+Brouillon PDF
+
+Brouillon HTML
+
+PDF final
+
+CSV des lignes
+
+Journal des arbitrages (qui a validé quoi et quand)
+
+6) 🧩 D. RAPPORTS AUTOMATIQUES
+6.1 Rapport Journalier (17h30)
+Objectif
+
+Informer le Responsable d’Affaire des actions du jour sans aller dans l’appli.
+
+Destinataires
+
+Responsable d’Affaire
+
+CC Conducteur & Responsable Site (paramétrable)
+
+Contenu HTML + PDF
+
+KPIs du jour
+
+Activités Réalisées / Reportées / Terminées
+
+Motifs de report
+
+OT manquants
+
+Activités à rattacher
+
+Auteur des saisies
+
+Lien pour ouvrir la vue du jour
+
+Règles
+
+Envoi quotidien ouvré
+
+Si aucune activité → envoi “RAS”
+
+6.2 Rapport Mensuel (archive Conducteur)
+Génération automatique
+
+Le 1er du mois M+1 à 06h00.
+
+Génération manuelle
+
+Possible via bouton.
+
+Contenu
+
+KPI du mois
+
+Journal complet du mois
+
+Lignes candidates à facturation
+
+Lignes reportées
+
+OT manquants
+
+Anomalies
+
+Historique des activités “à rattacher”
+
+Résumé par affaire
+
+Formats
+
+PDF (conservé 12 mois)
+
+CSV
+
+HTML
+
+7) 🧩 E. Rôles & Permissions
+Opérateur / Chef de chantier
+
+Accès tuile
+
+Peut créer activité simple
+
+Peut Terminer une activité en cours
+
+Pas accès à la facturation
+
+Conducteur
+
+Tout accès CC +
+
+Import Excel activités
+
+Rattachement d’activité
+
+Génération factures / rapports
+
+Arbitrage montant libre
+
+Correction statuts
+
+Responsable d’Affaire
+
+Lecture
+
+Réception rapport 17h30
+
+Administratif / Compta
+
+Facture finale
+
+Suivi archivage
+
+Admin
+
+Paramétrage global
+
+Modèles facture & emails
+
+Règles horaires / fériés
+
+8) ✅ Critères d’acceptation (définitifs)
+
+Une tuile, deux modes, aucun montant, aucun BPU visible.
+
+Sélection AFFAIRE → mode BPU ou DC appliqué automatiquement.
+
+La liste d’activités n’affiche que Planifiée / Lancée / Reportée.
+
+Préremplissage complet si activité existante.
+
+Création rapide si activité absente.
+
+Statuts enregistrés correctement (Lancer / Reporter / Terminer).
+
+Activité conserve Date début / fin / statut.
+
+Facturation mensuelle compile toutes les saisies.
+
+Conducteur arbitre BPU / Montant libre / Report facturé.
+
+Rapports 17h30 envoyés chaque jour avec KPIs + PDF.
+
+Rapport mensuel archivé automatiquement.
+
+Aucun montant dans la tuile ; tout montant est géré en facturation.
+
+OT obligatoire.
+
+Activité non rattachée → bloquante pour la facture.
+
+Flux complet sans contradiction.
